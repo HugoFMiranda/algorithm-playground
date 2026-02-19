@@ -50,6 +50,12 @@ export function AlgorithmPageShell({ algorithm }: AlgorithmPageShellProps) {
             <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-[10px] uppercase">
               {algorithm.category}
             </Badge>
+            <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-[10px]">
+              {algorithm.difficulty}
+            </Badge>
+            <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[10px]">
+              {algorithm.roadmapPhase}
+            </Badge>
             {algorithm.tags.map((tag) => (
               <Badge key={tag} variant="outline" className="rounded-full px-2.5 py-0.5 text-[10px]">
                 {tag}

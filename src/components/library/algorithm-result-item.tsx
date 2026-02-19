@@ -26,8 +26,11 @@ export function AlgorithmResultItem({ algorithm, onSelect }: AlgorithmResultItem
             <Badge variant="outline" className="border-border/80 bg-card/70 text-[10px] uppercase">
               {algorithm.category}
             </Badge>
+            <Badge variant="secondary" className="rounded-full px-2 py-0 text-[10px]">
+              {algorithm.difficulty}
+            </Badge>
             <CommandShortcut className="hidden text-[10px] sm:block">
-              {algorithm.slug}
+              {algorithm.roadmapPhase}
             </CommandShortcut>
           </div>
         </div>
