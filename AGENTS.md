@@ -1,48 +1,101 @@
-# Repository Guidelines
+# algorithm-playground Governance and Working Agreement
 
-## Project Structure & Module Organization
-This repository is a Next.js (App Router) TypeScript app.
+This file is the strict source of truth for product direction, architecture guardrails, and contribution rules.
 
-- `src/app/`: route entrypoints, layout, and global styles (`globals.css`).
-- `src/components/ui/`: reusable UI primitives (Radix/shadcn-style components).
-- `src/lib/`: shared utilities (for example `cn()` in `src/lib/utils.ts`).
-- `public/`: static assets served at `/`.
-- Root config: `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs`.
+## Product Mission
 
-Use the `@/*` alias (configured in `tsconfig.json`) for imports from `src`.
+Build a professional algorithm visualization hub where users can:
+- discover algorithms by category and complexity,
+- understand execution through deterministic step playback,
+- inspect parameter effects and compare behavior between algorithms.
 
-## Build, Test, and Development Commands
-- `npm run dev`: start local dev server on `http://localhost:3000`.
-- `npm run build`: create production build.
-- `npm run start`: run the production server after build.
-- `npm run lint`: run all quality checks.
-- `npm run lint:types`: strict TypeScript check (`tsc --noEmit`).
-- `npm run lint:eslint`: ESLint with zero warnings allowed.
+## Current Scope
 
-Use `npm run lint && npm run build` before opening a PR.
+- Frontend-only Next.js App Router application.
+- No backend requirements in the current roadmap window.
+- Focus on reusable engine and renderer architecture before advanced features.
 
-## Coding Style & Naming Conventions
-- Language: TypeScript + React function components.
-- Indentation: 2 spaces; keep imports grouped and sorted consistently.
-- Components: PascalCase export names; UI primitive filenames are lowercase (for example `button.tsx`).
-- Utilities/hooks: camelCase function names.
-- Styling: Tailwind utility classes in JSX; keep class strings readable and grouped by layout -> spacing -> color/state.
+## Source-of-Truth Policy
 
-## Testing Guidelines
-There is currently no dedicated test runner or `npm test` script in this repo. For now:
+Any material change to process, roadmap, architecture, or algorithm priority must update:
+1. `AGENTS.md` (this file).
+2. The relevant document in `docs/`.
 
-- Treat `npm run lint` as the required baseline check.
-- Verify behavior manually in `npm run dev`.
-- If adding tests, prefer colocated `*.test.ts` / `*.test.tsx` files near the source or under `src/__tests__/`.
+Changes that skip documentation sync are not considered complete.
 
-## Commit & Pull Request Guidelines
-Git history is currently minimal (`Initial commit`), so keep commit subjects short, imperative, and specific.
+## Core Technical Stack
 
-- Good example: `feat(ui): add algorithm input dialog`
-- Keep commits focused (one logical change per commit).
-- PRs should include: summary, key files changed, validation steps (`lint`, `build`, manual checks), and screenshots for UI changes.
+- Next.js + TypeScript (App Router)
+- Tailwind CSS + shadcn/ui
+- Zustand for app state
+- Framer Motion for subtle transitions
 
-## Security & Configuration Tips
-- Do not commit secrets; use environment variables via local `.env*` files.
-- Validate external input before rendering or processing.
-- Prefer `rel="noopener noreferrer"` on external links opened with `target="_blank"`.
+## Project Structure Rules
+
+- `src/app/`: route entrypoints, layout, global styles.
+- `src/components/ui/`: shadcn-style primitives.
+- `src/components/library/`: catalog/discovery components.
+- `src/components/algorithm/`: algorithm shell components.
+- `src/data/`: typed catalog metadata.
+- `src/store/`: global state scaffolding.
+- `src/lib/`: shared utilities.
+- `docs/`: roadmap and architecture plans.
+
+Use `@/*` absolute imports.
+
+## Documentation Map
+
+- `docs/ROADMAP.md`: phase planning and algorithm ordering.
+- `docs/ENGINE.md`: event/playback architecture.
+- `docs/ALGORITHM_SPECS.md`: per-algorithm implementation plan.
+- `docs/ARCHITECTURE.md`: current and target architecture.
+- `docs/CONTRIBUTING.md`: workflow and PR expectations.
+
+## Algorithm Taxonomy and Difficulty
+
+Categories:
+- Sorting
+- Pathfinding
+- Graph Theory
+- Trees & Search
+
+Difficulty:
+- `D1`: straightforward implementation and renderer coupling.
+- `D2`: moderate invariants and event complexity.
+- `D3`: advanced invariants, branching logic, and complex visuals.
+
+Roadmap horizon is 3 phases with 20 planned algorithms.
+
+## Delivery Sequence
+
+1. Phase 1: foundational sorting + pathfinding + binary search.
+2. Phase 2: graph breadth and additional sorting/tree structures.
+3. Phase 3: advanced algorithms and comparison tooling.
+
+Canonical order and algorithm list are maintained in `docs/ROADMAP.md` and `src/data/algorithms.ts`.
+
+## Definition of Done (Algorithm Implementation)
+
+For each implemented algorithm:
+- Typed metadata exists in `src/data/algorithms.ts`.
+- Algorithm spec is documented in `docs/ALGORITHM_SPECS.md`.
+- Engine emits deterministic step streams for fixed input+params.
+- Algorithm renders correctly in its target renderer family.
+- Playback controls function correctly (play/pause/step/reset/speed).
+- `npm run lint` and `npm run build` pass.
+
+## Coding and Quality Rules
+
+- Strict TypeScript, avoid `any`.
+- Keep ESLint enabled; avoid broad suppression.
+- Prefer small composable components and pure algorithm engines.
+- Keep shadcn-first UI usage for consistency.
+
+## Commit and PR Rules
+
+- Conventional Commits required.
+- Keep commits focused by concern (`feat(engine)`, `feat(algorithms)`, `docs(roadmap)`, etc.).
+- PR summary must include:
+  - what changed,
+  - validation run (`lint`, `build`),
+  - docs synchronized (`AGENTS.md` + relevant `docs/*`).
