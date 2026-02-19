@@ -27,8 +27,8 @@ export function AboutSheet() {
         <SheetHeader>
           <SheetTitle>algorithm-playground Phase One</SheetTitle>
           <SheetDescription>
-            Core UI, routing, and state scaffolding are available. Binary Search is now fully implemented as
-            the first engine-backed visualization slice.
+            Core UI, routing, and state scaffolding are available. Binary Search and Bubble Sort are fully
+            implemented as engine-backed visualization slices.
           </SheetDescription>
         </SheetHeader>
         <div className="space-y-4 px-4 pb-6 text-sm">
@@ -38,8 +38,19 @@ export function AboutSheet() {
               <Badge variant="secondary">Library Search</Badge>
               <Badge variant="secondary">Route Shells</Badge>
               <Badge variant="secondary">Binary Search Engine</Badge>
+              <Badge variant="secondary">Bubble Sort Engine</Badge>
               <Badge variant="secondary">Playback Controls</Badge>
             </div>
+          </div>
+          <Separator />
+          <div className="space-y-2">
+            <h3 className="font-medium">Disclaimer</h3>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              This is a personal learning project. I built it as a centralized library for algorithms I
+              practiced and studied. I aim for correctness, but it can still contain mistakes or incomplete
+              explanations. Use it as a study aid, and verify important details with your own checks and
+              trusted references.
+            </p>
           </div>
           <Separator />
           <div className="space-y-2">

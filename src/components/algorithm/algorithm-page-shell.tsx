@@ -6,6 +6,7 @@ import { ArrowLeftIcon, ChevronRightIcon } from "lucide-react";
 
 import type { AlgorithmDefinition } from "@/data/algorithms";
 import { useAppStore } from "@/store/app-store";
+import { ComplexityPanel } from "@/components/algorithm/complexity-panel";
 import { ImplementationExamples } from "@/components/algorithm/implementation-examples";
 import { PlaybackControls } from "@/components/algorithm/playback-controls";
 import { ParamsPanel } from "@/components/algorithm/params-panel";
@@ -71,8 +72,9 @@ export function AlgorithmPageShell({ algorithm }: AlgorithmPageShellProps) {
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <VisualizerPanel algorithm={algorithm} />
-          <aside>
+          <aside className="space-y-6">
             <ParamsPanel className="surface-card border-border/70" />
+            <ComplexityPanel algorithmSlug={algorithm.slug} className="surface-card border-border/70" />
           </aside>
         </div>
 

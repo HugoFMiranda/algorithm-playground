@@ -1,5 +1,7 @@
 import { createBinarySearchRun } from "@/algorithms/binary-search/engine";
 import { BINARY_SEARCH_DEFAULT_PARAMS } from "@/algorithms/binary-search/spec";
+import { createBubbleSortRun } from "@/algorithms/bubble-sort/engine";
+import { BUBBLE_SORT_DEFAULT_PARAMS } from "@/algorithms/bubble-sort/spec";
 import type { ParamPrimitive, RawParams, StepEventBase } from "@/types/engine";
 
 export type RendererFamily = "array" | "grid" | "graph" | "tree";
@@ -19,6 +21,12 @@ export interface AlgorithmRuntimeDefinition {
 }
 
 const ALGORITHM_RUNTIME_REGISTRY: Record<string, AlgorithmRuntimeDefinition> = {
+  "bubble-sort": {
+    slug: "bubble-sort",
+    rendererFamily: "array",
+    defaultParams: { ...BUBBLE_SORT_DEFAULT_PARAMS },
+    createRun: createBubbleSortRun,
+  },
   "binary-search": {
     slug: "binary-search",
     rendererFamily: "array",

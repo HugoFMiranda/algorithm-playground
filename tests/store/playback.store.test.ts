@@ -7,6 +7,17 @@ describe("app store playback", () => {
     useAppStore.setState(useAppStore.getInitialState(), true);
   });
 
+  it("initializes bubble sort run from runtime registry", () => {
+    const store = useAppStore.getState();
+    store.initializeAlgorithm("bubble-sort");
+
+    const state = useAppStore.getState();
+    expect(state.selectedAlgorithmSlug).toBe("bubble-sort");
+    expect(state.run).not.toBeNull();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
   it("initializes binary search run from runtime registry", () => {
     const store = useAppStore.getState();
     store.initializeAlgorithm("binary-search");

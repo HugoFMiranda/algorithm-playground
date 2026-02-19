@@ -64,15 +64,15 @@ export function LibrarySearch({ algorithms }: LibrarySearchProps) {
     <Card className="surface-card w-full border-border/70 shadow-2xl shadow-black/[0.04]">
       <CardHeader className="space-y-4 pb-2">
         <Badge variant="secondary" className="w-fit rounded-full px-2.5 py-0.5 text-[10px] uppercase">
-          algorithm-playground Library
+        🦅 algorithm-playground 🦅
         </Badge>
         <div className="space-y-2">
           <CardTitle className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
             Explore visual algorithms.
           </CardTitle>
           <CardDescription className="max-w-2xl text-sm leading-relaxed">
-            Search the algorithm catalog and open visualizer pages. Binary Search includes the first complete
-            deterministic engine + playback implementation.
+            Search the algorithm catalog and open visualizer pages. Binary Search and Bubble Sort currently
+            include complete deterministic engine + playback implementations.
           </CardDescription>
         </div>
       </CardHeader>

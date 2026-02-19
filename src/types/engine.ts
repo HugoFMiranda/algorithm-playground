@@ -22,6 +22,11 @@ export interface SearchStepEvent<
   TPayload extends StepPayload = StepPayload,
 > extends StepEventBase<"search", TType, TPayload> {}
 
+export interface ArrayStepEvent<
+  TType extends string = string,
+  TPayload extends StepPayload = StepPayload,
+> extends StepEventBase<"array", TType, TPayload> {}
+
 export type EngineGenerateOutput<TStep extends StepEventBase, TResult> = {
   steps: TStep[];
   result: TResult;

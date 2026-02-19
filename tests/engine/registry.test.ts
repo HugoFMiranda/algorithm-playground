@@ -4,10 +4,13 @@ import { getAlgorithmRuntime, isAlgorithmImplemented } from "@/algorithms/regist
 
 describe("algorithm runtime registry", () => {
   it("returns runtime definition for implemented algorithms", () => {
-    const runtime = getAlgorithmRuntime("binary-search");
+    const bubbleSortRuntime = getAlgorithmRuntime("bubble-sort");
+    const binarySearchRuntime = getAlgorithmRuntime("binary-search");
 
-    expect(runtime).not.toBeNull();
-    expect(runtime?.slug).toBe("binary-search");
+    expect(bubbleSortRuntime).not.toBeNull();
+    expect(bubbleSortRuntime?.slug).toBe("bubble-sort");
+    expect(binarySearchRuntime).not.toBeNull();
+    expect(binarySearchRuntime?.slug).toBe("binary-search");
   });
 
   it("returns null for non-implemented algorithms", () => {
