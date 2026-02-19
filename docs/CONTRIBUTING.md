@@ -1,59 +1,64 @@
 # Contributing
 
+## Workflow
+
+1. Pick roadmap-scoped work from `docs/ROADMAP.md`.
+2. Verify associated algorithm spec in `docs/ALGORITHM_SPECS.md`.
+3. Implement in small commits with Conventional Commits.
+4. Run validation before opening PR.
+
 ## Branch Naming
 
-Suggested branch naming:
-
-- `feat/<short-feature-name>`
-- `fix/<short-fix-name>`
-- `chore/<short-task-name>`
-- `docs/<short-doc-topic>`
+- `feat/<scope>-<short-topic>`
+- `fix/<scope>-<short-topic>`
+- `chore/<scope>-<short-topic>`
+- `docs/<scope>-<short-topic>`
 
 Examples:
+- `feat/engine-step-schema-v1`
+- `feat/pathfinding-dijkstra-engine`
+- `docs/roadmap-phase2-refinement`
 
-- `feat/library-command-search`
-- `feat/algorithm-shell-layout`
-- `docs/architecture-guide`
+## Commit Rules
 
-## Commit Style
-
-Use Conventional Commits for every commit.
+Use Conventional Commits.
 
 Examples:
+- `feat(engine): add deterministic step event contract`
+- `feat(algorithms): implement bubble sort step generator`
+- `feat(renderer): add grid frontier state renderer`
+- `docs(agents): update governance for roadmap scope`
 
-- `feat(ui): add command-style library search`
-- `feat(store): scaffold playback and parameter state`
-- `fix(routing): return 404 for unknown algorithm slugs`
-- `docs(architecture): document future step/renderer model`
-- `chore(tooling): update lint scripts`
+## Code and Architecture Rules
 
-## Code Style Rules
-
-- TypeScript strict mode only; avoid `any`.
-- Keep ESLint enabled and fix issues instead of disabling rules broadly.
+- Keep TypeScript strict and avoid `any`.
+- Keep ESLint enabled; do not broadly suppress rules.
 - Use absolute imports via `@/*`.
-- Prefer small composable components.
-- Use shadcn/ui primitives before adding custom or external UI patterns.
-- Keep Tailwind class lists readable and grouped.
+- Prefer pure algorithm engines and typed event payloads.
+- Keep renderers decoupled from algorithm internals.
 
-## How To Add a New Algorithm Entry (Placeholder Phase)
+## Mandatory Documentation Sync
 
-1. Open `src/data/algorithms.ts`.
-2. Add a new object to `ALGORITHMS` with:
-   - `name`
-   - `slug`
-   - `category`
-   - `tags`
-   - `shortDescription`
-3. Ensure the slug is unique.
-4. Run:
+`AGENTS.md` is the strict governance source of truth.
+
+For any material change to architecture, process, roadmap, or algorithm priorities:
+- Update `AGENTS.md`.
+- Update relevant docs in `docs/`.
+- Mention those updates in the PR summary.
+
+PRs that change implementation direction without docs sync are incomplete.
+
+## Algorithm Implementation Checklist
+
+Before merging a new algorithm implementation:
+- Add/update entry in `src/data/algorithms.ts`.
+- Add/update algorithm spec section in `docs/ALGORITHM_SPECS.md`.
+- Implement engine module with deterministic event output.
+- Verify renderer compatibility and playback controls.
+- Add/adjust tests for determinism and edge cases.
+- Run:
 
 ```bash
 npm run lint
 npm run build
 ```
-
-5. Verify:
-   - The new entry appears on `/`.
-   - Selecting it navigates to `/algorithms/<slug>`.
-   - The algorithm shell page renders correctly.

@@ -1,61 +1,73 @@
 # algorithm-playground Architecture
 
-## Overview
+## Objective
 
-algorithm-playground is structured as a frontend-only Next.js App Router project with typed placeholder data and UI scaffolding.
-This phase focuses on maintainable composition and future algorithm integration points.
+`algorithm-playground` is a frontend-first hub for exploring algorithm behavior through interactive visual playback.
 
-## Routes
+Primary goals:
+- Consistent UX across algorithm families.
+- Deterministic step-by-step simulation.
+- Reusable architecture that scales from simple sorting to advanced graph/tree algorithms.
 
-- `/`: Library page
-  - Centered search interface with placeholder algorithm catalog.
-  - Results navigate to algorithm detail pages.
-- `/algorithms/[slug]`: Algorithm shell page
-  - Placeholder visualizer panel.
-  - Placeholder parameter panel.
-  - Placeholder playback controls.
-  - Returns Next.js 404 when slug is not in the catalog.
+## Current State
 
-## Component Structure
+- App routes:
+  - `/` library page with search and algorithm list.
+  - `/algorithms/[slug]` algorithm shell with placeholders.
+- Core UI:
+  - search, algorithm cards, visualizer panel, params panel, playback controls.
+- Data:
+  - `src/data/algorithms.ts` now contains roadmap metadata (category, difficulty, planned phase).
+- State:
+  - `src/store/app-store.ts` holds selected algorithm, playback state, and params placeholders.
 
-- `src/components/library/`
-  - `library-search.tsx`: command-style searchable list.
-  - `algorithm-result-item.tsx`: reusable result row.
-  - `theme-toggle.tsx`: light/dark toggle.
-- `src/components/algorithm/`
-  - `algorithm-page-shell.tsx`: page-level composition and responsive shell.
-  - `visualizer-panel.tsx`: renderer placeholder.
-  - `params-panel.tsx`: parameter placeholder controls.
-  - `playback-controls.tsx`: bottom sticky playback placeholder.
-- `src/components/layout/`
-  - `page-transition.tsx`: subtle Framer Motion wrapper for page transitions.
+## Target Architecture (Roadmap)
 
-## Data and State
+## Route Layer
 
-- `src/data/algorithms.ts`
-  - Placeholder dataset and `AlgorithmDefinition` type.
-  - Source of truth for available algorithm slugs and display metadata.
-- `src/store/app-store.ts`
-  - Zustand state for:
-    - `selectedAlgorithmSlug`
-    - playback status/speed
-    - generic params object
+- `src/app/page.tsx`
+  - Catalog and discovery.
+- `src/app/algorithms/[slug]/page.tsx`
+  - Algorithm execution shell.
+- Future:
+  - `src/app/compare` for side-by-side algorithm comparisons.
 
-## Future Integration Model
+## Algorithm Layer (planned)
 
-Planned high-level flow for real algorithm support:
+- `src/algorithms/<slug>/spec.ts`
+  - Metadata, input/params schema, defaults, presets.
+- `src/algorithms/<slug>/engine.ts`
+  - Pure step generation logic.
 
-1. **Algorithm modules emit steps**
-   - Each algorithm will generate a typed sequence of step events from input + params.
-2. **Renderer modules consume steps**
-   - Renderer components will consume step events and derive visual frame state.
-3. **Playback layer orchestrates time**
-   - Playback controls will coordinate stepping, speed, pause, and reset across renderer state.
-4. **Param schema drives controls**
-   - Each algorithm module will define a params schema used to generate and validate controls.
+## Renderer Layer (planned)
 
-## Design System Notes
+- `src/renderers/array/`
+- `src/renderers/grid/`
+- `src/renderers/graph/`
+- `src/renderers/tree/`
 
-- Tailwind + shadcn tokens in `src/app/globals.css`.
-- Utility classes such as `.container-page` and `.surface-card` keep layout and surfaces consistent.
-- Accessibility basics are preserved via focus-visible styles, semantic labels, and contrast-safe colors.
+Each renderer consumes step events and produces view state for UI components.
+
+## Engine Contracts (planned)
+
+- Shared step event types in `src/types/engine.ts`.
+- Determinism: same inputs must yield same event streams.
+- Playback reads event streams and controls cursor progression.
+
+## Store Design Direction
+
+Current store is intentionally minimal.
+Planned expansion:
+- cursor/time index,
+- completed/loop states,
+- run metadata (seed, preset, run id),
+- metrics snapshots.
+
+## Documentation Contracts
+
+- Roadmap: `docs/ROADMAP.md`
+- Engine details: `docs/ENGINE.md`
+- Per-algorithm plans: `docs/ALGORITHM_SPECS.md`
+- Governance source of truth: `AGENTS.md`
+
+Any architecture/process change must be reflected in `AGENTS.md` and the relevant docs file.

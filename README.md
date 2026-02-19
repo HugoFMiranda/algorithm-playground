@@ -1,7 +1,7 @@
 # algorithm-playground
 
 algorithm-playground is a polished, minimalist web application scaffold for algorithm visualization.
-This phase intentionally ships only UI and architecture foundations, with no algorithm execution logic yet.
+This phase intentionally ships UI and architecture foundations, while the technical roadmap in `docs/` defines how algorithm implementations will be delivered.
 
 ## What This Project Includes
 
@@ -66,4 +66,7 @@ Examples:
 ## Documentation
 
 - Architecture: `docs/ARCHITECTURE.md`
+- Roadmap: `docs/ROADMAP.md`
+- Engine plan: `docs/ENGINE.md`
+- Algorithm specs: `docs/ALGORITHM_SPECS.md`
 - Contribution guide: `docs/CONTRIBUTING.md`
