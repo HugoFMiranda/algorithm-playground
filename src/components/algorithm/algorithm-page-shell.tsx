@@ -6,6 +6,7 @@ import { ArrowLeftIcon, ChevronRightIcon } from "lucide-react";
 
 import type { AlgorithmDefinition } from "@/data/algorithms";
 import { useAppStore } from "@/store/app-store";
+import { ImplementationExamples } from "@/components/algorithm/implementation-examples";
 import { PlaybackControls } from "@/components/algorithm/playback-controls";
 import { ParamsPanel } from "@/components/algorithm/params-panel";
 import { VisualizerPanel } from "@/components/algorithm/visualizer-panel";
@@ -18,14 +19,14 @@ interface AlgorithmPageShellProps {
 }
 
 export function AlgorithmPageShell({ algorithm }: AlgorithmPageShellProps) {
-  const setSelectedAlgorithmSlug = useAppStore((state) => state.setSelectedAlgorithmSlug);
+  const initializeAlgorithm = useAppStore((state) => state.initializeAlgorithm);
 
   useEffect(() => {
-    setSelectedAlgorithmSlug(algorithm.slug);
+    initializeAlgorithm(algorithm.slug);
     return () => {
-      setSelectedAlgorithmSlug(null);
+      initializeAlgorithm(null);
     };
-  }, [algorithm.slug, setSelectedAlgorithmSlug]);
+  }, [algorithm.slug, initializeAlgorithm]);
 
   return (
     <PageTransition className="min-h-svh bg-background pb-28">
@@ -73,6 +74,10 @@ export function AlgorithmPageShell({ algorithm }: AlgorithmPageShellProps) {
           <aside>
             <ParamsPanel className="surface-card border-border/70" />
           </aside>
+        </div>
+
+        <div className="mt-6">
+          <ImplementationExamples algorithmSlug={algorithm.slug} className="surface-card border-border/70" />
         </div>
       </div>
       <PlaybackControls />

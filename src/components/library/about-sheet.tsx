@@ -27,8 +27,8 @@ export function AboutSheet() {
         <SheetHeader>
           <SheetTitle>algorithm-playground Phase One</SheetTitle>
           <SheetDescription>
-            Core UI, routing, and state scaffolding are available. Algorithm engines are intentionally not
-            implemented yet.
+            Core UI, routing, and state scaffolding are available. Binary Search is now fully implemented as
+            the first engine-backed visualization slice.
           </SheetDescription>
         </SheetHeader>
         <div className="space-y-4 px-4 pb-6 text-sm">
@@ -37,8 +37,8 @@ export function AboutSheet() {
             <div className="flex flex-wrap gap-2">
               <Badge variant="secondary">Library Search</Badge>
               <Badge variant="secondary">Route Shells</Badge>
-              <Badge variant="secondary">Playback Scaffold</Badge>
-              <Badge variant="secondary">Zustand State</Badge>
+              <Badge variant="secondary">Binary Search Engine</Badge>
+              <Badge variant="secondary">Playback Controls</Badge>
             </div>
           </div>
           <Separator />

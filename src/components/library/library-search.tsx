@@ -71,8 +71,8 @@ export function LibrarySearch({ algorithms }: LibrarySearchProps) {
             Explore visual algorithms.
           </CardTitle>
           <CardDescription className="max-w-2xl text-sm leading-relaxed">
-            Search the algorithm catalog, open a visualizer shell, and prepare parameter presets before
-            simulation engines are added.
+            Search the algorithm catalog and open visualizer pages. Binary Search includes the first complete
+            deterministic engine + playback implementation.
           </CardDescription>
         </div>
       </CardHeader>

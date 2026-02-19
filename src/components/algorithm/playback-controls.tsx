@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { PauseIcon, PlayIcon, RotateCcwIcon, SkipForwardIcon } from "lucide-react";
 
 import { useAppStore } from "@/store/app-store";
@@ -17,11 +18,57 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 export function PlaybackControls() {
+  const run = useAppStore((state) => state.run);
   const playback = useAppStore((state) => state.playback);
   const setPlaybackStatus = useAppStore((state) => state.setPlaybackStatus);
   const setPlaybackSpeed = useAppStore((state) => state.setPlaybackSpeed);
+  const resetPlayback = useAppStore((state) => state.resetPlayback);
+  const stepForward = useAppStore((state) => state.stepForward);
 
   const isPlaying = playback.status === "playing";
+  const hasRun = run !== null;
+  const hasSteps = (run?.steps.length ?? 0) > 0;
+
+  useEffect(() => {
+    if (!hasRun || !hasSteps || playback.status !== "playing") {
+      return undefined;
+    }
+
+    const intervalMs = Math.max(90, Math.round(700 / playback.speed));
+    const timer = window.setInterval(() => {
+      stepForward({ keepStatus: true });
+    }, intervalMs);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [hasRun, hasSteps, playback.speed, playback.status, stepForward]);
+
+  const handlePlayPause = () => {
+    if (!hasRun || !hasSteps) {
+      return;
+    }
+
+    if (isPlaying) {
+      setPlaybackStatus("paused");
+      return;
+    }
+
+    if (playback.status === "completed") {
+      resetPlayback();
+    }
+
+    setPlaybackStatus("playing");
+  };
+
+  const handleStep = () => {
+    if (!hasRun || !hasSteps) {
+      return;
+    }
+
+    setPlaybackStatus("paused");
+    stepForward();
+  };
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/80 backdrop-blur">
@@ -31,16 +78,17 @@ export function PlaybackControls() {
             type="button"
             size="sm"
             variant={isPlaying ? "secondary" : "default"}
-            onClick={() => setPlaybackStatus(isPlaying ? "paused" : "playing")}
+            onClick={handlePlayPause}
+            disabled={!hasRun || !hasSteps}
           >
             {isPlaying ? <PauseIcon className="size-3.5" /> : <PlayIcon className="size-3.5" />}
             {isPlaying ? "Pause" : "Play"}
           </Button>
-          <Button type="button" size="sm" variant="outline" onClick={() => setPlaybackStatus("idle")}>
+          <Button type="button" size="sm" variant="outline" onClick={resetPlayback} disabled={!hasRun}>
             <RotateCcwIcon className="size-3.5" />
             Reset
           </Button>
-          <Button type="button" size="sm" variant="outline" onClick={() => setPlaybackStatus("paused")}>
+          <Button type="button" size="sm" variant="outline" onClick={handleStep} disabled={!hasRun || !hasSteps}>
             <SkipForwardIcon className="size-3.5" />
             Step
           </Button>
@@ -51,6 +99,7 @@ export function PlaybackControls() {
             variant="outline"
             size="sm"
             onClick={() => setPlaybackSpeed(playback.speed - 0.25)}
+            disabled={!hasRun}
           >
             - Speed
           </Button>
@@ -62,9 +111,13 @@ export function PlaybackControls() {
             variant="outline"
             size="sm"
             onClick={() => setPlaybackSpeed(playback.speed + 0.25)}
+            disabled={!hasRun}
           >
             + Speed
           </Button>
+          <Badge variant="outline" className="rounded-full px-2.5 py-0.5 tabular-nums">
+            {hasRun ? `${Math.max(playback.cursor + 1, 0)} / ${run?.steps.length ?? 0}` : "No Run"}
+          </Badge>
         </div>
         <Separator orientation="vertical" className="hidden h-6 sm:block" />
         <Dialog>
@@ -75,10 +128,10 @@ export function PlaybackControls() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Playback layer is scaffolded only</DialogTitle>
+              <DialogTitle>Playback engine behavior</DialogTitle>
               <DialogDescription>
-                Controls currently mutate UI state only. Algorithm step generation and renderer playback
-                coordination will be integrated in a later phase.
+                Playback runs against precomputed deterministic steps. Speed changes timing only, and reset
+                always returns the cursor to the initial state.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter showCloseButton />
