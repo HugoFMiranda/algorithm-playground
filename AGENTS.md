@@ -14,7 +14,7 @@ Build a professional algorithm visualization hub where users can:
 - Frontend-only Next.js App Router application.
 - No backend requirements in the current roadmap window.
 - Focus on reusable engine and renderer architecture before advanced features.
-- Current implementation checkpoint: Binary Search is the first fully integrated algorithm slice (engine, playback, renderer, params, and code examples).
+- Current implementation checkpoint: Binary Search and Bubble Sort are fully integrated algorithm slices (engine, playback, renderer, params, and code examples).
 
 ## Source-of-Truth Policy
 

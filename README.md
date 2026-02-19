@@ -1,14 +1,15 @@
 # algorithm-playground
 
 algorithm-playground is a polished, minimalist web application scaffold for algorithm visualization.
-The project now includes the first fully implemented engine-backed algorithm slice, with additional algorithms planned in the roadmap docs.
+The project now includes two fully implemented engine-backed algorithm slices, with additional algorithms planned in the roadmap docs.
 
 ## What This Project Includes
 
 - Premium library home page at `/` with command-palette-style search.
 - Dynamic algorithm route at `/algorithms/[slug]` with algorithm-specific runtime integration.
 - Deterministic playback controls (play/pause/step/reset/speed) for implemented algorithms.
-- Parameter controls with normalization and randomization support for Binary Search.
+- Parameter controls with normalization and randomization support for Binary Search and Bubble Sort.
+- Param-aware complexity panel (best/average/worst/current run context) for implemented algorithms.
 - Abstracted algorithm code examples panel (pseudocode + TypeScript).
 - Zustand state for selected algorithm, run snapshots, playback cursor, and params.
 - Subtle Framer Motion page transitions.
@@ -23,7 +24,7 @@ The project now includes the first fully implemented engine-backed algorithm sli
 ## Algorithm Implementation Status
 
 - [x] Binary Search
-- [ ] Bubble Sort
+- [x] Bubble Sort
 - [ ] Selection Sort
 - [ ] Insertion Sort
 - [ ] Merge Sort

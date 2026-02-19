@@ -10,9 +10,13 @@
   - Shared event envelope and algorithm engine interfaces.
   - Hybrid schema: generic base event + typed family/event unions.
 - `src/algorithms/binary-search/spec.ts`
-  - Parameter normalization and input shaping.
+  - Parameter normalization and input shaping for Binary Search.
 - `src/algorithms/binary-search/engine.ts`
   - Pure deterministic step generation for Binary Search.
+- `src/algorithms/bubble-sort/spec.ts`
+  - Parameter normalization and input shaping for Bubble Sort.
+- `src/algorithms/bubble-sort/engine.ts`
+  - Pure deterministic step generation for Bubble Sort.
 - `src/algorithms/registry.ts`
   - Central runtime registry (`slug -> defaults + run creation`).
 - `src/store/app-store.ts`
@@ -32,7 +36,7 @@ type StepEventBase = {
 
 Hybrid typing:
 - generic `StepEventBase` for registry/store interoperability,
-- typed family event wrappers (currently search-family events for Binary Search).
+- typed family event wrappers (search and array families currently implemented).
 
 ## Determinism Rules
 
@@ -57,6 +61,6 @@ Hybrid typing:
 
 ## Validation Strategy
 
-- Unit: determinism and normalization tests (Binary Search engine).
+- Unit: determinism and normalization tests (Binary Search + Bubble Sort engines).
 - Unit: playback transition tests in store.
 - Gate checks: `npm run lint`, `npm run build`, `npm run test`.

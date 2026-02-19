@@ -13,7 +13,7 @@ Primary goals:
 
 - App routes:
   - `/` library page with search and algorithm list.
-  - `/algorithms/[slug]` algorithm shell with Binary Search runtime integration.
+  - `/algorithms/[slug]` algorithm shell with Binary Search and Bubble Sort runtime integration.
 - Core UI:
   - search, algorithm cards, visualizer panel, params panel, playback controls, implementation examples panel.
 - Data:
@@ -28,7 +28,9 @@ Primary goals:
 - `src/algorithms/registry.ts`
   - Central typed runtime registry by slug.
 - `src/algorithms/binary-search/*`
-  - First complete engine/spec implementation.
+  - Engine/spec implementation for search-family visualization.
+- `src/algorithms/bubble-sort/*`
+  - Engine/spec implementation for array-family visualization.
 - `src/algorithms/examples/*`
   - Per-algorithm abstracted code examples (pseudocode + TypeScript).
 

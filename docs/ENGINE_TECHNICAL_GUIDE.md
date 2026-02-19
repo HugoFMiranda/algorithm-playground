@@ -13,6 +13,8 @@ Core files:
 - `src/types/engine.ts`: shared contracts for params, steps, and engine interfaces.
 - `src/algorithms/binary-search/spec.ts`: binary search defaults, validation, and normalization.
 - `src/algorithms/binary-search/engine.ts`: deterministic step-stream generation.
+- `src/algorithms/bubble-sort/spec.ts`: bubble sort defaults, validation, and normalization.
+- `src/algorithms/bubble-sort/engine.ts`: deterministic step-stream generation.
 - `src/algorithms/registry.ts`: algorithm slug to runtime binding.
 - `src/store/app-store.ts`: playback lifecycle, cursor control, and run snapshots.
 
@@ -50,7 +52,7 @@ Step events always include:
 - `type`: event name (for example `midpoint`).
 - `payload`: event-specific primitives.
 
-## 4. Binary Search Engine Walkthrough
+## 4. Implemented Engine Walkthroughs
 
 Binary Search lives in:
 
@@ -76,6 +78,22 @@ const { steps, result } = binarySearchEngine.generate(input, normalizedParams);
 Determinism guarantee:
 
 - same normalized array and target -> same `steps` order and same `result`.
+
+Bubble Sort lives in:
+
+- `src/algorithms/bubble-sort/spec.ts`
+- `src/algorithms/bubble-sort/engine.ts`
+
+The engine emits the following event sequence:
+
+1. `compare`
+2. `swap` (conditional)
+3. `pass-complete`
+4. terminal `complete`
+
+Determinism guarantee:
+
+- same normalized array and optimization flag -> same `steps` order and same `result`.
 
 ## 5. How to Use the Engine (Runtime)
 
@@ -164,10 +182,10 @@ Current tests validate:
 
 ## 9. Current Limits and Next Steps
 
-Current implementation is full for Binary Search only. Other algorithms remain placeholders until their engines are added to the registry.
+Current implementation is full for Binary Search and Bubble Sort. Other algorithms remain placeholders until their engines are added to the registry.
 
 Planned next extensions:
 
-1. add Bubble Sort with array-family events,
-2. add BFS with grid-family events,
+1. add BFS with grid-family events,
+2. add DFS with grid/graph-family events,
 3. split renderer logic into dedicated `src/renderers/*` modules as algorithm count increases.

@@ -26,9 +26,39 @@ Each algorithm must define:
 ## Sorting
 
 ### Bubble Sort (`D1`, Phase 1)
-- Objective: teach adjacent comparison/swapping.
-- Renderer: array.
-- Key events: compare, swap, pass-complete.
+- Objective: teach adjacent comparisons, swaps, and pass-level convergence of the sorted suffix.
+- Input model:
+  - Numeric list provided as comma/space-separated text.
+  - Engine preserves normalized numeric order from input (no pre-sort).
+  - Empty/invalid arrays fallback to default seed values.
+- Params:
+  - `arrayValues` (string, default: `37, 12, 29, 8, 44, 19, 3, 25`)
+  - `optimizeEarlyExit` (boolean, default: `true`)
+- Step event contract:
+  - `compare`: adjacent pair comparison for current pass.
+  - `swap`: emitted when adjacent elements are out of ascending order.
+  - `pass-complete`: summarizes per-pass comparisons/swaps and sorted suffix boundary.
+  - `complete`: terminal aggregate metrics and sorted-state flag.
+- Renderer requirements:
+  - Highlight actively compared pair.
+  - Distinct styling when a swap occurs.
+  - Persistently mark sorted suffix after each pass.
+  - Step status message derived from event payload.
+- Metrics tracked:
+  - Total comparisons.
+  - Total swaps.
+  - Total passes executed.
+- Edge cases:
+  - Already sorted arrays with `optimizeEarlyExit=true` terminate after first pass.
+  - Duplicate and negative values preserve deterministic swap ordering.
+  - Single-element arrays emit terminal completion state.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed params.
+  - Param fallback behavior for malformed input and flags.
+  - Early-exit optimization behavior is toggleable and deterministic.
+  - Renderer completion state matches final sorted output.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Selection Sort (`D1`, Phase 1)
 - Objective: teach boundary between sorted/unsorted regions.

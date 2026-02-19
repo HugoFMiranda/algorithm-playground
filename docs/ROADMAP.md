@@ -12,7 +12,7 @@ Audience target is broad: learners, interview preparation users, and engineering
 ## Planning Horizon
 
 - Phase window: 3 phases over approximately 3 months.
-- Current status: UI scaffold completed, Binary Search shipped as the first engine-backed vertical slice, remaining engines pending.
+- Current status: UI scaffold completed; Binary Search and Bubble Sort shipped as engine-backed vertical slices, with remaining engines pending.
 
 ## Difficulty Rubric
 
