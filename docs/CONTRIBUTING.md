@@ -59,6 +59,7 @@ Before merging a new algorithm implementation:
 - Run:
 
 ```bash
+npm run test
 npm run lint
 npm run build
 ```
