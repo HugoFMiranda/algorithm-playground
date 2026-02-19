@@ -1,0 +1,55 @@
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { useAppStore } from "@/store/app-store";
+
+describe("app store playback", () => {
+  beforeEach(() => {
+    useAppStore.setState(useAppStore.getInitialState(), true);
+  });
+
+  it("initializes binary search run from runtime registry", () => {
+    const store = useAppStore.getState();
+    store.initializeAlgorithm("binary-search");
+
+    const state = useAppStore.getState();
+    expect(state.selectedAlgorithmSlug).toBe("binary-search");
+    expect(state.run).not.toBeNull();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
+  it("advances cursor and reaches completed state", () => {
+    useAppStore.getState().initializeAlgorithm("binary-search");
+    useAppStore.getState().setPlaybackStatus("playing");
+
+    const totalSteps = useAppStore.getState().run?.steps.length ?? 0;
+    for (let index = 0; index < totalSteps; index += 1) {
+      useAppStore.getState().stepForward({ keepStatus: true });
+    }
+
+    const state = useAppStore.getState();
+    expect(state.playback.cursor).toBe(totalSteps - 1);
+    expect(state.playback.status).toBe("completed");
+  });
+
+  it("resets playback cursor without mutating run data", () => {
+    useAppStore.getState().initializeAlgorithm("binary-search");
+    useAppStore.getState().stepForward();
+    useAppStore.getState().resetPlayback();
+
+    const state = useAppStore.getState();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+    expect(state.run?.steps.length).toBeGreaterThan(0);
+  });
+
+  it("regenerates run when params change", () => {
+    useAppStore.getState().initializeAlgorithm("binary-search");
+    useAppStore.getState().setParam("target", 999);
+
+    const state = useAppStore.getState();
+    expect(state.run?.normalizedParams.target).toBe(999);
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+});
