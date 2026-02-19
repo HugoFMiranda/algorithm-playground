@@ -16,9 +16,10 @@ export function PageTransition({ children, className }: PageTransitionProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-      className={cn(className)}
+      className={cn("relative", className)}
     >
-      {children}
+      <div aria-hidden className="falcon-overlay" />
+      <div className="relative z-10">{children}</div>
     </motion.div>
   );
 }

@@ -129,6 +129,29 @@
 }
 
 @layer utilities {
+  .falcon-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle at top, oklch(0.71 0.013 255.54 / 0.14), transparent 52%),
+      url("/falcon-pattern.svg");
+    background-size:
+      100% 100%,
+      420px 420px;
+    background-repeat: no-repeat, repeat;
+    background-position:
+      center,
+      center;
+    opacity: 0.36;
+  }
+
+  .dark .falcon-overlay {
+    opacity: 0.38;
+    filter: saturate(0.9) brightness(1.2);
+  }
+
   .container-page {
     @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
   }
