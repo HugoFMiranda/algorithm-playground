@@ -1,0 +1,101 @@
+# algorithm-playground Governance and Working Agreement
+
+This file is the strict source of truth for product direction, architecture guardrails, and contribution rules.
+
+## Product Mission
+
+Build a professional algorithm visualization hub where users can:
+- discover algorithms by category and complexity,
+- understand execution through deterministic step playback,
+- inspect parameter effects and compare behavior between algorithms.
+
+## Current Scope
+
+- Frontend-only Next.js App Router application.
+- No backend requirements in the current roadmap window.
+- Focus on reusable engine and renderer architecture before advanced features.
+
+## Source-of-Truth Policy
+
+Any material change to process, roadmap, architecture, or algorithm priority must update:
+1. `AGENTS.md` (this file).
+2. The relevant document in `docs/`.
+
+Changes that skip documentation sync are not considered complete.
+
+## Core Technical Stack
+
+- Next.js + TypeScript (App Router)
+- Tailwind CSS + shadcn/ui
+- Zustand for app state
+- Framer Motion for subtle transitions
+
+## Project Structure Rules
+
+- `src/app/`: route entrypoints, layout, global styles.
+- `src/components/ui/`: shadcn-style primitives.
+- `src/components/library/`: catalog/discovery components.
+- `src/components/algorithm/`: algorithm shell components.
+- `src/data/`: typed catalog metadata.
+- `src/store/`: global state scaffolding.
+- `src/lib/`: shared utilities.
+- `docs/`: roadmap and architecture plans.
+
+Use `@/*` absolute imports.
+
+## Documentation Map
+
+- `docs/ROADMAP.md`: phase planning and algorithm ordering.
+- `docs/ENGINE.md`: event/playback architecture.
+- `docs/ALGORITHM_SPECS.md`: per-algorithm implementation plan.
+- `docs/ARCHITECTURE.md`: current and target architecture.
+- `docs/CONTRIBUTING.md`: workflow and PR expectations.
+
+## Algorithm Taxonomy and Difficulty
+
+Categories:
+- Sorting
+- Pathfinding
+- Graph Theory
+- Trees & Search
+
+Difficulty:
+- `D1`: straightforward implementation and renderer coupling.
+- `D2`: moderate invariants and event complexity.
+- `D3`: advanced invariants, branching logic, and complex visuals.
+
+Roadmap horizon is 3 phases with 20 planned algorithms.
+
+## Delivery Sequence
+
+1. Phase 1: foundational sorting + pathfinding + binary search.
+2. Phase 2: graph breadth and additional sorting/tree structures.
+3. Phase 3: advanced algorithms and comparison tooling.
+
+Canonical order and algorithm list are maintained in `docs/ROADMAP.md` and `src/data/algorithms.ts`.
+
+## Definition of Done (Algorithm Implementation)
+
+For each implemented algorithm:
+- Typed metadata exists in `src/data/algorithms.ts`.
+- Algorithm spec is documented in `docs/ALGORITHM_SPECS.md`.
+- Engine emits deterministic step streams for fixed input+params.
+- Algorithm renders correctly in its target renderer family.
+- Playback controls function correctly (play/pause/step/reset/speed).
+- `npm run lint` and `npm run build` pass.
+
+## Coding and Quality Rules
+
+- Strict TypeScript, avoid `any`.
+- Keep ESLint enabled; avoid broad suppression.
+- Prefer small composable components and pure algorithm engines.
+- Keep shadcn-first UI usage for consistency.
+
+## Commit and PR Rules
+
+- Conventional Commits required.
+- Keep commits focused by concern (`feat(engine)`, `feat(algorithms)`, `docs(roadmap)`, etc.).
+- PR summary must include:
+  - what changed,
+  - validation run (`lint`, `build`),
+  - docs synchronized (`AGENTS.md` + relevant `docs/*`).
