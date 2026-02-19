@@ -113,8 +113,37 @@ Each algorithm must define:
 
 ### Binary Search (`D1`, Phase 1)
 - Objective: interval halving and boundary update.
-- Renderer: sorted array.
-- Key events: midpoint, bound-update, match-found.
+- Input model:
+  - Numeric list provided as comma/space-separated text.
+  - Engine normalizes to ascending numeric array; invalid tokens are dropped.
+  - Empty/invalid arrays fallback to default seed values.
+- Params:
+  - `arrayValues` (string, default: `2, 5, 8, 12, 17, 21, 29, 34, 40, 47, 53, 61, 72, 88, 95`)
+  - `target` (number, default: `72`)
+- Step event contract:
+  - `bounds-init`: initial `low`/`high`
+  - `midpoint`: active interval + midpoint value comparison context
+  - `bound-update`: left/right interval contraction
+  - `found`: terminal match metadata
+  - `not-found`: terminal miss with insert position
+- Renderer requirements:
+  - Highlight active `[low, high]` interval.
+  - Distinct midpoint and found-node styling.
+  - Step status message derived from current event payload.
+- Metrics tracked:
+  - Iteration count.
+  - Final found index or miss.
+- Edge cases:
+  - Duplicate values (deterministic midpoint match behavior).
+  - Target outside min/max bounds.
+  - Single-element array hit/miss.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed params.
+  - Param fallback behavior for malformed input.
+  - Playback transition correctness (`idle`, `playing`, `paused`, `completed`).
+  - Renderer completion state matches result payload.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### BST Operations (`D2`, Phase 3)
 - Objective: structural changes for insert/search/delete.

@@ -2,66 +2,61 @@
 
 ## Core Data Flow
 
-`Algorithm Engine -> Step Events -> Renderer State -> Playback Controller -> UI`
+`Algorithm Engine -> Step Events -> Store Playback Cursor -> Renderer View State -> UI`
 
-## Planned Module Boundaries
+## Implemented v1 Boundaries
 
-- `src/algorithms/<slug>/engine.ts`
-  - Pure algorithm logic.
-  - Emits typed step events.
-- `src/algorithms/<slug>/spec.ts`
-  - Metadata, params schema, presets.
-- `src/renderers/`
-  - `array`, `grid`, `graph`, `tree` renderer implementations.
-- `src/store/`
-  - Global playback and params state (Zustand).
-- `src/types/engine.ts` (planned)
-  - Shared engine/step contracts.
+- `src/types/engine.ts`
+  - Shared event envelope and algorithm engine interfaces.
+  - Hybrid schema: generic base event + typed family/event unions.
+- `src/algorithms/binary-search/spec.ts`
+  - Parameter normalization and input shaping.
+- `src/algorithms/binary-search/engine.ts`
+  - Pure deterministic step generation for Binary Search.
+- `src/algorithms/registry.ts`
+  - Central runtime registry (`slug -> defaults + run creation`).
+- `src/store/app-store.ts`
+  - Playback cursor, run snapshots, speed control, and deterministic stepping.
 
-## Step Event Model (v1 target)
+## Step Event Model (v1 implemented)
 
 ```ts
-type StepEvent = {
+type StepEventBase = {
   id: string;
   index: number;
+  family: string;
   type: string;
   payload: Record<string, string | number | boolean | null>;
 };
 ```
 
-Event families (planned):
-- Array: compare, swap, write, pivot-set.
-- Grid: frontier-push, node-visit, path-finalize.
-- Graph: edge-relax, node-select, cycle-detected.
-- Tree: insert, search-hit, rotate-left, rotate-right.
+Hybrid typing:
+- generic `StepEventBase` for registry/store interoperability,
+- typed family event wrappers (currently search-family events for Binary Search).
 
 ## Determinism Rules
 
-- Equal input + params must produce equal ordered step streams.
-- Playback speed changes must not alter final state.
-- Reset must return to initial renderer state and cursor `0`.
+- Equal normalized input + params produce equal ordered step streams.
+- Playback speed changes only timing, never output semantics.
+- Reset returns cursor to `-1` (pre-step state).
 
-## Playback Lifecycle
+## Playback Lifecycle (v1)
 
-- `idle` -> `playing` -> `paused` -> `completed` (planned).
-- Required controls:
+- `idle` -> `playing` -> `paused` -> `completed`
+- Required controls implemented:
   - play/pause
   - step forward
   - reset
   - speed scaling
-- Optional controls (later phases):
-  - step backward
-  - loop
-  - timeline scrub
 
 ## Performance and Robustness Targets
 
-- Avoid main-thread blocking during heavy step generation.
-- Introduce worker-backed generation in later phases for heavy algorithms.
-- Keep event payloads minimal and renderer-friendly.
+- Engines remain pure and precompute steps synchronously.
+- Payloads stay minimal and renderer-oriented.
+- Worker-backed generation remains planned for heavy algorithms in later phases.
 
 ## Validation Strategy
 
-- Unit: engine determinism snapshots.
-- Integration: playback cursor and renderer consistency.
-- Regression: step schema compatibility checks across versions.
+- Unit: determinism and normalization tests (Binary Search engine).
+- Unit: playback transition tests in store.
+- Gate checks: `npm run lint`, `npm run build`, `npm run test`.

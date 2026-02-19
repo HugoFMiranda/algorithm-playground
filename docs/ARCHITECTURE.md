@@ -13,13 +13,24 @@ Primary goals:
 
 - App routes:
   - `/` library page with search and algorithm list.
-  - `/algorithms/[slug]` algorithm shell with placeholders.
+  - `/algorithms/[slug]` algorithm shell with Binary Search runtime integration.
 - Core UI:
-  - search, algorithm cards, visualizer panel, params panel, playback controls.
+  - search, algorithm cards, visualizer panel, params panel, playback controls, implementation examples panel.
 - Data:
   - `src/data/algorithms.ts` now contains roadmap metadata (category, difficulty, planned phase).
 - State:
-  - `src/store/app-store.ts` holds selected algorithm, playback state, and params placeholders.
+  - `src/store/app-store.ts` holds selected algorithm, raw params, normalized run snapshots, playback cursor, and speed.
+
+## Implemented Runtime Layer
+
+- `src/types/engine.ts`
+  - Shared algorithm engine contracts and step-event envelope.
+- `src/algorithms/registry.ts`
+  - Central typed runtime registry by slug.
+- `src/algorithms/binary-search/*`
+  - First complete engine/spec implementation.
+- `src/algorithms/examples/*`
+  - Per-algorithm abstracted code examples (pseudocode + TypeScript).
 
 ## Target Architecture (Roadmap)
 
@@ -32,7 +43,7 @@ Primary goals:
 - Future:
   - `src/app/compare` for side-by-side algorithm comparisons.
 
-## Algorithm Layer (planned)
+## Algorithm Layer (in progress)
 
 - `src/algorithms/<slug>/spec.ts`
   - Metadata, input/params schema, defaults, presets.
@@ -48,20 +59,23 @@ Primary goals:
 
 Each renderer consumes step events and produces view state for UI components.
 
-## Engine Contracts (planned)
+## Engine Contracts (in progress)
 
 - Shared step event types in `src/types/engine.ts`.
-- Determinism: same inputs must yield same event streams.
-- Playback reads event streams and controls cursor progression.
+- Determinism: same normalized inputs must yield same event streams.
+- Playback consumes precomputed events and controls cursor progression.
 
 ## Store Design Direction
 
-Current store is intentionally minimal.
+Current store now supports:
+- cursor index and completed state,
+- per-run metadata (normalized params + result),
+- playback speed scaling and reset semantics.
+
 Planned expansion:
-- cursor/time index,
-- completed/loop states,
-- run metadata (seed, preset, run id),
-- metrics snapshots.
+- loop/step-backward behavior,
+- run ids and timeline scrub,
+- worker-backed heavy-step generation.
 
 ## Documentation Contracts
 
