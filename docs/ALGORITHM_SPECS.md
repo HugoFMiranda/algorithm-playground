@@ -278,9 +278,53 @@ Each algorithm must define:
   - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Dijkstra (`D2`, Phase 1)
-- Objective: weighted shortest path via relaxation.
-- Renderer: weighted grid/graph.
-- Key events: extract-min, relax-edge, distance-update.
+- Objective: teach weighted shortest-path discovery through repeated minimum extraction and edge relaxation.
+- Input model:
+  - Grid dimensions (`rows`, `cols`) define cell indexing from `0` to `(rows * cols - 1)`.
+  - `startCell` and `targetCell` are normalized into valid range.
+  - `blockedCells` and `heavyCells` are parsed from comma/space-separated indices and exclude start/target.
+  - Cell entry weights are generated deterministically from `weightSeed`, with heavy cells receiving higher costs.
+  - Optional diagonal movement is controlled by a boolean parameter.
+- Params:
+  - `rows` (number, default: `6`)
+  - `cols` (number, default: `8`)
+  - `startCell` (number, default: `0`)
+  - `targetCell` (number, default: `47`)
+  - `blockedCells` (string, default: `10, 11, 19, 27, 35`)
+  - `heavyCells` (string, default: `14, 15, 22, 23, 30, 31`)
+  - `allowDiagonal` (boolean, default: `false`)
+  - `weightSeed` (number, default: `3`)
+- Human-friendly explanation:
+  - Dijkstra always expands the currently cheapest known position first, so when it reaches the target that path cost is optimal.
+- Step event contract:
+  - `extract-min`: frontier node with smallest known distance is settled.
+  - `relax-edge`: evaluates outgoing edge and classifies outcome (`blocked`, `visited`, `skip`, `update`).
+  - `distance-update`: records improved shortest-known distance and parent pointer.
+  - `found`: terminal hit with final distance and path metadata.
+  - `not-found`: terminal miss summary.
+  - `complete`: terminal aggregate run summary.
+- Renderer requirements:
+  - Render deterministic weighted grid state from normalized input.
+  - Distinct styling for blocked, heavy, frontier, settled, current, and final path cells.
+  - Display per-cell weight and best-known distance overlays.
+  - Highlight relaxation outcome for inspected neighbor on current step.
+  - Step status text derived from event payload.
+- Metrics tracked:
+  - Visited (settled) count.
+  - Successful relaxations.
+  - Final shortest distance (if found).
+  - Final path cells.
+- Edge cases:
+  - `startCell === targetCell` emits deterministic zero-distance found state.
+  - Unreachable targets emit deterministic `not-found` terminal state.
+  - Diagonal toggle and weight seed change traversal deterministically.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed params.
+  - Param fallback behavior for malformed index/boolean input.
+  - Playback transition correctness (`idle`, `playing`, `paused`, `completed`).
+  - Renderer completion state matches result payload.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### A* Search (`D2`, Phase 1)
 - Objective: heuristic-guided exploration.

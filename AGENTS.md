@@ -14,7 +14,7 @@ Build a professional algorithm visualization hub where users can:
 - Frontend-only Next.js App Router application.
 - No backend requirements in the current roadmap window.
 - Focus on reusable engine and renderer architecture before advanced features.
-- Current implementation checkpoint: Binary Search, BFS, DFS, Bubble Sort, Selection Sort, Insertion Sort, and Merge Sort are fully integrated algorithm slices (engine, playback, renderer, params, and code examples).
+- Current implementation checkpoint: Binary Search, BFS, DFS, Dijkstra, Bubble Sort, Selection Sort, Insertion Sort, and Merge Sort are fully integrated algorithm slices (engine, playback, renderer, params, and code examples).
 - Every algorithm must ship with an easy-to-understand explanation surfaced on its algorithm page.
 
 ## Source-of-Truth Policy
