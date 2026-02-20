@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeftIcon, ChevronRightIcon } from "lucide-react";
 
 import type { AlgorithmDefinition } from "@/data/algorithms";
+import { getAlgorithmEasyExplanation } from "@/data/easy-explanations";
 import { useAppStore } from "@/store/app-store";
 import { ComplexityPanel } from "@/components/algorithm/complexity-panel";
 import { ImplementationExamples } from "@/components/algorithm/implementation-examples";
@@ -21,6 +22,7 @@ interface AlgorithmPageShellProps {
 
 export function AlgorithmPageShell({ algorithm }: AlgorithmPageShellProps) {
   const initializeAlgorithm = useAppStore((state) => state.initializeAlgorithm);
+  const easyExplanation = getAlgorithmEasyExplanation(algorithm.slug);
 
   useEffect(() => {
     initializeAlgorithm(algorithm.slug);
@@ -68,6 +70,12 @@ export function AlgorithmPageShell({ algorithm }: AlgorithmPageShellProps) {
           <p className="text-muted-foreground max-w-3xl text-sm leading-relaxed sm:text-base">
             {algorithm.shortDescription}
           </p>
+          <div className="max-w-3xl rounded-xl border border-border/70 bg-card/60 p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Easy Explanation
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-foreground/90">{easyExplanation}</p>
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
