@@ -3,6 +3,11 @@
 import { useEffect } from "react";
 import { PauseIcon, PlayIcon, RotateCcwIcon, SkipForwardIcon } from "lucide-react";
 
+import {
+  PLAYBACK_MIN_SPEED,
+  getPlaybackMaxSpeed,
+  getPlaybackSpeedStep,
+} from "@/lib/playback-config";
 import { useAppStore } from "@/store/app-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 
 export function PlaybackControls() {
   const run = useAppStore((state) => state.run);
+  const selectedAlgorithmSlug = useAppStore((state) => state.selectedAlgorithmSlug);
   const playback = useAppStore((state) => state.playback);
   const setPlaybackStatus = useAppStore((state) => state.setPlaybackStatus);
   const setPlaybackSpeed = useAppStore((state) => state.setPlaybackSpeed);
@@ -28,6 +34,10 @@ export function PlaybackControls() {
   const isPlaying = playback.status === "playing";
   const hasRun = run !== null;
   const hasSteps = (run?.steps.length ?? 0) > 0;
+  const speedStep = getPlaybackSpeedStep(selectedAlgorithmSlug);
+  const maxSpeed = getPlaybackMaxSpeed(selectedAlgorithmSlug);
+  const canDecreaseSpeed = hasRun && playback.speed > PLAYBACK_MIN_SPEED;
+  const canIncreaseSpeed = hasRun && playback.speed < maxSpeed;
 
   useEffect(() => {
     if (!hasRun || !hasSteps || playback.status !== "playing") {
@@ -98,8 +108,8 @@ export function PlaybackControls() {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setPlaybackSpeed(playback.speed - 0.25)}
-            disabled={!hasRun}
+            onClick={() => setPlaybackSpeed(playback.speed - speedStep)}
+            disabled={!canDecreaseSpeed}
           >
             - Speed
           </Button>
@@ -110,8 +120,8 @@ export function PlaybackControls() {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setPlaybackSpeed(playback.speed + 0.25)}
-            disabled={!hasRun}
+            onClick={() => setPlaybackSpeed(playback.speed + speedStep)}
+            disabled={!canIncreaseSpeed}
           >
             + Speed
           </Button>

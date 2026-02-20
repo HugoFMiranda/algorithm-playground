@@ -1,6 +1,11 @@
 import { create } from "zustand";
 
 import { getAlgorithmDefaultParams, getAlgorithmRuntime } from "@/algorithms/registry";
+import {
+  PLAYBACK_MIN_SPEED,
+  getPlaybackDefaultSpeed,
+  getPlaybackMaxSpeed,
+} from "@/lib/playback-config";
 import type { ParamPrimitive, StepEventBase } from "@/types/engine";
 
 export type PlaybackStatus = "idle" | "playing" | "paused" | "completed";
@@ -39,7 +44,7 @@ interface AppState {
 
 const defaultPlayback: PlaybackState = {
   status: "idle",
-  speed: 1,
+  speed: getPlaybackDefaultSpeed(null),
   cursor: -1,
 };
 
@@ -106,12 +111,13 @@ export const useAppStore = create<AppState>((set) => ({
 
       const nextParams = getAlgorithmDefaultParams(slug);
       const nextRun = createRun(slug, nextParams);
+      const nextSpeed = getPlaybackDefaultSpeed(slug);
 
       return {
         selectedAlgorithmSlug: slug,
         params: nextParams,
         run: nextRun,
-        playback: createIdlePlayback(state.playback.speed),
+        playback: createIdlePlayback(nextSpeed),
       };
     }),
   setPlaybackStatus: (status) =>
@@ -126,7 +132,10 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       playback: {
         ...state.playback,
-        speed: Math.max(0.25, Math.min(speed, 3)),
+        speed: Math.max(
+          PLAYBACK_MIN_SPEED,
+          Math.min(speed, getPlaybackMaxSpeed(state.selectedAlgorithmSlug)),
+        ),
       },
     })),
   resetPlayback: () =>
