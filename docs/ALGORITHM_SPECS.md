@@ -465,9 +465,45 @@ Each algorithm must define:
 ## Graph Theory
 
 ### Topological Sort (`D2`, Phase 2)
-- Objective: DAG ordering constraints.
-- Renderer: directed graph.
-- Key events: indegree-decrement, queue-push, node-output.
+- Objective: teach dependency-safe ordering in directed acyclic graphs using indegree tracking and queue-driven output.
+- Input model:
+  - Node set is indexed from `0` to `nodeCount - 1`.
+  - Directed edges are provided as string pairs (`from>to`, `from->to`, or `from:to`).
+  - Invalid, duplicate, out-of-range, and self-loop edges are ignored during normalization.
+  - Empty/invalid edge input falls back to deterministic default DAG edges.
+- Params:
+  - `nodeCount` (number, default: `7`)
+  - `edges` (string, default: `0>1, 0>2, 1>3, 2>3, 2>4, 3>5, 4>5, 5>6`)
+  - `preferLowerIndex` (boolean, default: `true`)
+- Human-friendly explanation:
+  - Topological Sort repeatedly takes any node with no remaining prerequisites, outputs it, and removes its outgoing edges. If nodes remain but none can be chosen, a cycle exists.
+- Step event contract:
+  - `queue-push`: node enters zero-indegree queue (`initial-zero` or `indegree-zero`).
+  - `node-output`: queue pop and append to output ordering.
+  - `indegree-decrement`: processes an outgoing edge and updates target indegree.
+  - `complete`: terminal summary with output length and cycle status.
+- Renderer requirements:
+  - Highlight queued nodes, current output node, and processed order.
+  - Show live indegree value for each node.
+  - Highlight currently processed directed edge.
+  - Distinct completion state for valid ordering vs cycle-detected run.
+  - Step status message derived from event payload.
+- Metrics tracked:
+  - Output order length.
+  - Total edge relaxations (indegree decrements).
+  - Initial zero-indegree node count.
+  - Cycle detected flag and remaining unresolved nodes.
+- Edge cases:
+  - Multiple valid orders are resolved deterministically via `preferLowerIndex`.
+  - Cyclic graphs terminate with `cycleDetected=true` and partial output order.
+  - Disconnected DAG components remain valid and are emitted in deterministic queue order.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed params.
+  - Param fallback behavior for malformed node count / edge text / boolean values.
+  - Valid DAG run emits full order with `cycleDetected=false`.
+  - Cyclic run emits partial order with `cycleDetected=true`.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Union-Find (`D2`, Phase 2)
 - Objective: disjoint set operations and compression.
