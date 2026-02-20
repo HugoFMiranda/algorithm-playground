@@ -8,6 +8,7 @@ describe("algorithm runtime registry", () => {
     const binarySearchRuntime = getAlgorithmRuntime("binary-search");
     const aStarRuntime = getAlgorithmRuntime("a-star");
     const quickSortRuntime = getAlgorithmRuntime("quick-sort");
+    const heapSortRuntime = getAlgorithmRuntime("heap-sort");
 
     expect(bubbleSortRuntime).not.toBeNull();
     expect(bubbleSortRuntime?.slug).toBe("bubble-sort");
@@ -17,10 +18,12 @@ describe("algorithm runtime registry", () => {
     expect(aStarRuntime?.slug).toBe("a-star");
     expect(quickSortRuntime).not.toBeNull();
     expect(quickSortRuntime?.slug).toBe("quick-sort");
+    expect(heapSortRuntime).not.toBeNull();
+    expect(heapSortRuntime?.slug).toBe("heap-sort");
   });
 
   it("returns null for non-implemented algorithms", () => {
-    expect(getAlgorithmRuntime("heap-sort")).toBeNull();
-    expect(isAlgorithmImplemented("heap-sort")).toBe(false);
+    expect(getAlgorithmRuntime("topological-sort")).toBeNull();
+    expect(isAlgorithmImplemented("topological-sort")).toBe(false);
   });
 });

@@ -86,6 +86,17 @@ describe("app store playback", () => {
     expect(state.playback.status).toBe("idle");
   });
 
+  it("initializes heap-sort run from runtime registry", () => {
+    const store = useAppStore.getState();
+    store.initializeAlgorithm("heap-sort");
+
+    const state = useAppStore.getState();
+    expect(state.selectedAlgorithmSlug).toBe("heap-sort");
+    expect(state.run).not.toBeNull();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
   it("resets playback when dijkstra grid params are edited", () => {
     useAppStore.getState().initializeAlgorithm("dijkstra");
     useAppStore.getState().setPlaybackStatus("playing");

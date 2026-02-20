@@ -94,8 +94,27 @@ describe("complexity summary", () => {
     expect(summary?.timeWorst).toBe("O(n^2)");
   });
 
+  it("returns heap-sort complexity with run-aware details", () => {
+    const summary = getComplexitySummary("heap-sort", {
+      algorithmSlug: "heap-sort",
+      input: { values: [9, 4, 7, 3, 8, 2] },
+      normalizedParams: {},
+      result: {
+        sortedValues: [2, 3, 4, 7, 8, 9],
+        comparisons: 14,
+        swaps: 9,
+        heapifyCalls: 7,
+        extractions: 5,
+      },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(n log n)");
+    expect(summary?.timeWorst).toBe("O(n log n)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
-    expect(getComplexitySummary("heap-sort", null)).toBeNull();
+    expect(getComplexitySummary("topological-sort", null)).toBeNull();
   });
 
   it("returns compact complexity for implemented algorithms", () => {
@@ -117,10 +136,23 @@ describe("complexity summary", () => {
       normalizedParams: { pivotStrategy: "middle" },
       result: { sortedValues: [2, 3, 4, 7, 8, 9], comparisons: 11, swaps: 7, partitions: 4, maxDepth: 3 },
     });
+    const heap = getCompactCurrentComplexity("heap-sort", {
+      algorithmSlug: "heap-sort",
+      input: { values: [9, 4, 7, 3, 8, 2] },
+      normalizedParams: {},
+      result: {
+        sortedValues: [2, 3, 4, 7, 8, 9],
+        comparisons: 14,
+        swaps: 9,
+        heapifyCalls: 7,
+        extractions: 5,
+      },
+    });
 
     expect(binary).toBe("O(log n)");
     expect(bubble).toBe("O(n)");
     expect(quick).toBe("O(n log n)");
+    expect(heap).toBe("O(n log n)");
   });
 
   it("returns compact complexity for dijkstra", () => {
@@ -156,6 +188,6 @@ describe("complexity summary", () => {
   });
 
   it("returns null compact complexity for non-implemented algorithms", () => {
-    expect(getCompactCurrentComplexity("heap-sort", null)).toBeNull();
+    expect(getCompactCurrentComplexity("topological-sort", null)).toBeNull();
   });
 });
