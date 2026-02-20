@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { ShuffleIcon, SlidersHorizontalIcon } from "lucide-react";
+import { CircleHelpIcon, ShuffleIcon, SlidersHorizontalIcon } from "lucide-react";
 
 import {
   BINARY_SEARCH_DEFAULT_PARAMS,
@@ -36,6 +36,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { parseWeightOverrides } from "@/lib/path-grid-edit";
 
 interface ParamsPanelProps {
   className?: string;
@@ -90,6 +92,27 @@ function coerceBoolean(value: ParamPrimitive | undefined, fallback: boolean): bo
   }
 
   return fallback;
+}
+
+function InlineHelp({ text }: { text: string }) {
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="text-muted-foreground hover:text-foreground inline-flex items-center"
+            aria-label="Parameter help"
+          >
+            <CircleHelpIcon className="size-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-64 text-[11px] leading-relaxed">
+          {text}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 export function ParamsPanel({ className }: ParamsPanelProps) {
@@ -529,9 +552,12 @@ function BfsParamsCard({
           </div>
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="param-blocked-cells" className="text-xs font-medium">
-            Blocked Cells
-          </label>
+          <div className="flex items-center gap-1">
+            <label htmlFor="param-blocked-cells" className="text-xs font-medium">
+              Blocked Cells
+            </label>
+            <InlineHelp text="Cells in this list are treated like walls and cannot be entered." />
+          </div>
           <Input
             id="param-blocked-cells"
             value={blockedCells}
@@ -540,7 +566,10 @@ function BfsParamsCard({
           />
         </div>
         <div className="space-y-1.5">
-          <p className="text-xs font-medium">Neighbor Policy</p>
+          <div className="flex items-center gap-1">
+            <p className="text-xs font-medium">Neighbor Policy</p>
+            <InlineHelp text="4-direction checks up/right/down/left. 8-direction also includes diagonals." />
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
@@ -798,9 +827,12 @@ function DfsParamsCard({
           </div>
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="param-dfs-blocked-cells" className="text-xs font-medium">
-            Blocked Cells
-          </label>
+          <div className="flex items-center gap-1">
+            <label htmlFor="param-dfs-blocked-cells" className="text-xs font-medium">
+              Blocked Cells
+            </label>
+            <InlineHelp text="Blocked cells are walls. DFS will skip them and backtrack when needed." />
+          </div>
           <Input
             id="param-dfs-blocked-cells"
             value={blockedCells}
@@ -809,7 +841,10 @@ function DfsParamsCard({
           />
         </div>
         <div className="space-y-1.5">
-          <p className="text-xs font-medium">Neighbor Policy</p>
+          <div className="flex items-center gap-1">
+            <p className="text-xs font-medium">Neighbor Policy</p>
+            <InlineHelp text="4-direction uses orthogonal moves only. 8-direction includes diagonals too." />
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
@@ -978,6 +1013,11 @@ function DijkstraParamsCard({
     return String(DIJKSTRA_DEFAULT_PARAMS.weightSeed);
   }, [params.weightSeed]);
 
+  const weightOverrides = useMemo(() => {
+    const value = params.weightOverrides;
+    return typeof value === "string" ? value : DIJKSTRA_DEFAULT_PARAMS.weightOverrides;
+  }, [params.weightOverrides]);
+
   const allowDiagonal = useMemo(
     () => coerceBoolean(params.allowDiagonal, DIJKSTRA_DEFAULT_PARAMS.allowDiagonal),
     [params.allowDiagonal],
@@ -994,6 +1034,7 @@ function DijkstraParamsCard({
           heavyCells: number[];
           allowDiagonal: boolean;
           weightSeed: number;
+          weightOverrides: string;
           weights: number[];
         })
       : null;
@@ -1019,8 +1060,14 @@ function DijkstraParamsCard({
       heavyCells: randomParams.heavyCells,
       allowDiagonal: randomParams.allowDiagonal,
       weightSeed: randomParams.weightSeed,
+      weightOverrides: randomParams.weightOverrides,
     });
   };
+
+  const weightOverridesCount = useMemo(
+    () => (normalizedInput ? parseWeightOverrides(normalizedInput.weightOverrides, normalizedInput.weights.length).size : 0),
+    [normalizedInput],
+  );
 
   return (
     <Card className={className}>
@@ -1100,9 +1147,12 @@ function DijkstraParamsCard({
           </div>
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="param-dijkstra-blocked-cells" className="text-xs font-medium">
-            Blocked Cells
-          </label>
+          <div className="flex items-center gap-1">
+            <label htmlFor="param-dijkstra-blocked-cells" className="text-xs font-medium">
+              Blocked Cells
+            </label>
+            <InlineHelp text="Blocked cells are walls and cannot be entered by the pathfinding search." />
+          </div>
           <Input
             id="param-dijkstra-blocked-cells"
             value={blockedCells}
@@ -1111,9 +1161,12 @@ function DijkstraParamsCard({
           />
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="param-dijkstra-heavy-cells" className="text-xs font-medium">
-            Heavy Cells
-          </label>
+          <div className="flex items-center gap-1">
+            <label htmlFor="param-dijkstra-heavy-cells" className="text-xs font-medium">
+              Heavy Cells
+            </label>
+            <InlineHelp text="Heavy cells increase travel cost, so shortest routes may go around them." />
+          </div>
           <Input
             id="param-dijkstra-heavy-cells"
             value={heavyCells}
@@ -1122,9 +1175,12 @@ function DijkstraParamsCard({
           />
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="param-dijkstra-weight-seed" className="text-xs font-medium">
-            Weight Seed
-          </label>
+          <div className="flex items-center gap-1">
+            <label htmlFor="param-dijkstra-weight-seed" className="text-xs font-medium">
+              Weight Seed
+            </label>
+            <InlineHelp text="Deterministic seed used to generate base cell weights before overrides." />
+          </div>
           <Input
             id="param-dijkstra-weight-seed"
             type="number"
@@ -1138,7 +1194,24 @@ function DijkstraParamsCard({
           />
         </div>
         <div className="space-y-1.5">
-          <p className="text-xs font-medium">Neighbor Policy</p>
+          <div className="flex items-center gap-1">
+            <label htmlFor="param-dijkstra-weight-overrides" className="text-xs font-medium">
+              Weight Overrides
+            </label>
+            <InlineHelp text="Manual per-cell weights in the format cell:weight. Example: 6:12, 9:3" />
+          </div>
+          <Input
+            id="param-dijkstra-weight-overrides"
+            value={weightOverrides}
+            onChange={(event) => setParam("weightOverrides", event.target.value)}
+            placeholder="6:12, 9:3"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1">
+            <p className="text-xs font-medium">Neighbor Policy</p>
+            <InlineHelp text="4-direction allows orthogonal movement. 8-direction also allows diagonal movement." />
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
@@ -1189,6 +1262,9 @@ function DijkstraParamsCard({
                 ? `${normalizedInput.blockedCells.length} / ${normalizedInput.heavyCells.length}`
                 : "n/a"}
             </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Weight Overrides: <span className="font-mono">{normalizedInput ? weightOverridesCount : "n/a"}</span>
           </p>
           <p className="text-muted-foreground leading-relaxed">
             Result:{" "}

@@ -1,4 +1,5 @@
 import type { ParamPrimitive, RawParams } from "@/types/engine";
+import { parseCellList, parseWeightOverrides } from "@/lib/path-grid-edit";
 
 export interface DijkstraParams extends Record<string, ParamPrimitive> {
   rows: number;
@@ -9,6 +10,7 @@ export interface DijkstraParams extends Record<string, ParamPrimitive> {
   heavyCells: string;
   allowDiagonal: boolean;
   weightSeed: number;
+  weightOverrides: string;
 }
 
 export interface DijkstraInput {
@@ -20,6 +22,7 @@ export interface DijkstraInput {
   heavyCells: number[];
   allowDiagonal: boolean;
   weightSeed: number;
+  weightOverrides: string;
   weights: number[];
 }
 
@@ -39,6 +42,7 @@ const DIJKSTRA_DEFAULT_BLOCKED_CELLS = "10, 11, 19, 27, 35";
 const DIJKSTRA_DEFAULT_HEAVY_CELLS = "14, 15, 22, 23, 30, 31";
 const DIJKSTRA_DEFAULT_ALLOW_DIAGONAL = false;
 const DIJKSTRA_DEFAULT_WEIGHT_SEED = 3;
+const DIJKSTRA_DEFAULT_WEIGHT_OVERRIDES = "";
 
 export const DIJKSTRA_DEFAULT_PARAMS: DijkstraParams = {
   rows: DIJKSTRA_DEFAULT_ROWS,
@@ -49,6 +53,7 @@ export const DIJKSTRA_DEFAULT_PARAMS: DijkstraParams = {
   heavyCells: DIJKSTRA_DEFAULT_HEAVY_CELLS,
   allowDiagonal: DIJKSTRA_DEFAULT_ALLOW_DIAGONAL,
   weightSeed: DIJKSTRA_DEFAULT_WEIGHT_SEED,
+  weightOverrides: DIJKSTRA_DEFAULT_WEIGHT_OVERRIDES,
 };
 
 function parseInteger(
@@ -93,25 +98,12 @@ function parseBoolean(rawValue: RawParams[string], fallback: boolean): boolean {
   return fallback;
 }
 
-function parseCellList(rawCells: RawParams[string], fallback: string): string {
-  if (typeof rawCells === "string" && rawCells.trim().length > 0) {
-    return rawCells;
+function parseText(rawValue: RawParams[string], fallback: string): string {
+  if (typeof rawValue === "string" && rawValue.trim().length > 0) {
+    return rawValue;
   }
 
   return fallback;
-}
-
-function parseCellIndices(cellsText: string, cellCount: number): number[] {
-  const cells = cellsText
-    .split(/[,\s]+/g)
-    .map((token) => token.trim())
-    .filter((token) => token.length > 0)
-    .map((token) => Number(token))
-    .filter((value) => Number.isFinite(value))
-    .map((value) => Math.floor(value))
-    .filter((value) => value >= 0 && value < cellCount);
-
-  return [...new Set(cells)].sort((left, right) => left - right);
 }
 
 function createWeights(cellCount: number, weightSeed: number, heavyCells: Set<number>): number[] {
@@ -120,6 +112,25 @@ function createWeights(cellCount: number, weightSeed: number, heavyCells: Set<nu
     const adjusted = heavyCells.has(cell) ? base + 4 : base;
     return Math.max(1, Math.min(adjusted, 15));
   });
+}
+
+function applyWeightOverrides(
+  weights: number[],
+  overrides: Map<number, number>,
+  blockedCells: Set<number>,
+): number[] {
+  const nextWeights = [...weights];
+  for (const [cell, weight] of overrides) {
+    if (blockedCells.has(cell)) {
+      continue;
+    }
+    if (cell < 0 || cell >= nextWeights.length) {
+      continue;
+    }
+    nextWeights[cell] = Math.max(1, Math.min(15, Math.floor(weight)));
+  }
+
+  return nextWeights;
 }
 
 export function normalizeDijkstraParams(rawParams: RawParams): DijkstraParams {
@@ -144,21 +155,27 @@ export function normalizeDijkstraParams(rawParams: RawParams): DijkstraParams {
     cols,
     startCell,
     targetCell,
-    blockedCells: parseCellList(rawParams.blockedCells, DIJKSTRA_DEFAULT_BLOCKED_CELLS),
-    heavyCells: parseCellList(rawParams.heavyCells, DIJKSTRA_DEFAULT_HEAVY_CELLS),
+    blockedCells: parseText(rawParams.blockedCells, DIJKSTRA_DEFAULT_BLOCKED_CELLS),
+    heavyCells: parseText(rawParams.heavyCells, DIJKSTRA_DEFAULT_HEAVY_CELLS),
     allowDiagonal: parseBoolean(rawParams.allowDiagonal, DIJKSTRA_DEFAULT_ALLOW_DIAGONAL),
     weightSeed: parseInteger(rawParams.weightSeed, DIJKSTRA_DEFAULT_WEIGHT_SEED, 0, 999),
+    weightOverrides: parseText(rawParams.weightOverrides, DIJKSTRA_DEFAULT_WEIGHT_OVERRIDES),
   };
 }
 
 export function normalizeDijkstraInput(rawInput: unknown, params: DijkstraParams): DijkstraInput {
   const cellCount = params.rows * params.cols;
-  const blockedCells = parseCellIndices(params.blockedCells, cellCount).filter(
+  const blockedCells = parseCellList(params.blockedCells, cellCount).filter(
     (cell) => cell !== params.startCell && cell !== params.targetCell,
   );
-  const heavyCells = parseCellIndices(params.heavyCells, cellCount).filter(
+  const heavyCells = parseCellList(params.heavyCells, cellCount).filter(
     (cell) => cell !== params.startCell && cell !== params.targetCell,
   );
+  const blockedSet = new Set<number>(blockedCells);
+  const heavySet = new Set<number>(heavyCells);
+  const weightOverrides = parseWeightOverrides(params.weightOverrides, cellCount);
+  weightOverrides.delete(params.startCell);
+  weightOverrides.delete(params.targetCell);
 
   if (
     typeof rawInput === "object" &&
@@ -170,10 +187,11 @@ export function normalizeDijkstraInput(rawInput: unknown, params: DijkstraParams
     const inputWeights = rawInput.weights
       .slice(0, cellCount)
       .map((value) => Math.max(1, Math.min(Math.floor(value), 15)));
+    const generatedWeights = createWeights(cellCount, params.weightSeed, new Set(heavyCells));
     const weights =
       inputWeights.length === cellCount
-        ? inputWeights
-        : createWeights(cellCount, params.weightSeed, new Set(heavyCells));
+        ? applyWeightOverrides(inputWeights, weightOverrides, blockedSet)
+        : applyWeightOverrides(generatedWeights, weightOverrides, blockedSet);
 
     return {
       rows: params.rows,
@@ -184,10 +202,12 @@ export function normalizeDijkstraInput(rawInput: unknown, params: DijkstraParams
       heavyCells,
       allowDiagonal: params.allowDiagonal,
       weightSeed: params.weightSeed,
+      weightOverrides: params.weightOverrides,
       weights,
     };
   }
 
+  const generatedWeights = createWeights(cellCount, params.weightSeed, heavySet);
   return {
     rows: params.rows,
     cols: params.cols,
@@ -197,7 +217,8 @@ export function normalizeDijkstraInput(rawInput: unknown, params: DijkstraParams
     heavyCells,
     allowDiagonal: params.allowDiagonal,
     weightSeed: params.weightSeed,
-    weights: createWeights(cellCount, params.weightSeed, new Set(heavyCells)),
+    weightOverrides: params.weightOverrides,
+    weights: applyWeightOverrides(generatedWeights, weightOverrides, blockedSet),
   };
 }
 
@@ -244,5 +265,6 @@ export function createRandomDijkstraParams(): DijkstraParams {
     heavyCells: [...heavy].sort((left, right) => left - right).join(", "),
     allowDiagonal: Math.random() >= 0.5,
     weightSeed: getRandomInteger(0, 50),
+    weightOverrides: "",
   };
 }

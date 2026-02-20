@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpDownIcon, Grid2x2Icon, MonitorPlayIcon, SearchIcon } from "lucide-react";
 
 import type { BinarySearchResult, BinarySearchInput } from "@/algorithms/binary-search/spec";
@@ -19,10 +19,13 @@ import type { SelectionSortInput, SelectionSortResult } from "@/algorithms/selec
 import type { SelectionSortStepEvent } from "@/algorithms/selection-sort/engine";
 import type { AlgorithmDefinition } from "@/data/algorithms";
 import { getCompactCurrentComplexity } from "@/lib/complexity";
+import { parseWeightOverrides, serializeCellList, serializeWeightOverrides } from "@/lib/path-grid-edit";
 import { useAppStore } from "@/store/app-store";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 interface VisualizerPanelProps {
   algorithm: AlgorithmDefinition;
@@ -238,7 +241,130 @@ function toGridLabel(cell: number, cols: number): string {
   return `r${row} c${col}`;
 }
 
+type PathGridTool =
+  | "start"
+  | "target"
+  | "block"
+  | "erase"
+  | "heavy"
+  | "unheavy"
+  | "weight";
+
+interface GridToolOption {
+  id: PathGridTool;
+  label: string;
+}
+
+interface GridToolBarProps {
+  activeTool: PathGridTool;
+  tools: GridToolOption[];
+  disabled: boolean;
+  onToolChange: (tool: PathGridTool) => void;
+}
+
+function GridToolBar({ activeTool, tools, disabled, onToolChange }: GridToolBarProps) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {tools.map((tool) => (
+        <Button
+          key={tool.id}
+          type="button"
+          size="sm"
+          variant={activeTool === tool.id ? "secondary" : "outline"}
+          onClick={() => onToolChange(tool.id)}
+          disabled={disabled}
+          className="h-7 px-2 text-[11px]"
+        >
+          {tool.label}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+interface GridPaintHandlers {
+  onPointerDown: (cell: number) => void;
+  onPointerEnter: (cell: number) => void;
+}
+
+function useGridPaint(
+  activeTool: PathGridTool,
+  draggableTools: readonly PathGridTool[],
+  canEdit: boolean,
+  onApply: (cell: number) => void,
+): GridPaintHandlers {
+  const isPointerDownRef = useRef(false);
+  const lastCellRef = useRef<number | null>(null);
+  const draggableSet = useMemo(() => new Set<PathGridTool>(draggableTools), [draggableTools]);
+
+  useEffect(() => {
+    const handlePointerUp = () => {
+      isPointerDownRef.current = false;
+      lastCellRef.current = null;
+    };
+
+    window.addEventListener("pointerup", handlePointerUp);
+    return () => {
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, []);
+
+  const onPointerDown = useCallback(
+    (cell: number) => {
+      if (!canEdit) {
+        return;
+      }
+
+      isPointerDownRef.current = true;
+      lastCellRef.current = cell;
+      onApply(cell);
+    },
+    [canEdit, onApply],
+  );
+
+  const onPointerEnter = useCallback(
+    (cell: number) => {
+      if (!canEdit || !isPointerDownRef.current) {
+        return;
+      }
+
+      if (!draggableSet.has(activeTool)) {
+        return;
+      }
+
+      if (lastCellRef.current === cell) {
+        return;
+      }
+
+      lastCellRef.current = cell;
+      onApply(cell);
+    },
+    [activeTool, canEdit, draggableSet, onApply],
+  );
+
+  return {
+    onPointerDown,
+    onPointerEnter,
+  };
+}
+
+function areNumberSetsEqual(left: Set<number>, right: Set<number>): boolean {
+  if (left.size !== right.size) {
+    return false;
+  }
+
+  for (const value of left) {
+    if (!right.has(value)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function BfsVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const setParams = useAppStore((state) => state.setParams);
+  const playbackStatus = useAppStore((state) => state.playback.status);
   const compactComplexity = getCompactCurrentComplexity("bfs", run);
   const typedRun =
     run && run.algorithmSlug === "bfs"
@@ -256,6 +382,53 @@ function BfsVisualizer({ run, cursor }: SharedVisualizerProps) {
   const stepLabel = activeStep ? formatBfsStepLabel(activeStep) : "Ready";
   const stepMessage = activeStep ? formatBfsStepMessage(activeStep) : "Press Play or Step to start execution.";
   const totalCells = typedRun ? typedRun.input.rows * typedRun.input.cols : 0;
+  const canEdit = playbackStatus !== "playing";
+  const [activeTool, setActiveTool] = useState<PathGridTool>("block");
+
+  const applyTool = useCallback(
+    (cell: number) => {
+      if (!typedRun || !canEdit || cell < 0 || cell >= totalCells) {
+        return;
+      }
+
+      const blocked = new Set<number>(typedRun.input.blockedCells);
+      const previousBlocked = new Set<number>(typedRun.input.blockedCells);
+      let nextStart = typedRun.input.startCell;
+      let nextTarget = typedRun.input.targetCell;
+
+      if (activeTool === "start") {
+        nextStart = cell;
+        blocked.delete(cell);
+      } else if (activeTool === "target") {
+        nextTarget = cell;
+        blocked.delete(cell);
+      } else if (activeTool === "block") {
+        if (cell === nextStart || cell === nextTarget) {
+          return;
+        }
+        blocked.add(cell);
+      } else if (activeTool === "erase") {
+        blocked.delete(cell);
+      }
+
+      if (
+        nextStart === typedRun.input.startCell &&
+        nextTarget === typedRun.input.targetCell &&
+        areNumberSetsEqual(blocked, previousBlocked)
+      ) {
+        return;
+      }
+
+      setParams({
+        startCell: nextStart,
+        targetCell: nextTarget,
+        blockedCells: serializeCellList(blocked),
+      });
+    },
+    [activeTool, canEdit, setParams, totalCells, typedRun],
+  );
+
+  const paintHandlers = useGridPaint(activeTool, ["block", "erase"], canEdit, applyTool);
 
   return (
     <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
@@ -304,6 +477,26 @@ function BfsVisualizer({ run, cursor }: SharedVisualizerProps) {
         </div>
 
         <div className="space-y-2">
+          <div className="space-y-1.5 rounded-lg border border-border/70 bg-background/50 p-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <GridToolBar
+                activeTool={activeTool}
+                tools={[
+                  { id: "start", label: "Start" },
+                  { id: "target", label: "Target" },
+                  { id: "block", label: "Block" },
+                  { id: "erase", label: "Erase" },
+                ]}
+                disabled={!typedRun || !canEdit}
+                onToolChange={setActiveTool}
+              />
+              {!canEdit ? (
+                <p className="text-muted-foreground text-[11px]">Pause playback to edit the grid.</p>
+              ) : (
+                <p className="text-muted-foreground text-[11px]">Click or drag to apply the active tool.</p>
+              )}
+            </div>
+          </div>
           <div className="flex items-center gap-2 text-xs">
             <Badge variant="outline" className="rounded-full border-border/70">
               {stepLabel}
@@ -328,8 +521,10 @@ function BfsVisualizer({ run, cursor }: SharedVisualizerProps) {
                 return (
                   <div
                     key={cell}
+                    onPointerDown={() => paintHandlers.onPointerDown(cell)}
+                    onPointerEnter={() => paintHandlers.onPointerEnter(cell)}
                     className={cn(
-                      "rounded-lg border p-2",
+                      "rounded-lg border p-2 select-none",
                       isBlocked && "border-zinc-500/70 bg-zinc-500/25 text-zinc-100",
                       isVisited && "border-sky-300/60 bg-sky-500/12",
                       isQueued && "border-cyan-300/60 bg-cyan-500/12",
@@ -339,6 +534,8 @@ function BfsVisualizer({ run, cursor }: SharedVisualizerProps) {
                       isInspected && frame.inspectStatus === "enqueue" && "border-violet-300/70 bg-violet-500/20",
                       isStart && "ring-1 ring-blue-300/70",
                       isTarget && "ring-1 ring-rose-300/70",
+                      typedRun && canEdit && "cursor-pointer",
+                      (!typedRun || !canEdit) && "cursor-default",
                     )}
                   >
                     <p className="text-muted-foreground text-[10px]">{toGridLabel(cell, typedRun.input.cols)}</p>
@@ -519,6 +716,8 @@ interface DfsFrame {
 }
 
 function DfsVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const setParams = useAppStore((state) => state.setParams);
+  const playbackStatus = useAppStore((state) => state.playback.status);
   const compactComplexity = getCompactCurrentComplexity("dfs", run);
   const typedRun =
     run && run.algorithmSlug === "dfs"
@@ -535,6 +734,53 @@ function DfsVisualizer({ run, cursor }: SharedVisualizerProps) {
   const stepLabel = activeStep ? formatDfsStepLabel(activeStep) : "Ready";
   const stepMessage = activeStep ? formatDfsStepMessage(activeStep) : "Press Play or Step to start execution.";
   const totalCells = typedRun ? typedRun.input.rows * typedRun.input.cols : 0;
+  const canEdit = playbackStatus !== "playing";
+  const [activeTool, setActiveTool] = useState<PathGridTool>("block");
+
+  const applyTool = useCallback(
+    (cell: number) => {
+      if (!typedRun || !canEdit || cell < 0 || cell >= totalCells) {
+        return;
+      }
+
+      const blocked = new Set<number>(typedRun.input.blockedCells);
+      const previousBlocked = new Set<number>(typedRun.input.blockedCells);
+      let nextStart = typedRun.input.startCell;
+      let nextTarget = typedRun.input.targetCell;
+
+      if (activeTool === "start") {
+        nextStart = cell;
+        blocked.delete(cell);
+      } else if (activeTool === "target") {
+        nextTarget = cell;
+        blocked.delete(cell);
+      } else if (activeTool === "block") {
+        if (cell === nextStart || cell === nextTarget) {
+          return;
+        }
+        blocked.add(cell);
+      } else if (activeTool === "erase") {
+        blocked.delete(cell);
+      }
+
+      if (
+        nextStart === typedRun.input.startCell &&
+        nextTarget === typedRun.input.targetCell &&
+        areNumberSetsEqual(blocked, previousBlocked)
+      ) {
+        return;
+      }
+
+      setParams({
+        startCell: nextStart,
+        targetCell: nextTarget,
+        blockedCells: serializeCellList(blocked),
+      });
+    },
+    [activeTool, canEdit, setParams, totalCells, typedRun],
+  );
+
+  const paintHandlers = useGridPaint(activeTool, ["block", "erase"], canEdit, applyTool);
 
   return (
     <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
@@ -584,6 +830,26 @@ function DfsVisualizer({ run, cursor }: SharedVisualizerProps) {
         </div>
 
         <div className="space-y-2">
+          <div className="space-y-1.5 rounded-lg border border-border/70 bg-background/50 p-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <GridToolBar
+                activeTool={activeTool}
+                tools={[
+                  { id: "start", label: "Start" },
+                  { id: "target", label: "Target" },
+                  { id: "block", label: "Block" },
+                  { id: "erase", label: "Erase" },
+                ]}
+                disabled={!typedRun || !canEdit}
+                onToolChange={setActiveTool}
+              />
+              {!canEdit ? (
+                <p className="text-muted-foreground text-[11px]">Pause playback to edit the grid.</p>
+              ) : (
+                <p className="text-muted-foreground text-[11px]">Click or drag to apply the active tool.</p>
+              )}
+            </div>
+          </div>
           <div className="flex items-center gap-2 text-xs">
             <Badge variant="outline" className="rounded-full border-border/70">
               {stepLabel}
@@ -608,8 +874,10 @@ function DfsVisualizer({ run, cursor }: SharedVisualizerProps) {
                 return (
                   <div
                     key={cell}
+                    onPointerDown={() => paintHandlers.onPointerDown(cell)}
+                    onPointerEnter={() => paintHandlers.onPointerEnter(cell)}
                     className={cn(
-                      "rounded-lg border p-2",
+                      "rounded-lg border p-2 select-none",
                       isBlocked && "border-zinc-500/70 bg-zinc-500/25 text-zinc-100",
                       isVisited && "border-sky-300/60 bg-sky-500/12",
                       isStacked && "border-cyan-300/60 bg-cyan-500/12",
@@ -620,6 +888,8 @@ function DfsVisualizer({ run, cursor }: SharedVisualizerProps) {
                       isInspected && frame.inspectStatus === "visited" && "border-orange-300/70 bg-orange-500/20",
                       isStart && "ring-1 ring-blue-300/70",
                       isTarget && "ring-1 ring-rose-300/70",
+                      typedRun && canEdit && "cursor-pointer",
+                      (!typedRun || !canEdit) && "cursor-default",
                     )}
                   >
                     <p className="text-muted-foreground text-[10px]">{toGridLabel(cell, typedRun.input.cols)}</p>
@@ -804,13 +1074,16 @@ interface DijkstraFrame {
 
 function formatDistance(distance: number | undefined): string {
   if (distance === undefined) {
-    return "∞";
+    return "inf";
   }
 
   return String(distance);
 }
 
 function DijkstraVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const params = useAppStore((state) => state.params);
+  const setParams = useAppStore((state) => state.setParams);
+  const playbackStatus = useAppStore((state) => state.playback.status);
   const compactComplexity = getCompactCurrentComplexity("dijkstra", run);
   const typedRun =
     run && run.algorithmSlug === "dijkstra"
@@ -829,6 +1102,153 @@ function DijkstraVisualizer({ run, cursor }: SharedVisualizerProps) {
     ? formatDijkstraStepMessage(activeStep)
     : "Press Play or Step to start execution.";
   const totalCells = typedRun ? typedRun.input.rows * typedRun.input.cols : 0;
+  const canEdit = playbackStatus !== "playing";
+  const [activeTool, setActiveTool] = useState<PathGridTool>("block");
+  const [pendingWeightCell, setPendingWeightCell] = useState<number | null>(null);
+  const [pendingWeightValue, setPendingWeightValue] = useState("");
+  const weightOverridesText =
+    typeof params.weightOverrides === "string" ? params.weightOverrides : typedRun?.input.weightOverrides ?? "";
+  const weightOverrides = useMemo(
+    () => parseWeightOverrides(weightOverridesText, totalCells),
+    [totalCells, weightOverridesText],
+  );
+  const serializedWeightOverrides = useMemo(
+    () => serializeWeightOverrides(weightOverrides),
+    [weightOverrides],
+  );
+
+  useEffect(() => {
+    if (activeTool !== "weight") {
+      setPendingWeightCell(null);
+    }
+  }, [activeTool]);
+
+  const applyTool = useCallback(
+    (cell: number) => {
+      if (!typedRun || !canEdit || cell < 0 || cell >= totalCells) {
+        return;
+      }
+
+      const blocked = new Set<number>(typedRun.input.blockedCells);
+      const heavy = new Set<number>(typedRun.input.heavyCells);
+      const previousBlocked = new Set<number>(typedRun.input.blockedCells);
+      const previousHeavy = new Set<number>(typedRun.input.heavyCells);
+      const nextWeightOverrides = parseWeightOverrides(weightOverridesText, totalCells);
+
+      let nextStart = typedRun.input.startCell;
+      let nextTarget = typedRun.input.targetCell;
+
+      if (activeTool === "weight") {
+        if (blocked.has(cell)) {
+          return;
+        }
+
+        setPendingWeightCell(cell);
+        setPendingWeightValue(String(nextWeightOverrides.get(cell) ?? typedRun.input.weights[cell]));
+        return;
+      }
+
+      if (activeTool === "start") {
+        nextStart = cell;
+        blocked.delete(cell);
+        heavy.delete(cell);
+        nextWeightOverrides.delete(cell);
+      } else if (activeTool === "target") {
+        nextTarget = cell;
+        blocked.delete(cell);
+        heavy.delete(cell);
+        nextWeightOverrides.delete(cell);
+      } else if (activeTool === "block") {
+        if (cell === nextStart || cell === nextTarget) {
+          return;
+        }
+        blocked.add(cell);
+        heavy.delete(cell);
+        nextWeightOverrides.delete(cell);
+      } else if (activeTool === "erase") {
+        blocked.delete(cell);
+      } else if (activeTool === "heavy") {
+        if (blocked.has(cell) || cell === nextStart || cell === nextTarget) {
+          return;
+        }
+        heavy.add(cell);
+      } else if (activeTool === "unheavy") {
+        heavy.delete(cell);
+      }
+
+      const nextOverridesText = serializeWeightOverrides(nextWeightOverrides);
+      if (
+        nextStart === typedRun.input.startCell &&
+        nextTarget === typedRun.input.targetCell &&
+        areNumberSetsEqual(blocked, previousBlocked) &&
+        areNumberSetsEqual(heavy, previousHeavy) &&
+        nextOverridesText === serializedWeightOverrides
+      ) {
+        return;
+      }
+
+      setPendingWeightCell(null);
+      setParams({
+        startCell: nextStart,
+        targetCell: nextTarget,
+        blockedCells: serializeCellList(blocked),
+        heavyCells: serializeCellList(heavy),
+        weightOverrides: nextOverridesText,
+      });
+    },
+    [
+      activeTool,
+      canEdit,
+      serializedWeightOverrides,
+      setParams,
+      totalCells,
+      typedRun,
+      weightOverridesText,
+    ],
+  );
+
+  const paintHandlers = useGridPaint(
+    activeTool,
+    ["block", "erase", "heavy", "unheavy"],
+    canEdit,
+    applyTool,
+  );
+
+  const handleApplyWeight = useCallback(() => {
+    if (!typedRun || !canEdit || pendingWeightCell === null) {
+      return;
+    }
+
+    const nextWeight = Number(pendingWeightValue);
+    if (!Number.isFinite(nextWeight)) {
+      return;
+    }
+
+    const blocked = new Set<number>(typedRun.input.blockedCells);
+    if (blocked.has(pendingWeightCell)) {
+      return;
+    }
+
+    const nextWeightOverrides = parseWeightOverrides(weightOverridesText, totalCells);
+    nextWeightOverrides.set(pendingWeightCell, Math.max(1, Math.min(15, Math.floor(nextWeight))));
+    const nextOverridesText = serializeWeightOverrides(nextWeightOverrides);
+    if (nextOverridesText === serializedWeightOverrides) {
+      setPendingWeightCell(null);
+      return;
+    }
+
+    setParams({ weightOverrides: nextOverridesText });
+    setPendingWeightCell(null);
+  }, [
+    canEdit,
+    pendingWeightCell,
+    pendingWeightValue,
+    serializedWeightOverrides,
+    setParams,
+    totalCells,
+    typedRun,
+    weightOverridesText,
+  ]);
 
   return (
     <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
@@ -875,6 +1295,67 @@ function DijkstraVisualizer({ run, cursor }: SharedVisualizerProps) {
         </div>
 
         <div className="space-y-2">
+          <div className="space-y-1.5 rounded-lg border border-border/70 bg-background/50 p-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <GridToolBar
+                activeTool={activeTool}
+                tools={[
+                  { id: "start", label: "Start" },
+                  { id: "target", label: "Target" },
+                  { id: "block", label: "Block" },
+                  { id: "erase", label: "Erase" },
+                  { id: "heavy", label: "Heavy" },
+                  { id: "unheavy", label: "Unheavy" },
+                  { id: "weight", label: "Weight" },
+                ]}
+                disabled={!typedRun || !canEdit}
+                onToolChange={setActiveTool}
+              />
+              {!canEdit ? (
+                <p className="text-muted-foreground text-[11px]">Pause playback to edit the grid.</p>
+              ) : (
+                <p className="text-muted-foreground text-[11px]">Click or drag to apply the active tool.</p>
+              )}
+            </div>
+            {activeTool === "weight" && typedRun ? (
+              <div className="flex flex-wrap items-end gap-2">
+                <div className="space-y-1">
+                  <p className="text-muted-foreground text-[11px]">
+                    {pendingWeightCell === null
+                      ? "Select a non-blocked cell to edit its weight."
+                      : `Cell ${pendingWeightCell} weight`}
+                  </p>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={15}
+                    value={pendingWeightValue}
+                    onChange={(event) => setPendingWeightValue(event.target.value)}
+                    className="h-8 w-28"
+                    disabled={!canEdit || pendingWeightCell === null}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  disabled={!canEdit || pendingWeightCell === null}
+                  onClick={handleApplyWeight}
+                >
+                  Apply
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={pendingWeightCell === null}
+                  onClick={() => setPendingWeightCell(null)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : null}
+          </div>
           <div className="flex items-center gap-2 text-xs">
             <Badge variant="outline" className="rounded-full border-border/70">
               {stepLabel}
@@ -897,23 +1378,29 @@ function DijkstraVisualizer({ run, cursor }: SharedVisualizerProps) {
                 const isInspected = frame.inspected === cell;
                 const isHeavy = frame.heavy.has(cell);
                 const distance = frame.distances.get(cell);
+                const isOverridden = weightOverrides.has(cell);
 
                 return (
                   <div
                     key={cell}
+                    onPointerDown={() => paintHandlers.onPointerDown(cell)}
+                    onPointerEnter={() => paintHandlers.onPointerEnter(cell)}
                     className={cn(
-                      "rounded-lg border p-2",
+                      "rounded-lg border p-2 select-none",
                       isBlocked && "border-zinc-500/70 bg-zinc-500/25 text-zinc-100",
                       isVisited && "border-sky-300/60 bg-sky-500/12",
                       isFrontier && "border-cyan-300/60 bg-cyan-500/12",
                       isPath && "border-emerald-300/70 bg-emerald-500/20",
                       isCurrent && "border-amber-300/70 bg-amber-500/20",
                       isHeavy && !isBlocked && "ring-1 ring-violet-300/50",
+                      isOverridden && !isBlocked && "ring-1 ring-lime-300/60",
                       isInspected && frame.inspectStatus === "blocked" && "border-red-300/70 bg-red-500/18",
                       isInspected && frame.inspectStatus === "update" && "border-violet-300/70 bg-violet-500/20",
                       isInspected && frame.inspectStatus === "skip" && "border-orange-300/70 bg-orange-500/20",
                       isStart && "ring-1 ring-blue-300/70",
                       isTarget && "ring-1 ring-rose-300/70",
+                      typedRun && canEdit && "cursor-pointer",
+                      (!typedRun || !canEdit) && "cursor-default",
                     )}
                   >
                     <p className="text-muted-foreground text-[10px]">{toGridLabel(cell, typedRun.input.cols)}</p>
@@ -936,7 +1423,8 @@ function DijkstraVisualizer({ run, cursor }: SharedVisualizerProps) {
 
         <div className="text-muted-foreground text-xs">
           Legend: <span className="font-medium">S/T</span> start/target, <span className="font-medium">#</span>{" "}
-          blocked, number = cell weight, d = best known distance.
+          blocked, violet ring = heavy, lime ring = weight override, number = cell weight, d = best known
+          distance.
         </div>
       </CardContent>
     </Card>
@@ -1075,7 +1563,7 @@ function formatDijkstraStepMessage(step: DijkstraStepEvent): string {
   }
 
   if (step.type === "distance-update") {
-    return `Update d(${step.payload.cell}) from ${step.payload.previousDistance < 0 ? "∞" : step.payload.previousDistance} to ${step.payload.nextDistance}.`;
+    return `Update d(${step.payload.cell}) from ${step.payload.previousDistance < 0 ? "inf" : step.payload.previousDistance} to ${step.payload.nextDistance}.`;
   }
 
   if (step.type === "found") {
@@ -2145,3 +2633,4 @@ function formatBinarySearchStepMessage(step: BinarySearchStepEvent): string {
 
   return `Target not found. Insert position would be ${step.payload.insertIndex}.`;
 }
+
