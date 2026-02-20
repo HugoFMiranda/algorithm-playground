@@ -121,6 +121,17 @@ describe("app store playback", () => {
     expect(state.playback.status).toBe("idle");
   });
 
+  it("initializes topological-sort run from runtime registry", () => {
+    const store = useAppStore.getState();
+    store.initializeAlgorithm("topological-sort");
+
+    const state = useAppStore.getState();
+    expect(state.selectedAlgorithmSlug).toBe("topological-sort");
+    expect(state.run).not.toBeNull();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
   it("resets playback when dijkstra grid params are edited", () => {
     useAppStore.getState().initializeAlgorithm("dijkstra");
     useAppStore.getState().setPlaybackStatus("playing");

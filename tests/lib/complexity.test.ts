@@ -113,8 +113,38 @@ describe("complexity summary", () => {
     expect(summary?.timeWorst).toBe("O(n log n)");
   });
 
+  it("returns topological-sort complexity with run-aware details", () => {
+    const summary = getComplexitySummary("topological-sort", {
+      algorithmSlug: "topological-sort",
+      input: {
+        nodeCount: 6,
+        edges: [
+          [0, 1],
+          [0, 2],
+          [1, 3],
+          [2, 3],
+          [3, 4],
+          [4, 5],
+        ],
+      },
+      normalizedParams: { preferLowerIndex: true },
+      result: {
+        order: [0, 1, 2, 3, 4, 5],
+        cycleDetected: false,
+        processedCount: 6,
+        remainingCount: 0,
+        edgeRelaxations: 6,
+        initialZeroCount: 1,
+      },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(V + E)");
+    expect(summary?.timeWorst).toBe("O(V + E)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
-    expect(getComplexitySummary("topological-sort", null)).toBeNull();
+    expect(getComplexitySummary("union-find", null)).toBeNull();
   });
 
   it("returns compact complexity for implemented algorithms", () => {
@@ -148,11 +178,35 @@ describe("complexity summary", () => {
         extractions: 5,
       },
     });
+    const topological = getCompactCurrentComplexity("topological-sort", {
+      algorithmSlug: "topological-sort",
+      input: {
+        nodeCount: 6,
+        edges: [
+          [0, 1],
+          [0, 2],
+          [1, 3],
+          [2, 3],
+          [3, 4],
+          [4, 5],
+        ],
+      },
+      normalizedParams: { preferLowerIndex: true },
+      result: {
+        order: [0, 1, 2, 3, 4, 5],
+        cycleDetected: false,
+        processedCount: 6,
+        remainingCount: 0,
+        edgeRelaxations: 6,
+        initialZeroCount: 1,
+      },
+    });
 
     expect(binary).toBe("O(log n)");
     expect(bubble).toBe("O(n)");
     expect(quick).toBe("O(n log n)");
     expect(heap).toBe("O(n log n)");
+    expect(topological).toBe("O(V + E)");
   });
 
   it("returns compact complexity for dijkstra", () => {
@@ -188,6 +242,6 @@ describe("complexity summary", () => {
   });
 
   it("returns null compact complexity for non-implemented algorithms", () => {
-    expect(getCompactCurrentComplexity("topological-sort", null)).toBeNull();
+    expect(getCompactCurrentComplexity("union-find", null)).toBeNull();
   });
 });
