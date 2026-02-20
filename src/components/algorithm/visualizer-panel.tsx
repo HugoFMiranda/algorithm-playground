@@ -2184,7 +2184,6 @@ function TopologicalSortVisualizer({ run, cursor }: SharedVisualizerProps) {
   const nodeCount = typedRun?.input.nodeCount ?? 0;
   const nodeIds = useMemo(() => Array.from({ length: nodeCount }, (_, index) => index), [nodeCount]);
   const edges = typedRun?.input.edges ?? [];
-  const steps = typedRun?.steps ?? [];
   const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
   const frame = useMemo(() => deriveTopologicalSortFrame(typedRun, cursor), [typedRun, cursor]);
   const stepLabel = activeStep ? formatTopologicalSortStepLabel(activeStep) : "Ready";
@@ -2202,6 +2201,10 @@ function TopologicalSortVisualizer({ run, cursor }: SharedVisualizerProps) {
       ),
     [frame.queue, preferLowerIndex],
   );
+  const queuedSet = useMemo(() => new Set(queueDisplay), [queueDisplay]);
+  const nodePositions = useMemo(() => createTopologicalNodePositions(typedRun?.input ?? null), [typedRun]);
+  const nodeRadius = 4.8;
+  const activeEdgeKey = frame.inspectedEdge ? `${frame.inspectedEdge[0]}:${frame.inspectedEdge[1]}` : null;
 
   return (
     <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
@@ -2277,54 +2280,141 @@ function TopologicalSortVisualizer({ run, cursor }: SharedVisualizerProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-            {nodeIds.map((node) => {
-              const isCurrent = frame.currentNode === node;
-              const isQueued = queueDisplay.includes(node);
-              const isProcessed = frame.processedNodes.has(node);
-              const isBlockedByCycle = frame.completed && frame.cycleDetected && !isProcessed;
-              const indegree = frame.indegrees[node] ?? 0;
+          <div className="rounded-xl border border-border/80 bg-background/70 p-3">
+            <div className="overflow-hidden rounded-lg border border-border/70 bg-[radial-gradient(circle_at_20%_10%,rgba(14,165,233,0.08),transparent_52%),radial-gradient(circle_at_80%_88%,rgba(99,102,241,0.08),transparent_48%)]">
+              <svg viewBox="0 0 100 64" className="h-[300px] w-full">
+                <defs>
+                  <marker
+                    id="topological-arrow-default"
+                    markerWidth="7"
+                    markerHeight="7"
+                    refX="6"
+                    refY="3.5"
+                    orient="auto"
+                  >
+                    <polygon points="0 0, 7 3.5, 0 7" fill="rgba(148, 163, 184, 0.75)" />
+                  </marker>
+                  <marker
+                    id="topological-arrow-active"
+                    markerWidth="7"
+                    markerHeight="7"
+                    refX="6"
+                    refY="3.5"
+                    orient="auto"
+                  >
+                    <polygon points="0 0, 7 3.5, 0 7" fill="rgba(99, 102, 241, 0.9)" />
+                  </marker>
+                </defs>
 
-              return (
-                <div
-                  key={`node-${node}`}
-                  className={cn(
-                    "rounded-lg border p-2",
-                    isQueued && "border-sky-300/60 bg-sky-500/12",
-                    isCurrent && "border-amber-300/60 bg-amber-500/18",
-                    isProcessed && "border-emerald-300/60 bg-emerald-500/15",
-                    isBlockedByCycle && "border-rose-300/60 bg-rose-500/14",
-                  )}
-                >
-                  <p className="text-muted-foreground text-[10px]">node {node}</p>
-                  <p className="font-mono text-xs">indegree {indegree}</p>
-                </div>
-              );
-            })}
+                {edges.map((edge, edgeIndex) => {
+                  const fromPosition = nodePositions[edge[0]];
+                  const toPosition = nodePositions[edge[1]];
+                  if (!fromPosition || !toPosition) {
+                    return null;
+                  }
+
+                  const segment = projectEdgeSegment(fromPosition, toPosition, nodeRadius);
+                  const edgeKey = `${edge[0]}:${edge[1]}`;
+                  const isActive = activeEdgeKey === edgeKey;
+                  const isFromProcessed = frame.processedNodes.has(edge[0]);
+                  const stroke = isActive
+                    ? "rgba(99, 102, 241, 0.95)"
+                    : isFromProcessed
+                      ? "rgba(16, 185, 129, 0.62)"
+                      : "rgba(148, 163, 184, 0.58)";
+
+                  return (
+                    <line
+                      key={`edge-line-${edge[0]}-${edge[1]}-${edgeIndex}`}
+                      x1={segment.x1}
+                      y1={segment.y1}
+                      x2={segment.x2}
+                      y2={segment.y2}
+                      stroke={stroke}
+                      strokeWidth={isActive ? 1.6 : 1.15}
+                      markerEnd={isActive ? "url(#topological-arrow-active)" : "url(#topological-arrow-default)"}
+                    />
+                  );
+                })}
+
+                {nodeIds.map((node) => {
+                  const position = nodePositions[node];
+                  if (!position) {
+                    return null;
+                  }
+
+                  const isCurrent = frame.currentNode === node;
+                  const isQueued = queuedSet.has(node);
+                  const isProcessed = frame.processedNodes.has(node);
+                  const isBlockedByCycle = frame.completed && frame.cycleDetected && !isProcessed;
+                  const indegree = frame.indegrees[node] ?? 0;
+
+                  const fill = isBlockedByCycle
+                    ? "rgba(244, 63, 94, 0.25)"
+                    : isProcessed
+                      ? "rgba(16, 185, 129, 0.22)"
+                      : isCurrent
+                        ? "rgba(245, 158, 11, 0.24)"
+                        : isQueued
+                          ? "rgba(14, 165, 233, 0.2)"
+                          : "rgba(148, 163, 184, 0.16)";
+                  const stroke = isBlockedByCycle
+                    ? "rgba(244, 63, 94, 0.78)"
+                    : isProcessed
+                      ? "rgba(16, 185, 129, 0.78)"
+                      : isCurrent
+                        ? "rgba(245, 158, 11, 0.84)"
+                        : isQueued
+                          ? "rgba(14, 165, 233, 0.78)"
+                          : "rgba(148, 163, 184, 0.66)";
+
+                  return (
+                    <g key={`graph-node-${node}`} transform={`translate(${position.x} ${position.y})`}>
+                      <circle r={nodeRadius} fill={fill} stroke={stroke} strokeWidth={1.2} />
+                      <text
+                        x="0"
+                        y="1"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="fill-foreground font-mono text-[3.1px] font-semibold"
+                      >
+                        {node}
+                      </text>
+                      <text
+                        x="0"
+                        y={nodeRadius + 3}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="fill-muted-foreground font-mono text-[2.2px]"
+                      >
+                        in:{indegree}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-sky-500/70" />
+                queued
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-amber-500/70" />
+                current
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-emerald-500/70" />
+                processed
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-rose-500/70" />
+                cycle-blocked
+              </span>
+            </div>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2">
-            {edges.map((edge, edgeIndex) => {
-              const isInspected =
-                frame.inspectedEdge !== null &&
-                frame.inspectedEdge[0] === edge[0] &&
-                frame.inspectedEdge[1] === edge[1];
-
-              return (
-                <div
-                  key={`edge-${edge[0]}-${edge[1]}-${edgeIndex}`}
-                  className={cn(
-                    "rounded-lg border border-border/70 bg-background/70 px-3 py-2 text-xs",
-                    isInspected && "border-indigo-300/60 bg-indigo-500/15",
-                  )}
-                >
-                  <p className="font-mono">
-                    {edge[0]} -&gt; {edge[1]}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
           {edges.length === 0 ? (
             <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-border/70 p-4 text-xs">
               <ArrowUpDownIcon className="size-3.5" />
@@ -2335,6 +2425,98 @@ function TopologicalSortVisualizer({ run, cursor }: SharedVisualizerProps) {
       </CardContent>
     </Card>
   );
+}
+
+interface GraphPoint {
+  x: number;
+  y: number;
+}
+
+interface GraphSegment {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+function createTopologicalNodePositions(
+  input: Pick<TopologicalSortInput, "nodeCount" | "adjacency" | "indegrees"> | null,
+): Record<number, GraphPoint> {
+  if (!input || input.nodeCount <= 0) {
+    return {};
+  }
+
+  const { nodeCount } = input;
+  const indegrees = [...input.indegrees];
+  const levels = Array.from({ length: nodeCount }, () => 0);
+  const queue: number[] = [];
+
+  for (let node = 0; node < nodeCount; node += 1) {
+    if ((indegrees[node] ?? 0) === 0) {
+      queue.push(node);
+    }
+  }
+
+  while (queue.length > 0) {
+    const current = queue.shift() as number;
+    for (const neighbor of input.adjacency[current] ?? []) {
+      levels[neighbor] = Math.max(levels[neighbor], levels[current] + 1);
+      indegrees[neighbor] -= 1;
+      if (indegrees[neighbor] === 0) {
+        queue.push(neighbor);
+      }
+    }
+  }
+
+  const maxLevel = Math.max(...levels, 0);
+  const layeredNodes = new Map<number, number[]>();
+  for (let node = 0; node < nodeCount; node += 1) {
+    const level = Math.max(0, Math.min(levels[node], maxLevel));
+    const existing = layeredNodes.get(level);
+    if (existing) {
+      existing.push(node);
+    } else {
+      layeredNodes.set(level, [node]);
+    }
+  }
+
+  const positions: Record<number, GraphPoint> = {};
+  for (let level = 0; level <= maxLevel; level += 1) {
+    const nodes = [...(layeredNodes.get(level) ?? [])].sort((left, right) => left - right);
+    const x = maxLevel === 0 ? 50 : 10 + (80 * level) / maxLevel;
+    const verticalStep = 56 / (nodes.length + 1);
+
+    nodes.forEach((node, rowIndex) => {
+      positions[node] = {
+        x,
+        y: 4 + verticalStep * (rowIndex + 1),
+      };
+    });
+  }
+
+  return positions;
+}
+
+function projectEdgeSegment(from: GraphPoint, to: GraphPoint, radius: number): GraphSegment {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const distance = Math.hypot(dx, dy);
+
+  if (distance <= 0.001) {
+    return { x1: from.x, y1: from.y, x2: to.x, y2: to.y };
+  }
+
+  const nx = dx / distance;
+  const ny = dy / distance;
+  const startOffset = radius * 0.88;
+  const endOffset = radius * 1.08;
+
+  return {
+    x1: from.x + nx * startOffset,
+    y1: from.y + ny * startOffset,
+    x2: to.x - nx * endOffset,
+    y2: to.y - ny * endOffset,
+  };
 }
 
 function deriveTopologicalSortFrame(
