@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { PauseIcon, PlayIcon, RotateCcwIcon, SkipBackIcon, SkipForwardIcon } from "lucide-react";
 
 import {
@@ -38,6 +38,10 @@ export function PlaybackControls() {
   const hasSteps = (run?.steps.length ?? 0) > 0;
   const speedStep = getPlaybackSpeedStep(selectedAlgorithmSlug);
   const maxSpeed = getPlaybackMaxSpeed(selectedAlgorithmSlug);
+  const effectiveSpeed = useMemo(
+    () => getPlaybackEffectiveSpeed(selectedAlgorithmSlug, playback.speed),
+    [selectedAlgorithmSlug, playback.speed],
+  );
   const canDecreaseSpeed = hasRun && playback.speed > PLAYBACK_MIN_SPEED + 0.001;
   const canIncreaseSpeed = hasRun && playback.speed < maxSpeed - 0.001;
   const canStepBackward = hasRun && hasSteps && playback.cursor >= 0;
@@ -47,7 +51,6 @@ export function PlaybackControls() {
       return undefined;
     }
 
-    const effectiveSpeed = getPlaybackEffectiveSpeed(selectedAlgorithmSlug, playback.speed);
     const intervalMs = Math.max(20, Math.round(700 / effectiveSpeed));
     const timer = window.setInterval(() => {
       stepForward({ keepStatus: true });
@@ -56,7 +59,7 @@ export function PlaybackControls() {
     return () => {
       window.clearInterval(timer);
     };
-  }, [hasRun, hasSteps, playback.speed, playback.status, selectedAlgorithmSlug, stepForward]);
+  }, [hasRun, hasSteps, playback.status, effectiveSpeed, stepForward]);
 
   const handlePlayPause = () => {
     if (!hasRun || !hasSteps) {
