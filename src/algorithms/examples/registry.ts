@@ -4,6 +4,7 @@ import { bfsExamples } from "@/algorithms/examples/bfs";
 import { bubbleSortExamples } from "@/algorithms/examples/bubble-sort";
 import { dijkstraExamples } from "@/algorithms/examples/dijkstra";
 import { dfsExamples } from "@/algorithms/examples/dfs";
+import { heapSortExamples } from "@/algorithms/examples/heap-sort";
 import { insertionSortExamples } from "@/algorithms/examples/insertion-sort";
 import { mergeSortExamples } from "@/algorithms/examples/merge-sort";
 import { quickSortExamples } from "@/algorithms/examples/quick-sort";
@@ -21,6 +22,7 @@ const EXAMPLES_REGISTRY: Record<string, AlgorithmExamples> = {
   "insertion-sort": insertionSortExamples,
   "merge-sort": mergeSortExamples,
   "quick-sort": quickSortExamples,
+  "heap-sort": heapSortExamples,
 };
 
 export function getAlgorithmExamplesBySlug(slug: string): AlgorithmExamples | null {

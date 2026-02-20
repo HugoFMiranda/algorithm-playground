@@ -13,6 +13,8 @@ import type { DijkstraInput, DijkstraResult } from "@/algorithms/dijkstra/spec";
 import type { DijkstraStepEvent } from "@/algorithms/dijkstra/engine";
 import type { DfsInput, DfsResult } from "@/algorithms/dfs/spec";
 import type { DfsStepEvent } from "@/algorithms/dfs/engine";
+import type { HeapSortInput, HeapSortResult } from "@/algorithms/heap-sort/spec";
+import type { HeapSortStepEvent } from "@/algorithms/heap-sort/engine";
 import type { InsertionSortInput, InsertionSortResult } from "@/algorithms/insertion-sort/spec";
 import type { InsertionSortStepEvent } from "@/algorithms/insertion-sort/engine";
 import type { MergeSortInput, MergeSortResult } from "@/algorithms/merge-sort/spec";
@@ -82,6 +84,10 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
 
   if (algorithm.slug === "quick-sort") {
     return <QuickSortVisualizer run={run} cursor={cursor} />;
+  }
+
+  if (algorithm.slug === "heap-sort") {
+    return <HeapSortVisualizer run={run} cursor={cursor} />;
   }
 
   if (algorithm.slug === "insertion-sort") {
@@ -2350,6 +2356,238 @@ function formatBubbleSortStepMessage(step: BubbleSortStepEvent): string {
   }
 
   return `Completed in ${step.payload.passes} passes with ${step.payload.comparisons} comparisons.`;
+}
+
+interface HeapSortFrame {
+  values: number[];
+  heapSize: number;
+  activeRoot: number | null;
+  comparedPair: [number, number] | null;
+  swapPair: [number, number] | null;
+  phase: "build" | "extract" | null;
+  completed: boolean;
+}
+
+function HeapSortVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const compactComplexity = getCompactCurrentComplexity("heap-sort", run);
+  const typedRun =
+    run && run.algorithmSlug === "heap-sort"
+      ? {
+          ...run,
+          input: run.input as HeapSortInput,
+          result: run.result as HeapSortResult,
+          steps: run.steps as HeapSortStepEvent[],
+        }
+      : null;
+
+  const values = typedRun?.input.values ?? [];
+  const steps = typedRun?.steps ?? [];
+  const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
+  const frame = useMemo(() => deriveHeapSortFrame(values, steps, cursor), [values, steps, cursor]);
+  const stepLabel = activeStep ? formatHeapSortStepLabel(activeStep) : "Ready";
+  const stepMessage = activeStep ? formatHeapSortStepMessage(activeStep) : "Press Play or Step to start execution.";
+
+  return (
+    <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg">Visualizer</CardTitle>
+          <div className="flex items-center gap-2">
+            {compactComplexity ? (
+              <Badge variant="outline" className="rounded-full border-border/70">
+                {compactComplexity}
+              </Badge>
+            ) : null}
+            <Badge variant="secondary" className="rounded-full border-border/70">
+              Heap Sort
+            </Badge>
+          </div>
+        </div>
+        <CardDescription>
+          Deterministic max-heap build and extraction playback with sift-down compare and swap events.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Phase</p>
+            <p className="font-mono text-base">
+              {frame.completed ? "Done" : frame.phase === "build" ? "Build Heap" : "Extract Max"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Heap Size</p>
+            <p className="font-mono text-base">{frame.heapSize}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Comparisons</p>
+            <p className="font-mono text-base">{typedRun?.result.comparisons ?? 0}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Swaps</p>
+            <p className="font-mono text-base">{typedRun?.result.swaps ?? 0}</p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="rounded-full border-border/70">
+              {stepLabel}
+            </Badge>
+            <p className="text-muted-foreground">{stepMessage}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            {frame.values.map((value, index) => {
+              const isHeapCell = !frame.completed && index < frame.heapSize;
+              const isSorted = frame.completed || index >= frame.heapSize;
+              const isRoot = frame.activeRoot === index;
+              const isCompared =
+                frame.comparedPair !== null &&
+                (index === frame.comparedPair[0] || index === frame.comparedPair[1]);
+              const isSwapped =
+                frame.swapPair !== null && (index === frame.swapPair[0] || index === frame.swapPair[1]);
+
+              return (
+                <div
+                  key={`${value}-${index}`}
+                  className={cn(
+                    "rounded-lg border p-2",
+                    isHeapCell && "border-sky-300/60 bg-sky-500/10",
+                    isRoot && "border-cyan-300/60 bg-cyan-500/15",
+                    isCompared && "border-indigo-300/60 bg-indigo-500/15",
+                    isSwapped && "border-amber-300/60 bg-amber-500/20",
+                    isSorted && "border-emerald-300/60 bg-emerald-500/15",
+                  )}
+                >
+                  <p className="text-muted-foreground text-[10px]">index {index}</p>
+                  <p className="font-mono text-sm">{value}</p>
+                </div>
+              );
+            })}
+          </div>
+          {frame.values.length === 0 ? (
+            <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-border/70 p-4 text-xs">
+              <ArrowUpDownIcon className="size-3.5" />
+              No values available for visualization.
+            </div>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function deriveHeapSortFrame(initialValues: number[], steps: HeapSortStepEvent[], cursor: number): HeapSortFrame {
+  const frame: HeapSortFrame = {
+    values: [...initialValues],
+    heapSize: initialValues.length,
+    activeRoot: null,
+    comparedPair: null,
+    swapPair: null,
+    phase: initialValues.length > 0 ? "build" : null,
+    completed: false,
+  };
+
+  if (cursor < 0 || steps.length === 0) {
+    return frame;
+  }
+
+  const boundedCursor = Math.min(cursor, steps.length - 1);
+  for (let index = 0; index <= boundedCursor; index += 1) {
+    const step = steps[index];
+
+    if (step.type === "heapify-start") {
+      frame.heapSize = step.payload.heapSize;
+      frame.activeRoot = step.payload.rootIndex;
+      frame.comparedPair = null;
+      frame.swapPair = null;
+      frame.phase = step.payload.phase;
+      continue;
+    }
+
+    if (step.type === "compare") {
+      frame.heapSize = step.payload.heapSize;
+      frame.activeRoot = step.payload.rootIndex;
+      frame.comparedPair = [step.payload.candidateIndex, step.payload.comparedIndex];
+      frame.swapPair = null;
+      frame.phase = step.payload.phase;
+      continue;
+    }
+
+    if (step.type === "swap") {
+      const leftValue = frame.values[step.payload.leftIndex];
+      frame.values[step.payload.leftIndex] = frame.values[step.payload.rightIndex];
+      frame.values[step.payload.rightIndex] = leftValue;
+
+      frame.heapSize = step.payload.sortedStart;
+      frame.comparedPair = [step.payload.leftIndex, step.payload.rightIndex];
+      frame.swapPair = [step.payload.leftIndex, step.payload.rightIndex];
+      frame.phase = step.payload.phase;
+      continue;
+    }
+
+    if (step.type === "heapify-complete") {
+      frame.heapSize = step.payload.heapSize;
+      frame.activeRoot = null;
+      frame.comparedPair = null;
+      frame.swapPair = null;
+      frame.phase = step.payload.phase;
+      continue;
+    }
+
+    frame.heapSize = 0;
+    frame.activeRoot = null;
+    frame.comparedPair = null;
+    frame.swapPair = null;
+    frame.phase = null;
+    frame.completed = step.payload.isSorted;
+  }
+
+  return frame;
+}
+
+function formatHeapSortStepLabel(step: HeapSortStepEvent): string {
+  if (step.type === "heapify-start") {
+    return "Heapify";
+  }
+
+  if (step.type === "compare") {
+    return "Compare";
+  }
+
+  if (step.type === "swap") {
+    return step.payload.reason === "extract-root" ? "Extract Max" : "Sift Swap";
+  }
+
+  if (step.type === "heapify-complete") {
+    return "Heapify Done";
+  }
+
+  return "Sorted";
+}
+
+function formatHeapSortStepMessage(step: HeapSortStepEvent): string {
+  if (step.type === "heapify-start") {
+    return `${step.payload.phase === "build" ? "Build" : "Extract"} phase: heapify root index ${step.payload.rootIndex} with heap size ${step.payload.heapSize}.`;
+  }
+
+  if (step.type === "compare") {
+    return `Compare candidate index ${step.payload.candidateIndex} (${step.payload.candidateValue}) with child index ${step.payload.comparedIndex} (${step.payload.comparedValue}).`;
+  }
+
+  if (step.type === "swap") {
+    if (step.payload.reason === "extract-root") {
+      return `Move current max from root to index ${step.payload.rightIndex}; sorted suffix grows from index ${step.payload.sortedStart}.`;
+    }
+
+    return `Swap index ${step.payload.leftIndex} and ${step.payload.rightIndex} to restore max-heap order.`;
+  }
+
+  if (step.type === "heapify-complete") {
+    return `Heapify complete for root ${step.payload.rootIndex} with heap size ${step.payload.heapSize}.`;
+  }
+
+  return `Completed with ${step.payload.comparisons} comparisons, ${step.payload.swaps} swaps, and ${step.payload.extractions} extractions.`;
 }
 
 interface QuickSortFrame {

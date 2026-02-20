@@ -10,6 +10,8 @@ import { createDijkstraRun } from "@/algorithms/dijkstra/engine";
 import { DIJKSTRA_DEFAULT_PARAMS } from "@/algorithms/dijkstra/spec";
 import { createDfsRun } from "@/algorithms/dfs/engine";
 import { DFS_DEFAULT_PARAMS } from "@/algorithms/dfs/spec";
+import { createHeapSortRun } from "@/algorithms/heap-sort/engine";
+import { HEAP_SORT_DEFAULT_PARAMS } from "@/algorithms/heap-sort/spec";
 import { createInsertionSortRun } from "@/algorithms/insertion-sort/engine";
 import { INSERTION_SORT_DEFAULT_PARAMS } from "@/algorithms/insertion-sort/spec";
 import { createMergeSortRun } from "@/algorithms/merge-sort/engine";
@@ -96,6 +98,12 @@ const ALGORITHM_RUNTIME_REGISTRY: Record<string, AlgorithmRuntimeDefinition> = {
     rendererFamily: "array",
     defaultParams: { ...QUICK_SORT_DEFAULT_PARAMS },
     createRun: createQuickSortRun,
+  },
+  "heap-sort": {
+    slug: "heap-sort",
+    rendererFamily: "array",
+    defaultParams: { ...HEAP_SORT_DEFAULT_PARAMS },
+    createRun: createHeapSortRun,
   },
 };
 

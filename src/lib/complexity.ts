@@ -246,6 +246,50 @@ function getQuickSortComplexity(run: AlgorithmRunSnapshot | null): ComplexitySum
   };
 }
 
+function getHeapSortComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
+  const values = run ? extractValues(run.input) : [];
+  const n = values.length;
+
+  let comparisons: number | null = null;
+  let swaps: number | null = null;
+  let heapifyCalls: number | null = null;
+  let extractions: number | null = null;
+  if (run && isRecord(run.result)) {
+    if ("comparisons" in run.result && isFiniteNumber(run.result.comparisons)) {
+      comparisons = run.result.comparisons;
+    }
+    if ("swaps" in run.result && isFiniteNumber(run.result.swaps)) {
+      swaps = run.result.swaps;
+    }
+    if ("heapifyCalls" in run.result && isFiniteNumber(run.result.heapifyCalls)) {
+      heapifyCalls = run.result.heapifyCalls;
+    }
+    if ("extractions" in run.result && isFiniteNumber(run.result.extractions)) {
+      extractions = run.result.extractions;
+    }
+  }
+
+  const details = [
+    `n = ${n}`,
+    "Build-heap phase is O(n), followed by O(log n) sift-down per extraction",
+    comparisons === null
+      ? "Observed comparisons/swaps: pending"
+      : `Observed comparisons/swaps: ${comparisons}/${swaps ?? "?"}`,
+    heapifyCalls === null
+      ? "Observed heapify calls: pending"
+      : `Observed heapify calls/extractions: ${heapifyCalls}/${extractions ?? "?"}`,
+  ];
+
+  return {
+    timeBest: "O(n log n)",
+    timeAverage: "O(n log n)",
+    timeWorst: "O(n log n)",
+    space: "O(1)",
+    current: n <= 1 ? "O(1) on this input" : "O(n log n) on this input",
+    details,
+  };
+}
+
 function getInsertionSortComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
   const values = run ? extractValues(run.input) : [];
   const n = values.length;
@@ -624,6 +668,10 @@ export function getComplexitySummary(
 
   if (algorithmSlug === "quick-sort") {
     return getQuickSortComplexity(run && run.algorithmSlug === "quick-sort" ? run : null);
+  }
+
+  if (algorithmSlug === "heap-sort") {
+    return getHeapSortComplexity(run && run.algorithmSlug === "heap-sort" ? run : null);
   }
 
   if (algorithmSlug === "insertion-sort") {

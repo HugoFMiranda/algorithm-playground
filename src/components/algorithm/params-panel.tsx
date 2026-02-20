@@ -19,6 +19,10 @@ import {
   createRandomDijkstraParams,
 } from "@/algorithms/dijkstra/spec";
 import {
+  HEAP_SORT_DEFAULT_PARAMS,
+  createRandomHeapSortParams,
+} from "@/algorithms/heap-sort/spec";
+import {
   INSERTION_SORT_DEFAULT_PARAMS,
   createRandomInsertionSortParams,
 } from "@/algorithms/insertion-sort/spec";
@@ -219,6 +223,19 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
     );
   }
 
+  if (selectedAlgorithmSlug === "heap-sort") {
+    return (
+      <HeapSortParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
   if (selectedAlgorithmSlug === "selection-sort") {
     return (
       <SelectionSortParamsCard
@@ -269,7 +286,7 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
         </div>
         <CardDescription className="text-xs leading-relaxed">
           Parameter schema and validation are enabled for Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort,
-          Quick Sort, Selection Sort, Insertion Sort, and Merge Sort in this milestone.
+          Quick Sort, Heap Sort, Selection Sort, Insertion Sort, and Merge Sort in this milestone.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -1813,6 +1830,105 @@ function BubbleSortParamsCard({
             Values ({normalizedValues.length}):{" "}
             <span className="font-mono">
               {normalizedValues.length > 0 ? normalizedValues.join(", ") : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Sorted:{" "}
+            <span className="font-mono">{sortedValues.length > 0 ? sortedValues.join(", ") : "n/a"}</span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function HeapSortParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const arrayValues = useMemo(() => {
+    const value = params.arrayValues;
+    return typeof value === "string" ? value : HEAP_SORT_DEFAULT_PARAMS.arrayValues;
+  }, [params.arrayValues]);
+
+  const normalizedValues = run && run.algorithmSlug === "heap-sort" ? getInputValues(run.input) : [];
+  const sortedValues = run && run.algorithmSlug === "heap-sort" ? getSortedResultValues(run.result) : [];
+
+  const normalizedResult =
+    run && run.algorithmSlug === "heap-sort" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          comparisons: number;
+          swaps: number;
+          heapifyCalls: number;
+          extractions: number;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomHeapSortParams();
+    setParams({
+      arrayValues: randomParams.arrayValues,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Heap Sort
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Provide comma-separated numeric values. Heap Sort builds a max heap, then repeatedly moves the
+          largest value to the sorted suffix.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="param-heap-sort-array-values" className="text-xs font-medium">
+            Array Values
+          </label>
+          <Input
+            id="param-heap-sort-array-values"
+            value={arrayValues}
+            onChange={(event) => setParam("arrayValues", event.target.value)}
+            placeholder={HEAP_SORT_DEFAULT_PARAMS.arrayValues}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Values ({normalizedValues.length}):{" "}
+            <span className="font-mono">
+              {normalizedValues.length > 0 ? normalizedValues.join(", ") : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result metrics:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? `comparisons ${normalizedResult.comparisons}, swaps ${normalizedResult.swaps}, heapify calls ${normalizedResult.heapifyCalls}`
+                : "n/a"}
             </span>
           </p>
           <p className="text-muted-foreground leading-relaxed">
