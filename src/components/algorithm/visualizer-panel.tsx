@@ -23,6 +23,8 @@ import type { QuickSortInput, QuickSortResult } from "@/algorithms/quick-sort/sp
 import type { QuickSortStepEvent } from "@/algorithms/quick-sort/engine";
 import type { SelectionSortInput, SelectionSortResult } from "@/algorithms/selection-sort/spec";
 import type { SelectionSortStepEvent } from "@/algorithms/selection-sort/engine";
+import type { TopologicalSortInput, TopologicalSortResult } from "@/algorithms/topological-sort/spec";
+import type { TopologicalSortStepEvent } from "@/algorithms/topological-sort/engine";
 import type { AlgorithmDefinition } from "@/data/algorithms";
 import { getCompactCurrentComplexity } from "@/lib/complexity";
 import { parseWeightOverrides, serializeCellList, serializeWeightOverrides } from "@/lib/path-grid-edit";
@@ -88,6 +90,10 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
 
   if (algorithm.slug === "heap-sort") {
     return <HeapSortVisualizer run={run} cursor={cursor} />;
+  }
+
+  if (algorithm.slug === "topological-sort") {
+    return <TopologicalSortVisualizer run={run} cursor={cursor} />;
   }
 
   if (algorithm.slug === "insertion-sort") {
@@ -2149,6 +2155,287 @@ function formatAStarStepMessage(step: AStarStepEvent): string {
   return step.payload.found
     ? `Completed with distance ${step.payload.distance} and ${step.payload.relaxations} update(s).`
     : `Completed without path after expanding ${step.payload.expandedCount} cells.`;
+}
+
+interface TopologicalSortFrame {
+  indegrees: number[];
+  queue: number[];
+  outputOrder: number[];
+  processedNodes: Set<number>;
+  currentNode: number | null;
+  inspectedEdge: [number, number] | null;
+  completed: boolean;
+  cycleDetected: boolean;
+  edgeRelaxations: number;
+}
+
+function TopologicalSortVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const compactComplexity = getCompactCurrentComplexity("topological-sort", run);
+  const typedRun =
+    run && run.algorithmSlug === "topological-sort"
+      ? {
+          ...run,
+          input: run.input as TopologicalSortInput,
+          result: run.result as TopologicalSortResult,
+          steps: run.steps as TopologicalSortStepEvent[],
+        }
+      : null;
+
+  const nodeCount = typedRun?.input.nodeCount ?? 0;
+  const nodeIds = useMemo(() => Array.from({ length: nodeCount }, (_, index) => index), [nodeCount]);
+  const edges = typedRun?.input.edges ?? [];
+  const steps = typedRun?.steps ?? [];
+  const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
+  const frame = useMemo(() => deriveTopologicalSortFrame(typedRun, cursor), [typedRun, cursor]);
+  const stepLabel = activeStep ? formatTopologicalSortStepLabel(activeStep) : "Ready";
+  const stepMessage = activeStep
+    ? formatTopologicalSortStepMessage(activeStep)
+    : "Press Play or Step to start execution.";
+  const preferLowerIndex =
+    typedRun && typeof typedRun.normalizedParams.preferLowerIndex === "boolean"
+      ? typedRun.normalizedParams.preferLowerIndex
+      : true;
+  const queueDisplay = useMemo(
+    () =>
+      [...frame.queue].sort((left, right) =>
+        preferLowerIndex ? left - right : right - left,
+      ),
+    [frame.queue, preferLowerIndex],
+  );
+
+  return (
+    <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg">Visualizer</CardTitle>
+          <div className="flex items-center gap-2">
+            {compactComplexity ? (
+              <Badge variant="outline" className="rounded-full border-border/70">
+                {compactComplexity}
+              </Badge>
+            ) : null}
+            <Badge variant="secondary" className="rounded-full border-border/70">
+              Topological Sort
+            </Badge>
+          </div>
+        </div>
+        <CardDescription>
+          Deterministic Kahn traversal playback with indegree decrements, zero-indegree queue pushes, and
+          dependency-safe output ordering.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Processed</p>
+            <p className="font-mono text-base">{frame.outputOrder.length}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Queue Size</p>
+            <p className="font-mono text-base">{queueDisplay.length}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Relaxations</p>
+            <p className="font-mono text-base">{frame.edgeRelaxations}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Result</p>
+            <p className="font-mono text-base">
+              {frame.completed
+                ? frame.cycleDetected
+                  ? "Cycle Detected"
+                  : "Valid Order"
+                : "Processing"}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="rounded-full border-border/70">
+              {stepLabel}
+            </Badge>
+            <p className="text-muted-foreground">{stepMessage}</p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Output Order</p>
+              <p className="font-mono text-xs">
+                {frame.outputOrder.length > 0 ? frame.outputOrder.join(" -> ") : "n/a"}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Zero-Indegree Queue</p>
+              <p className="font-mono text-xs">{queueDisplay.length > 0 ? queueDisplay.join(", ") : "empty"}</p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Current Edge</p>
+              <p className="font-mono text-xs">
+                {frame.inspectedEdge ? `${frame.inspectedEdge[0]} -> ${frame.inspectedEdge[1]}` : "n/a"}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            {nodeIds.map((node) => {
+              const isCurrent = frame.currentNode === node;
+              const isQueued = queueDisplay.includes(node);
+              const isProcessed = frame.processedNodes.has(node);
+              const isBlockedByCycle = frame.completed && frame.cycleDetected && !isProcessed;
+              const indegree = frame.indegrees[node] ?? 0;
+
+              return (
+                <div
+                  key={`node-${node}`}
+                  className={cn(
+                    "rounded-lg border p-2",
+                    isQueued && "border-sky-300/60 bg-sky-500/12",
+                    isCurrent && "border-amber-300/60 bg-amber-500/18",
+                    isProcessed && "border-emerald-300/60 bg-emerald-500/15",
+                    isBlockedByCycle && "border-rose-300/60 bg-rose-500/14",
+                  )}
+                >
+                  <p className="text-muted-foreground text-[10px]">node {node}</p>
+                  <p className="font-mono text-xs">indegree {indegree}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-2">
+            {edges.map((edge, edgeIndex) => {
+              const isInspected =
+                frame.inspectedEdge !== null &&
+                frame.inspectedEdge[0] === edge[0] &&
+                frame.inspectedEdge[1] === edge[1];
+
+              return (
+                <div
+                  key={`edge-${edge[0]}-${edge[1]}-${edgeIndex}`}
+                  className={cn(
+                    "rounded-lg border border-border/70 bg-background/70 px-3 py-2 text-xs",
+                    isInspected && "border-indigo-300/60 bg-indigo-500/15",
+                  )}
+                >
+                  <p className="font-mono">
+                    {edge[0]} -&gt; {edge[1]}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+          {edges.length === 0 ? (
+            <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-border/70 p-4 text-xs">
+              <ArrowUpDownIcon className="size-3.5" />
+              No edges available for visualization.
+            </div>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function deriveTopologicalSortFrame(
+  run: {
+    input: TopologicalSortInput;
+    steps: TopologicalSortStepEvent[];
+  } | null,
+  cursor: number,
+): TopologicalSortFrame {
+  const nodeCount = run?.input.nodeCount ?? 0;
+  const initialIndegrees = run?.input.indegrees ?? [];
+  const frame: TopologicalSortFrame = {
+    indegrees: Array.from({ length: nodeCount }, (_, node) => initialIndegrees[node] ?? 0),
+    queue: [],
+    outputOrder: [],
+    processedNodes: new Set<number>(),
+    currentNode: null,
+    inspectedEdge: null,
+    completed: false,
+    cycleDetected: false,
+    edgeRelaxations: 0,
+  };
+
+  if (!run || cursor < 0 || run.steps.length === 0) {
+    return frame;
+  }
+
+  const boundedCursor = Math.min(cursor, run.steps.length - 1);
+  for (let index = 0; index <= boundedCursor; index += 1) {
+    const step = run.steps[index];
+
+    if (step.type === "queue-push") {
+      if (!frame.processedNodes.has(step.payload.node) && !frame.queue.includes(step.payload.node)) {
+        frame.queue.push(step.payload.node);
+      }
+      frame.inspectedEdge = null;
+      continue;
+    }
+
+    if (step.type === "node-output") {
+      frame.queue = frame.queue.filter((node) => node !== step.payload.node);
+      frame.outputOrder.push(step.payload.node);
+      frame.processedNodes.add(step.payload.node);
+      frame.currentNode = step.payload.node;
+      frame.inspectedEdge = null;
+      continue;
+    }
+
+    if (step.type === "indegree-decrement") {
+      frame.indegrees[step.payload.to] = step.payload.nextIndegree;
+      frame.inspectedEdge = [step.payload.from, step.payload.to];
+      frame.edgeRelaxations += 1;
+      continue;
+    }
+
+    frame.completed = true;
+    frame.currentNode = null;
+    frame.inspectedEdge = null;
+    frame.cycleDetected = step.payload.cycleDetected;
+    frame.edgeRelaxations = step.payload.edgeRelaxations;
+  }
+
+  return frame;
+}
+
+function formatTopologicalSortStepLabel(step: TopologicalSortStepEvent): string {
+  if (step.type === "queue-push") {
+    return "Queue Push";
+  }
+
+  if (step.type === "node-output") {
+    return "Output Node";
+  }
+
+  if (step.type === "indegree-decrement") {
+    return "Indegree Update";
+  }
+
+  return step.payload.cycleDetected ? "Cycle Detected" : "Complete";
+}
+
+function formatTopologicalSortStepMessage(step: TopologicalSortStepEvent): string {
+  if (step.type === "queue-push") {
+    return step.payload.reason === "initial-zero"
+      ? `Node ${step.payload.node} starts with indegree 0 and enters the queue.`
+      : `Node ${step.payload.node} reached indegree 0 and is queued.`;
+  }
+
+  if (step.type === "node-output") {
+    return `Output node ${step.payload.node} at position ${step.payload.orderIndex}; queue size now ${step.payload.queueSize}.`;
+  }
+
+  if (step.type === "indegree-decrement") {
+    return step.payload.queued
+      ? `Process edge ${step.payload.from} -> ${step.payload.to}: indegree drops to 0, so node ${step.payload.to} is queued.`
+      : `Process edge ${step.payload.from} -> ${step.payload.to}: indegree is now ${step.payload.nextIndegree}.`;
+  }
+
+  return step.payload.cycleDetected
+    ? `Stopped after outputting ${step.payload.orderLength} node(s); ${step.payload.remainingCount} node(s) remain in a cycle.`
+    : `Completed with valid order of ${step.payload.orderLength} node(s) and ${step.payload.edgeRelaxations} edge updates.`;
 }
 
 interface BubbleSortFrame {

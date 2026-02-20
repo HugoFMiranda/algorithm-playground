@@ -20,6 +20,8 @@ import { createQuickSortRun } from "@/algorithms/quick-sort/engine";
 import { QUICK_SORT_DEFAULT_PARAMS } from "@/algorithms/quick-sort/spec";
 import { createSelectionSortRun } from "@/algorithms/selection-sort/engine";
 import { SELECTION_SORT_DEFAULT_PARAMS } from "@/algorithms/selection-sort/spec";
+import { createTopologicalSortRun } from "@/algorithms/topological-sort/engine";
+import { TOPOLOGICAL_SORT_DEFAULT_PARAMS } from "@/algorithms/topological-sort/spec";
 import type { ParamPrimitive, RawParams, StepEventBase } from "@/types/engine";
 
 export type RendererFamily = "array" | "grid" | "graph" | "tree";
@@ -104,6 +106,12 @@ const ALGORITHM_RUNTIME_REGISTRY: Record<string, AlgorithmRuntimeDefinition> = {
     rendererFamily: "array",
     defaultParams: { ...HEAP_SORT_DEFAULT_PARAMS },
     createRun: createHeapSortRun,
+  },
+  "topological-sort": {
+    slug: "topological-sort",
+    rendererFamily: "graph",
+    defaultParams: { ...TOPOLOGICAL_SORT_DEFAULT_PARAMS },
+    createRun: createTopologicalSortRun,
   },
 };
 

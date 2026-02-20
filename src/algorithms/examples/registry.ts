@@ -9,6 +9,7 @@ import { insertionSortExamples } from "@/algorithms/examples/insertion-sort";
 import { mergeSortExamples } from "@/algorithms/examples/merge-sort";
 import { quickSortExamples } from "@/algorithms/examples/quick-sort";
 import { selectionSortExamples } from "@/algorithms/examples/selection-sort";
+import { topologicalSortExamples } from "@/algorithms/examples/topological-sort";
 import type { AlgorithmExamples } from "@/types/examples";
 
 const EXAMPLES_REGISTRY: Record<string, AlgorithmExamples> = {
@@ -22,6 +23,7 @@ const EXAMPLES_REGISTRY: Record<string, AlgorithmExamples> = {
   "insertion-sort": insertionSortExamples,
   "merge-sort": mergeSortExamples,
   "quick-sort": quickSortExamples,
+  "topological-sort": topologicalSortExamples,
   "heap-sort": heapSortExamples,
 };
 

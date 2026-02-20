@@ -38,6 +38,10 @@ import {
   SELECTION_SORT_DEFAULT_PARAMS,
   createRandomSelectionSortParams,
 } from "@/algorithms/selection-sort/spec";
+import {
+  TOPOLOGICAL_SORT_DEFAULT_PARAMS,
+  createRandomTopologicalSortParams,
+} from "@/algorithms/topological-sort/spec";
 import { useAppStore } from "@/store/app-store";
 import type { ParamPrimitive } from "@/types/engine";
 import { Badge } from "@/components/ui/badge";
@@ -236,6 +240,19 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
     );
   }
 
+  if (selectedAlgorithmSlug === "topological-sort") {
+    return (
+      <TopologicalSortParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
   if (selectedAlgorithmSlug === "selection-sort") {
     return (
       <SelectionSortParamsCard
@@ -286,7 +303,8 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
         </div>
         <CardDescription className="text-xs leading-relaxed">
           Parameter schema and validation are enabled for Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort,
-          Quick Sort, Heap Sort, Selection Sort, Insertion Sort, and Merge Sort in this milestone.
+          Quick Sort, Heap Sort, Topological Sort, Selection Sort, Insertion Sort, and Merge Sort in this
+          milestone.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -1934,6 +1952,170 @@ function HeapSortParamsCard({
           <p className="text-muted-foreground leading-relaxed">
             Sorted:{" "}
             <span className="font-mono">{sortedValues.length > 0 ? sortedValues.join(", ") : "n/a"}</span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TopologicalSortParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const nodeCount = useMemo(() => {
+    const value = params.nodeCount;
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(TOPOLOGICAL_SORT_DEFAULT_PARAMS.nodeCount);
+  }, [params.nodeCount]);
+
+  const edges = useMemo(() => {
+    const value = params.edges;
+    return typeof value === "string" ? value : TOPOLOGICAL_SORT_DEFAULT_PARAMS.edges;
+  }, [params.edges]);
+
+  const preferLowerIndex = useMemo(
+    () => coerceBoolean(params.preferLowerIndex, TOPOLOGICAL_SORT_DEFAULT_PARAMS.preferLowerIndex),
+    [params.preferLowerIndex],
+  );
+
+  const normalizedInput =
+    run && run.algorithmSlug === "topological-sort" && typeof run.input === "object" && run.input !== null
+      ? (run.input as {
+          nodeCount: number;
+          edges: Array<readonly [number, number]>;
+        })
+      : null;
+
+  const normalizedResult =
+    run && run.algorithmSlug === "topological-sort" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          order: number[];
+          cycleDetected: boolean;
+          remainingCount: number;
+          edgeRelaxations: number;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomTopologicalSortParams();
+    setParams({
+      nodeCount: randomParams.nodeCount,
+      edges: randomParams.edges,
+      preferLowerIndex: randomParams.preferLowerIndex,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Topological Sort
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Configure a directed graph with node count and edges. Kahn&apos;s algorithm outputs valid dependency
+          order when no cycle exists.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="param-topological-node-count" className="text-xs font-medium">
+            Node Count
+          </label>
+          <Input
+            id="param-topological-node-count"
+            type="number"
+            min={2}
+            max={16}
+            step={1}
+            value={nodeCount}
+            onChange={(event) => {
+              const parsed = Number(event.target.value);
+              setParam("nodeCount", Number.isFinite(parsed) ? parsed : event.target.value);
+            }}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="param-topological-edges" className="text-xs font-medium">
+              Directed Edges
+            </label>
+            <InlineHelp text="Use formats like 0>1, 0>2, 2>4. Invalid or out-of-range edges are ignored." />
+          </div>
+          <Input
+            id="param-topological-edges"
+            value={edges}
+            onChange={(event) => setParam("edges", event.target.value)}
+            placeholder={TOPOLOGICAL_SORT_DEFAULT_PARAMS.edges}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Zero-Indegree Priority</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={preferLowerIndex ? "secondary" : "outline"}
+              onClick={() => setParam("preferLowerIndex", true)}
+            >
+              Lower Index First
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={preferLowerIndex ? "outline" : "secondary"}
+              onClick={() => setParam("preferLowerIndex", false)}
+            >
+              Higher Index First
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Node count: <span className="font-mono">{normalizedInput?.nodeCount ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Edge count: <span className="font-mono">{normalizedInput?.edges.length ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Output order:{" "}
+            <span className="font-mono">
+              {normalizedResult ? normalizedResult.order.join(", ") : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Cycle detected:{" "}
+            <span className="font-mono">
+              {normalizedResult ? String(normalizedResult.cycleDetected) : "n/a"}
+            </span>
           </p>
         </div>
         <div className="text-muted-foreground flex items-center gap-2 text-xs">

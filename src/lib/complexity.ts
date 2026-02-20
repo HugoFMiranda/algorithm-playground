@@ -290,6 +290,60 @@ function getHeapSortComplexity(run: AlgorithmRunSnapshot | null): ComplexitySumm
   };
 }
 
+function getTopologicalSortComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
+  let nodeCount = 0;
+  let edgeCount = 0;
+
+  if (run && isRecord(run.input)) {
+    if ("nodeCount" in run.input && isFiniteNumber(run.input.nodeCount)) {
+      nodeCount = run.input.nodeCount;
+    }
+    if ("edges" in run.input && Array.isArray(run.input.edges)) {
+      edgeCount = run.input.edges.length;
+    }
+  }
+
+  let orderLength: number | null = null;
+  let cycleDetected: boolean | null = null;
+  let remainingCount: number | null = null;
+  let edgeRelaxations: number | null = null;
+  if (run && isRecord(run.result)) {
+    if ("order" in run.result && Array.isArray(run.result.order)) {
+      orderLength = run.result.order.length;
+    }
+    if ("cycleDetected" in run.result && typeof run.result.cycleDetected === "boolean") {
+      cycleDetected = run.result.cycleDetected;
+    }
+    if ("remainingCount" in run.result && isFiniteNumber(run.result.remainingCount)) {
+      remainingCount = run.result.remainingCount;
+    }
+    if ("edgeRelaxations" in run.result && isFiniteNumber(run.result.edgeRelaxations)) {
+      edgeRelaxations = run.result.edgeRelaxations;
+    }
+  }
+
+  const details = [
+    `Graph size: V=${nodeCount}, E=${edgeCount}`,
+    "Kahn traversal processes each node and edge at most once",
+    orderLength === null ? "Observed output length: pending" : `Observed output length: ${orderLength}`,
+    edgeRelaxations === null ? "Observed edge relaxations: pending" : `Observed edge relaxations: ${edgeRelaxations}`,
+    cycleDetected === null
+      ? "Cycle detection: pending"
+      : cycleDetected
+        ? `Cycle detected with ${remainingCount ?? "?"} node(s) unresolved`
+        : "Cycle detection: none",
+  ];
+
+  return {
+    timeBest: "O(V + E)",
+    timeAverage: "O(V + E)",
+    timeWorst: "O(V + E)",
+    space: "O(V + E)",
+    current: "O(V + E) on this graph",
+    details,
+  };
+}
+
 function getInsertionSortComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
   const values = run ? extractValues(run.input) : [];
   const n = values.length;
@@ -672,6 +726,10 @@ export function getComplexitySummary(
 
   if (algorithmSlug === "heap-sort") {
     return getHeapSortComplexity(run && run.algorithmSlug === "heap-sort" ? run : null);
+  }
+
+  if (algorithmSlug === "topological-sort") {
+    return getTopologicalSortComplexity(run && run.algorithmSlug === "topological-sort" ? run : null);
   }
 
   if (algorithmSlug === "insertion-sort") {
