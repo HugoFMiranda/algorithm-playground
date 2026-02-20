@@ -7,10 +7,24 @@ import {
   BINARY_SEARCH_DEFAULT_PARAMS,
   createRandomBinarySearchParams,
 } from "@/algorithms/binary-search/spec";
+import { BFS_DEFAULT_PARAMS, createRandomBfsParams } from "@/algorithms/bfs/spec";
 import {
   BUBBLE_SORT_DEFAULT_PARAMS,
   createRandomBubbleSortParams,
 } from "@/algorithms/bubble-sort/spec";
+import { DFS_DEFAULT_PARAMS, createRandomDfsParams } from "@/algorithms/dfs/spec";
+import {
+  INSERTION_SORT_DEFAULT_PARAMS,
+  createRandomInsertionSortParams,
+} from "@/algorithms/insertion-sort/spec";
+import {
+  MERGE_SORT_DEFAULT_PARAMS,
+  createRandomMergeSortParams,
+} from "@/algorithms/merge-sort/spec";
+import {
+  SELECTION_SORT_DEFAULT_PARAMS,
+  createRandomSelectionSortParams,
+} from "@/algorithms/selection-sort/spec";
 import { useAppStore } from "@/store/app-store";
 import type { ParamPrimitive } from "@/types/engine";
 import { Badge } from "@/components/ui/badge";
@@ -95,9 +109,74 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
     );
   }
 
+  if (selectedAlgorithmSlug === "bfs") {
+    return (
+      <BfsParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
+  if (selectedAlgorithmSlug === "dfs") {
+    return (
+      <DfsParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
   if (selectedAlgorithmSlug === "bubble-sort") {
     return (
       <BubbleSortParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
+  if (selectedAlgorithmSlug === "selection-sort") {
+    return (
+      <SelectionSortParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
+  if (selectedAlgorithmSlug === "insertion-sort") {
+    return (
+      <InsertionSortParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
+  if (selectedAlgorithmSlug === "merge-sort") {
+    return (
+      <MergeSortParamsCard
         className={className}
         params={params}
         run={run}
@@ -118,7 +197,8 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
           </Badge>
         </div>
         <CardDescription className="text-xs leading-relaxed">
-          Parameter schema and validation are enabled for Binary Search and Bubble Sort in this milestone.
+          Parameter schema and validation are enabled for Binary Search, BFS, DFS, Bubble Sort, Selection
+          Sort, Insertion Sort, and Merge Sort in this milestone.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -250,6 +330,554 @@ function BinarySearchParamsCard({
   );
 }
 
+function BfsParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const rows = useMemo(() => {
+    const value = params.rows;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(BFS_DEFAULT_PARAMS.rows);
+  }, [params.rows]);
+
+  const cols = useMemo(() => {
+    const value = params.cols;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(BFS_DEFAULT_PARAMS.cols);
+  }, [params.cols]);
+
+  const startCell = useMemo(() => {
+    const value = params.startCell;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(BFS_DEFAULT_PARAMS.startCell);
+  }, [params.startCell]);
+
+  const targetCell = useMemo(() => {
+    const value = params.targetCell;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(BFS_DEFAULT_PARAMS.targetCell);
+  }, [params.targetCell]);
+
+  const blockedCells = useMemo(() => {
+    const value = params.blockedCells;
+    return typeof value === "string" ? value : BFS_DEFAULT_PARAMS.blockedCells;
+  }, [params.blockedCells]);
+
+  const allowDiagonal = useMemo(
+    () => coerceBoolean(params.allowDiagonal, BFS_DEFAULT_PARAMS.allowDiagonal),
+    [params.allowDiagonal],
+  );
+
+  const normalizedInput =
+    run && run.algorithmSlug === "bfs" && typeof run.input === "object" && run.input !== null
+      ? (run.input as {
+          rows: number;
+          cols: number;
+          startCell: number;
+          targetCell: number;
+          blockedCells: number[];
+          allowDiagonal: boolean;
+        })
+      : null;
+
+  const normalizedResult =
+    run && run.algorithmSlug === "bfs" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          found: boolean;
+          distance: number;
+          visitedCount: number;
+          layers: number;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomBfsParams();
+    setParams({
+      rows: randomParams.rows,
+      cols: randomParams.cols,
+      startCell: randomParams.startCell,
+      targetCell: randomParams.targetCell,
+      blockedCells: randomParams.blockedCells,
+      allowDiagonal: randomParams.allowDiagonal,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            BFS
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Configure a grid, optional walls, start and target cells. BFS explores shortest unweighted routes
+          layer by layer.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <label htmlFor="param-rows" className="text-xs font-medium">
+              Rows
+            </label>
+            <Input
+              id="param-rows"
+              type="number"
+              value={rows}
+              onChange={(event) =>
+                setParam("rows", event.target.value.trim().length === 0 ? "" : Number(event.target.value))
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="param-cols" className="text-xs font-medium">
+              Columns
+            </label>
+            <Input
+              id="param-cols"
+              type="number"
+              value={cols}
+              onChange={(event) =>
+                setParam("cols", event.target.value.trim().length === 0 ? "" : Number(event.target.value))
+              }
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <label htmlFor="param-start-cell" className="text-xs font-medium">
+              Start Cell
+            </label>
+            <Input
+              id="param-start-cell"
+              type="number"
+              value={startCell}
+              onChange={(event) =>
+                setParam(
+                  "startCell",
+                  event.target.value.trim().length === 0 ? "" : Number(event.target.value),
+                )
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="param-target-cell" className="text-xs font-medium">
+              Target Cell
+            </label>
+            <Input
+              id="param-target-cell"
+              type="number"
+              value={targetCell}
+              onChange={(event) =>
+                setParam(
+                  "targetCell",
+                  event.target.value.trim().length === 0 ? "" : Number(event.target.value),
+                )
+              }
+            />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="param-blocked-cells" className="text-xs font-medium">
+            Blocked Cells
+          </label>
+          <Input
+            id="param-blocked-cells"
+            value={blockedCells}
+            onChange={(event) => setParam("blockedCells", event.target.value)}
+            placeholder={BFS_DEFAULT_PARAMS.blockedCells}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Neighbor Policy</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={allowDiagonal ? "outline" : "secondary"}
+              onClick={() => setParam("allowDiagonal", false)}
+            >
+              4-Direction
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={allowDiagonal ? "secondary" : "outline"}
+              onClick={() => setParam("allowDiagonal", true)}
+            >
+              8-Direction
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Grid:{" "}
+            <span className="font-mono">
+              {normalizedInput ? `${normalizedInput.rows} x ${normalizedInput.cols}` : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Start / Target:{" "}
+            <span className="font-mono">
+              {normalizedInput ? `${normalizedInput.startCell} / ${normalizedInput.targetCell}` : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Blocked Cells:{" "}
+            <span className="font-mono">
+              {normalizedInput ? normalizedInput.blockedCells.length : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? normalizedResult.found
+                  ? `found in ${normalizedResult.distance} step(s), visited ${normalizedResult.visitedCount}`
+                  : `not found, visited ${normalizedResult.visitedCount}`
+                : "n/a"}
+            </span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DfsParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const rows = useMemo(() => {
+    const value = params.rows;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(DFS_DEFAULT_PARAMS.rows);
+  }, [params.rows]);
+
+  const cols = useMemo(() => {
+    const value = params.cols;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(DFS_DEFAULT_PARAMS.cols);
+  }, [params.cols]);
+
+  const startCell = useMemo(() => {
+    const value = params.startCell;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(DFS_DEFAULT_PARAMS.startCell);
+  }, [params.startCell]);
+
+  const targetCell = useMemo(() => {
+    const value = params.targetCell;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(DFS_DEFAULT_PARAMS.targetCell);
+  }, [params.targetCell]);
+
+  const blockedCells = useMemo(() => {
+    const value = params.blockedCells;
+    return typeof value === "string" ? value : DFS_DEFAULT_PARAMS.blockedCells;
+  }, [params.blockedCells]);
+
+  const allowDiagonal = useMemo(
+    () => coerceBoolean(params.allowDiagonal, DFS_DEFAULT_PARAMS.allowDiagonal),
+    [params.allowDiagonal],
+  );
+  const preferClockwise = useMemo(
+    () => coerceBoolean(params.preferClockwise, DFS_DEFAULT_PARAMS.preferClockwise),
+    [params.preferClockwise],
+  );
+
+  const normalizedInput =
+    run && run.algorithmSlug === "dfs" && typeof run.input === "object" && run.input !== null
+      ? (run.input as {
+          rows: number;
+          cols: number;
+          startCell: number;
+          targetCell: number;
+          blockedCells: number[];
+          allowDiagonal: boolean;
+          preferClockwise: boolean;
+        })
+      : null;
+
+  const normalizedResult =
+    run && run.algorithmSlug === "dfs" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          found: boolean;
+          depth: number;
+          visitedCount: number;
+          backtracks: number;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomDfsParams();
+    setParams({
+      rows: randomParams.rows,
+      cols: randomParams.cols,
+      startCell: randomParams.startCell,
+      targetCell: randomParams.targetCell,
+      blockedCells: randomParams.blockedCells,
+      allowDiagonal: randomParams.allowDiagonal,
+      preferClockwise: randomParams.preferClockwise,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            DFS
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Configure a grid, optional walls, start and target cells. DFS explores one branch deeply before
+          backtracking.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <label htmlFor="param-dfs-rows" className="text-xs font-medium">
+              Rows
+            </label>
+            <Input
+              id="param-dfs-rows"
+              type="number"
+              value={rows}
+              onChange={(event) =>
+                setParam("rows", event.target.value.trim().length === 0 ? "" : Number(event.target.value))
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="param-dfs-cols" className="text-xs font-medium">
+              Columns
+            </label>
+            <Input
+              id="param-dfs-cols"
+              type="number"
+              value={cols}
+              onChange={(event) =>
+                setParam("cols", event.target.value.trim().length === 0 ? "" : Number(event.target.value))
+              }
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <label htmlFor="param-dfs-start-cell" className="text-xs font-medium">
+              Start Cell
+            </label>
+            <Input
+              id="param-dfs-start-cell"
+              type="number"
+              value={startCell}
+              onChange={(event) =>
+                setParam(
+                  "startCell",
+                  event.target.value.trim().length === 0 ? "" : Number(event.target.value),
+                )
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="param-dfs-target-cell" className="text-xs font-medium">
+              Target Cell
+            </label>
+            <Input
+              id="param-dfs-target-cell"
+              type="number"
+              value={targetCell}
+              onChange={(event) =>
+                setParam(
+                  "targetCell",
+                  event.target.value.trim().length === 0 ? "" : Number(event.target.value),
+                )
+              }
+            />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="param-dfs-blocked-cells" className="text-xs font-medium">
+            Blocked Cells
+          </label>
+          <Input
+            id="param-dfs-blocked-cells"
+            value={blockedCells}
+            onChange={(event) => setParam("blockedCells", event.target.value)}
+            placeholder={DFS_DEFAULT_PARAMS.blockedCells}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Neighbor Policy</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={allowDiagonal ? "outline" : "secondary"}
+              onClick={() => setParam("allowDiagonal", false)}
+            >
+              4-Direction
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={allowDiagonal ? "secondary" : "outline"}
+              onClick={() => setParam("allowDiagonal", true)}
+            >
+              8-Direction
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={preferClockwise ? "secondary" : "outline"}
+              onClick={() => setParam("preferClockwise", true)}
+            >
+              Clockwise
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={preferClockwise ? "outline" : "secondary"}
+              onClick={() => setParam("preferClockwise", false)}
+            >
+              Counterclockwise
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Grid:{" "}
+            <span className="font-mono">
+              {normalizedInput ? `${normalizedInput.rows} x ${normalizedInput.cols}` : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Start / Target:{" "}
+            <span className="font-mono">
+              {normalizedInput ? `${normalizedInput.startCell} / ${normalizedInput.targetCell}` : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Blocked Cells:{" "}
+            <span className="font-mono">
+              {normalizedInput ? normalizedInput.blockedCells.length : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? normalizedResult.found
+                  ? `found at depth ${normalizedResult.depth}, backtracks ${normalizedResult.backtracks}`
+                  : `not found, visited ${normalizedResult.visitedCount}`
+                : "n/a"}
+            </span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function BubbleSortParamsCard({
   className,
   params,
@@ -347,6 +975,369 @@ function BubbleSortParamsCard({
           <p className="font-medium">Normalized Run Input</p>
           <p className="text-muted-foreground leading-relaxed">
             Early exit: <span className="font-mono">{normalizedOptimize === null ? "n/a" : String(normalizedOptimize)}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Values ({normalizedValues.length}):{" "}
+            <span className="font-mono">
+              {normalizedValues.length > 0 ? normalizedValues.join(", ") : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Sorted:{" "}
+            <span className="font-mono">{sortedValues.length > 0 ? sortedValues.join(", ") : "n/a"}</span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SelectionSortParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const arrayValues = useMemo(() => {
+    const value = params.arrayValues;
+    return typeof value === "string" ? value : SELECTION_SORT_DEFAULT_PARAMS.arrayValues;
+  }, [params.arrayValues]);
+
+  const swapOnlyWhenNeeded = useMemo(
+    () => coerceBoolean(params.swapOnlyWhenNeeded, SELECTION_SORT_DEFAULT_PARAMS.swapOnlyWhenNeeded),
+    [params.swapOnlyWhenNeeded],
+  );
+
+  const normalizedValues = run && run.algorithmSlug === "selection-sort" ? getInputValues(run.input) : [];
+  const normalizedSwapOnlyWhenNeeded =
+    run && run.algorithmSlug === "selection-sort"
+      ? coerceBoolean(
+          run.normalizedParams.swapOnlyWhenNeeded,
+          SELECTION_SORT_DEFAULT_PARAMS.swapOnlyWhenNeeded,
+        )
+      : null;
+  const sortedValues = run && run.algorithmSlug === "selection-sort" ? getSortedResultValues(run.result) : [];
+
+  const handleRandomize = () => {
+    const randomParams = createRandomSelectionSortParams();
+    setParams({
+      arrayValues: randomParams.arrayValues,
+      swapOnlyWhenNeeded: randomParams.swapOnlyWhenNeeded,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Selection Sort
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Provide comma-separated numeric values. Selection Sort scans the unsorted suffix to pick a
+          minimum candidate and then commits one swap per pass.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="param-array-values" className="text-xs font-medium">
+            Array Values
+          </label>
+          <Input
+            id="param-array-values"
+            value={arrayValues}
+            onChange={(event) => setParam("arrayValues", event.target.value)}
+            placeholder={SELECTION_SORT_DEFAULT_PARAMS.arrayValues}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Swap Behavior</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={swapOnlyWhenNeeded ? "secondary" : "outline"}
+              onClick={() => setParam("swapOnlyWhenNeeded", true)}
+            >
+              Skip Self-Swaps
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={swapOnlyWhenNeeded ? "outline" : "secondary"}
+              onClick={() => setParam("swapOnlyWhenNeeded", false)}
+            >
+              Force Swaps
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Swap only when needed:{" "}
+            <span className="font-mono">
+              {normalizedSwapOnlyWhenNeeded === null ? "n/a" : String(normalizedSwapOnlyWhenNeeded)}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Values ({normalizedValues.length}):{" "}
+            <span className="font-mono">
+              {normalizedValues.length > 0 ? normalizedValues.join(", ") : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Sorted:{" "}
+            <span className="font-mono">{sortedValues.length > 0 ? sortedValues.join(", ") : "n/a"}</span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function InsertionSortParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const arrayValues = useMemo(() => {
+    const value = params.arrayValues;
+    return typeof value === "string" ? value : INSERTION_SORT_DEFAULT_PARAMS.arrayValues;
+  }, [params.arrayValues]);
+
+  const allowEarlyPlacement = useMemo(
+    () => coerceBoolean(params.allowEarlyPlacement, INSERTION_SORT_DEFAULT_PARAMS.allowEarlyPlacement),
+    [params.allowEarlyPlacement],
+  );
+
+  const normalizedValues = run && run.algorithmSlug === "insertion-sort" ? getInputValues(run.input) : [];
+  const normalizedAllowEarlyPlacement =
+    run && run.algorithmSlug === "insertion-sort"
+      ? coerceBoolean(
+          run.normalizedParams.allowEarlyPlacement,
+          INSERTION_SORT_DEFAULT_PARAMS.allowEarlyPlacement,
+        )
+      : null;
+  const sortedValues = run && run.algorithmSlug === "insertion-sort" ? getSortedResultValues(run.result) : [];
+
+  const handleRandomize = () => {
+    const randomParams = createRandomInsertionSortParams();
+    setParams({
+      arrayValues: randomParams.arrayValues,
+      allowEarlyPlacement: randomParams.allowEarlyPlacement,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Insertion Sort
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Provide comma-separated numeric values. Insertion Sort shifts larger prefix values right and
+          places the selected key at its insertion index.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="param-array-values" className="text-xs font-medium">
+            Array Values
+          </label>
+          <Input
+            id="param-array-values"
+            value={arrayValues}
+            onChange={(event) => setParam("arrayValues", event.target.value)}
+            placeholder={INSERTION_SORT_DEFAULT_PARAMS.arrayValues}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Inner Loop</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={allowEarlyPlacement ? "secondary" : "outline"}
+              onClick={() => setParam("allowEarlyPlacement", true)}
+            >
+              Break On Place
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={allowEarlyPlacement ? "outline" : "secondary"}
+              onClick={() => setParam("allowEarlyPlacement", false)}
+            >
+              Scan Full Prefix
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Break on placement:{" "}
+            <span className="font-mono">
+              {normalizedAllowEarlyPlacement === null ? "n/a" : String(normalizedAllowEarlyPlacement)}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Values ({normalizedValues.length}):{" "}
+            <span className="font-mono">
+              {normalizedValues.length > 0 ? normalizedValues.join(", ") : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Sorted:{" "}
+            <span className="font-mono">{sortedValues.length > 0 ? sortedValues.join(", ") : "n/a"}</span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function MergeSortParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const arrayValues = useMemo(() => {
+    const value = params.arrayValues;
+    return typeof value === "string" ? value : MERGE_SORT_DEFAULT_PARAMS.arrayValues;
+  }, [params.arrayValues]);
+
+  const preferLeftOnEqual = useMemo(
+    () => coerceBoolean(params.preferLeftOnEqual, MERGE_SORT_DEFAULT_PARAMS.preferLeftOnEqual),
+    [params.preferLeftOnEqual],
+  );
+
+  const normalizedValues = run && run.algorithmSlug === "merge-sort" ? getInputValues(run.input) : [];
+  const normalizedPreferLeftOnEqual =
+    run && run.algorithmSlug === "merge-sort"
+      ? coerceBoolean(
+          run.normalizedParams.preferLeftOnEqual,
+          MERGE_SORT_DEFAULT_PARAMS.preferLeftOnEqual,
+        )
+      : null;
+  const sortedValues = run && run.algorithmSlug === "merge-sort" ? getSortedResultValues(run.result) : [];
+
+  const handleRandomize = () => {
+    const randomParams = createRandomMergeSortParams();
+    setParams({
+      arrayValues: randomParams.arrayValues,
+      preferLeftOnEqual: randomParams.preferLeftOnEqual,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Merge Sort
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Provide comma-separated numeric values. Merge Sort recursively splits ranges and merges sorted
+          halves back with deterministic tie handling.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="param-array-values" className="text-xs font-medium">
+            Array Values
+          </label>
+          <Input
+            id="param-array-values"
+            value={arrayValues}
+            onChange={(event) => setParam("arrayValues", event.target.value)}
+            placeholder={MERGE_SORT_DEFAULT_PARAMS.arrayValues}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Tie Handling</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={preferLeftOnEqual ? "secondary" : "outline"}
+              onClick={() => setParam("preferLeftOnEqual", true)}
+            >
+              Prefer Left
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={preferLeftOnEqual ? "outline" : "secondary"}
+              onClick={() => setParam("preferLeftOnEqual", false)}
+            >
+              Prefer Right
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Prefer left on equal:{" "}
+            <span className="font-mono">
+              {normalizedPreferLeftOnEqual === null ? "n/a" : String(normalizedPreferLeftOnEqual)}
+            </span>
           </p>
           <p className="text-muted-foreground leading-relaxed">
             Values ({normalizedValues.length}):{" "}
