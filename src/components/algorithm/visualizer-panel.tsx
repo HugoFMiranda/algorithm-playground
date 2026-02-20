@@ -2586,11 +2586,11 @@ function formatQuickSortStepLabel(step: QuickSortStepEvent): string {
 
 function formatQuickSortStepMessage(step: QuickSortStepEvent): string {
   if (step.type === "pivot-set") {
-    return `Depth ${step.payload.depth}: choose pivot ${step.payload.pivotValue} using ${step.payload.strategy} strategy on range [${step.payload.low}, ${step.payload.high}].`;
+    return `Depth ${step.payload.depth}: choose pivot ${step.payload.pivotValue} using ${step.payload.strategy} strategy on range [${step.payload.low}, ${step.payload.high}]. This pivot stays fixed during this partition.`;
   }
 
   if (step.type === "compare") {
-    return `Compare index ${step.payload.comparedIndex} (${step.payload.comparedValue}) with pivot ${step.payload.pivotValue}.`;
+    return `Compare index ${step.payload.comparedIndex} (${step.payload.comparedValue}) with fixed pivot ${step.payload.pivotValue}.`;
   }
 
   if (step.type === "partition-swap") {
