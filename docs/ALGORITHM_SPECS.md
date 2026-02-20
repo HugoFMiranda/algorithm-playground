@@ -472,8 +472,8 @@ Each algorithm must define:
   - Invalid, duplicate, out-of-range, and self-loop edges are ignored during normalization.
   - Empty/invalid edge input falls back to deterministic default DAG edges.
 - Params:
-  - `nodeCount` (number, default: `7`)
-  - `edges` (string, default: `0>1, 0>2, 1>3, 2>3, 2>4, 3>5, 4>5, 5>6`)
+  - `nodeCount` (number, default: `10`)
+  - `edges` (string, default: `0>4, 1>4, 1>5, 2>5, 2>6, 3>6, 4>7, 5>7, 6>8, 7>9, 8>9`)
   - `preferLowerIndex` (boolean, default: `true`)
 - Human-friendly explanation:
   - Topological Sort repeatedly takes any node with no remaining prerequisites, outputs it, and removes its outgoing edges. If nodes remain but none can be chosen, a cycle exists.

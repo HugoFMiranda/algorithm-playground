@@ -26,16 +26,19 @@ export interface TopologicalSortResult {
 
 const MIN_NODE_COUNT = 2;
 const MAX_NODE_COUNT = 16;
-const DEFAULT_NODE_COUNT = 7;
+const DEFAULT_NODE_COUNT = 10;
 const DEFAULT_EDGES: TopologicalSortEdge[] = [
-  [0, 1],
-  [0, 2],
-  [1, 3],
-  [2, 3],
-  [2, 4],
-  [3, 5],
-  [4, 5],
-  [5, 6],
+  [0, 4],
+  [1, 4],
+  [1, 5],
+  [2, 5],
+  [2, 6],
+  [3, 6],
+  [4, 7],
+  [5, 7],
+  [6, 8],
+  [7, 9],
+  [8, 9],
 ];
 const DEFAULT_EDGES_TEXT = DEFAULT_EDGES.map((edge) => `${edge[0]}>${edge[1]}`).join(", ");
 const DEFAULT_PREFER_LOWER_INDEX = true;
