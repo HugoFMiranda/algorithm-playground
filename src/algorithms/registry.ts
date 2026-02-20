@@ -1,3 +1,5 @@
+import { createAStarRun } from "@/algorithms/a-star/engine";
+import { A_STAR_DEFAULT_PARAMS } from "@/algorithms/a-star/spec";
 import { createBinarySearchRun } from "@/algorithms/binary-search/engine";
 import { BINARY_SEARCH_DEFAULT_PARAMS } from "@/algorithms/binary-search/spec";
 import { createBfsRun } from "@/algorithms/bfs/engine";
@@ -56,6 +58,12 @@ const ALGORITHM_RUNTIME_REGISTRY: Record<string, AlgorithmRuntimeDefinition> = {
     rendererFamily: "grid",
     defaultParams: { ...DIJKSTRA_DEFAULT_PARAMS },
     createRun: createDijkstraRun,
+  },
+  "a-star": {
+    slug: "a-star",
+    rendererFamily: "grid",
+    defaultParams: { ...A_STAR_DEFAULT_PARAMS },
+    createRun: createAStarRun,
   },
   "binary-search": {
     slug: "binary-search",

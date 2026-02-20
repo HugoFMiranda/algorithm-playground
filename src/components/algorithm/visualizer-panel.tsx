@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpDownIcon, Grid2x2Icon, MonitorPlayIcon, SearchIcon } from "lucide-react";
 
+import type { AStarInput, AStarResult } from "@/algorithms/a-star/spec";
+import type { AStarStepEvent } from "@/algorithms/a-star/engine";
 import type { BinarySearchResult, BinarySearchInput } from "@/algorithms/binary-search/spec";
 import type { BinarySearchStepEvent } from "@/algorithms/binary-search/engine";
 import type { BfsInput, BfsResult } from "@/algorithms/bfs/spec";
@@ -66,6 +68,10 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
 
   if (algorithm.slug === "dijkstra") {
     return <DijkstraVisualizer run={run} cursor={cursor} />;
+  }
+
+  if (algorithm.slug === "a-star") {
+    return <AStarVisualizer run={run} cursor={cursor} />;
   }
 
   if (algorithm.slug === "selection-sort") {
@@ -1577,6 +1583,560 @@ function formatDijkstraStepMessage(step: DijkstraStepEvent): string {
   return step.payload.found
     ? `Completed with distance ${step.payload.distance} and ${step.payload.relaxations} relaxation(s).`
     : `Completed without path after visiting ${step.payload.visitedCount} cells.`;
+}
+
+interface AStarFrame {
+  open: Set<number>;
+  closed: Set<number>;
+  blocked: Set<number>;
+  heavy: Set<number>;
+  path: Set<number>;
+  gScores: Map<number, number>;
+  fScores: Map<number, number>;
+  current: number | null;
+  inspected: number | null;
+  inspectStatus: "blocked" | "closed" | "skip" | "update" | null;
+  completed: boolean;
+  found: boolean;
+}
+
+function getHeuristicEstimate(
+  cell: number,
+  targetCell: number,
+  cols: number,
+  allowDiagonal: boolean,
+  heuristicWeight: number,
+): number {
+  const fromPoint = {
+    row: Math.floor(cell / cols),
+    col: cell % cols,
+  };
+  const targetPoint = {
+    row: Math.floor(targetCell / cols),
+    col: targetCell % cols,
+  };
+  const rowDiff = Math.abs(fromPoint.row - targetPoint.row);
+  const colDiff = Math.abs(fromPoint.col - targetPoint.col);
+  const distance = allowDiagonal ? Math.max(rowDiff, colDiff) : rowDiff + colDiff;
+  return distance * heuristicWeight;
+}
+
+function AStarVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const params = useAppStore((state) => state.params);
+  const setParams = useAppStore((state) => state.setParams);
+  const playbackStatus = useAppStore((state) => state.playback.status);
+  const compactComplexity = getCompactCurrentComplexity("a-star", run);
+  const typedRun =
+    run && run.algorithmSlug === "a-star"
+      ? {
+          ...run,
+          input: run.input as AStarInput,
+          result: run.result as AStarResult,
+          steps: run.steps as AStarStepEvent[],
+        }
+      : null;
+
+  const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
+  const frame = useMemo(() => deriveAStarFrame(typedRun, cursor), [typedRun, cursor]);
+  const stepLabel = activeStep ? formatAStarStepLabel(activeStep) : "Ready";
+  const stepMessage = activeStep ? formatAStarStepMessage(activeStep) : "Press Play or Step to start execution.";
+  const totalCells = typedRun ? typedRun.input.rows * typedRun.input.cols : 0;
+  const canEdit = playbackStatus !== "playing";
+  const [activeTool, setActiveTool] = useState<PathGridTool>("block");
+  const [pendingWeightCell, setPendingWeightCell] = useState<number | null>(null);
+  const [pendingWeightValue, setPendingWeightValue] = useState("");
+  const weightOverridesText =
+    typeof params.weightOverrides === "string" ? params.weightOverrides : typedRun?.input.weightOverrides ?? "";
+  const weightOverrides = useMemo(
+    () => parseWeightOverrides(weightOverridesText, totalCells),
+    [totalCells, weightOverridesText],
+  );
+  const serializedWeightOverrides = useMemo(
+    () => serializeWeightOverrides(weightOverrides),
+    [weightOverrides],
+  );
+
+  useEffect(() => {
+    if (activeTool !== "weight") {
+      setPendingWeightCell(null);
+    }
+  }, [activeTool]);
+
+  const applyTool = useCallback(
+    (cell: number) => {
+      if (!typedRun || !canEdit || cell < 0 || cell >= totalCells) {
+        return;
+      }
+
+      const blocked = new Set<number>(typedRun.input.blockedCells);
+      const heavy = new Set<number>(typedRun.input.heavyCells);
+      const previousBlocked = new Set<number>(typedRun.input.blockedCells);
+      const previousHeavy = new Set<number>(typedRun.input.heavyCells);
+      const nextWeightOverrides = parseWeightOverrides(weightOverridesText, totalCells);
+
+      let nextStart = typedRun.input.startCell;
+      let nextTarget = typedRun.input.targetCell;
+
+      if (activeTool === "weight") {
+        if (blocked.has(cell)) {
+          return;
+        }
+
+        setPendingWeightCell(cell);
+        setPendingWeightValue(String(nextWeightOverrides.get(cell) ?? typedRun.input.weights[cell]));
+        return;
+      }
+
+      if (activeTool === "start") {
+        nextStart = cell;
+        blocked.delete(cell);
+        heavy.delete(cell);
+        nextWeightOverrides.delete(cell);
+      } else if (activeTool === "target") {
+        nextTarget = cell;
+        blocked.delete(cell);
+        heavy.delete(cell);
+        nextWeightOverrides.delete(cell);
+      } else if (activeTool === "block") {
+        if (cell === nextStart || cell === nextTarget) {
+          return;
+        }
+        blocked.add(cell);
+        heavy.delete(cell);
+        nextWeightOverrides.delete(cell);
+      } else if (activeTool === "erase") {
+        blocked.delete(cell);
+      } else if (activeTool === "heavy") {
+        if (blocked.has(cell) || cell === nextStart || cell === nextTarget) {
+          return;
+        }
+        heavy.add(cell);
+      } else if (activeTool === "unheavy") {
+        heavy.delete(cell);
+      }
+
+      const nextOverridesText = serializeWeightOverrides(nextWeightOverrides);
+      if (
+        nextStart === typedRun.input.startCell &&
+        nextTarget === typedRun.input.targetCell &&
+        areNumberSetsEqual(blocked, previousBlocked) &&
+        areNumberSetsEqual(heavy, previousHeavy) &&
+        nextOverridesText === serializedWeightOverrides
+      ) {
+        return;
+      }
+
+      setPendingWeightCell(null);
+      setParams({
+        startCell: nextStart,
+        targetCell: nextTarget,
+        blockedCells: serializeCellList(blocked),
+        heavyCells: serializeCellList(heavy),
+        weightOverrides: nextOverridesText,
+      });
+    },
+    [
+      activeTool,
+      canEdit,
+      serializedWeightOverrides,
+      setParams,
+      totalCells,
+      typedRun,
+      weightOverridesText,
+    ],
+  );
+
+  const paintHandlers = useGridPaint(
+    activeTool,
+    ["block", "erase", "heavy", "unheavy"],
+    canEdit,
+    applyTool,
+  );
+
+  const handleApplyWeight = useCallback(() => {
+    if (!typedRun || !canEdit || pendingWeightCell === null) {
+      return;
+    }
+
+    const nextWeight = Number(pendingWeightValue);
+    if (!Number.isFinite(nextWeight)) {
+      return;
+    }
+
+    const blocked = new Set<number>(typedRun.input.blockedCells);
+    if (blocked.has(pendingWeightCell)) {
+      return;
+    }
+
+    const nextWeightOverrides = parseWeightOverrides(weightOverridesText, totalCells);
+    nextWeightOverrides.set(pendingWeightCell, Math.max(1, Math.min(15, Math.floor(nextWeight))));
+    const nextOverridesText = serializeWeightOverrides(nextWeightOverrides);
+    if (nextOverridesText === serializedWeightOverrides) {
+      setPendingWeightCell(null);
+      return;
+    }
+
+    setParams({ weightOverrides: nextOverridesText });
+    setPendingWeightCell(null);
+  }, [
+    canEdit,
+    pendingWeightCell,
+    pendingWeightValue,
+    serializedWeightOverrides,
+    setParams,
+    totalCells,
+    typedRun,
+    weightOverridesText,
+  ]);
+
+  return (
+    <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg">Visualizer</CardTitle>
+          <div className="flex items-center gap-2">
+            {compactComplexity ? (
+              <Badge variant="outline" className="rounded-full border-border/70">
+                {compactComplexity}
+              </Badge>
+            ) : null}
+            <Badge variant="secondary" className="rounded-full border-border/70">
+              A*
+            </Badge>
+          </div>
+        </div>
+        <CardDescription>
+          Heuristic-guided weighted-grid search with open-set selection and score updates.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Grid</p>
+            <p className="font-mono text-base">
+              {typedRun ? `${typedRun.input.rows} x ${typedRun.input.cols}` : "n/a"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Expanded</p>
+            <p className="font-mono text-base">{typedRun?.result.expandedCount ?? 0}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Distance</p>
+            <p className="font-mono text-base">{typedRun?.result.found ? typedRun.result.distance : "n/a"}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Result</p>
+            <p className="font-mono text-base">
+              {typedRun?.result.found ? "Path Found" : typedRun && frame.completed ? "Not Found" : "Searching"}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="space-y-1.5 rounded-lg border border-border/70 bg-background/50 p-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <GridToolBar
+                activeTool={activeTool}
+                tools={[
+                  { id: "start", label: "Start" },
+                  { id: "target", label: "Target" },
+                  { id: "block", label: "Block" },
+                  { id: "erase", label: "Erase" },
+                  { id: "heavy", label: "Heavy" },
+                  { id: "unheavy", label: "Unheavy" },
+                  { id: "weight", label: "Weight" },
+                ]}
+                disabled={!typedRun || !canEdit}
+                onToolChange={setActiveTool}
+              />
+              {!canEdit ? (
+                <p className="text-muted-foreground text-[11px]">Pause playback to edit the grid.</p>
+              ) : (
+                <p className="text-muted-foreground text-[11px]">Click or drag to apply the active tool.</p>
+              )}
+            </div>
+            {activeTool === "weight" && typedRun ? (
+              <div className="flex flex-wrap items-end gap-2">
+                <div className="space-y-1">
+                  <p className="text-muted-foreground text-[11px]">
+                    {pendingWeightCell === null
+                      ? "Select a non-blocked cell to edit its weight."
+                      : `Cell ${pendingWeightCell} weight`}
+                  </p>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={15}
+                    value={pendingWeightValue}
+                    onChange={(event) => setPendingWeightValue(event.target.value)}
+                    className="h-8 w-28"
+                    disabled={!canEdit || pendingWeightCell === null}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  disabled={!canEdit || pendingWeightCell === null}
+                  onClick={handleApplyWeight}
+                >
+                  Apply
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={pendingWeightCell === null}
+                  onClick={() => setPendingWeightCell(null)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="rounded-full border-border/70">
+              {stepLabel}
+            </Badge>
+            <p className="text-muted-foreground">{stepMessage}</p>
+          </div>
+          {typedRun ? (
+            <div
+              className="grid gap-2"
+              style={{ gridTemplateColumns: `repeat(${typedRun.input.cols}, minmax(0, 1fr))` }}
+            >
+              {Array.from({ length: totalCells }, (_, cell) => {
+                const isStart = cell === typedRun.input.startCell;
+                const isTarget = cell === typedRun.input.targetCell;
+                const isBlocked = frame.blocked.has(cell);
+                const isClosed = frame.closed.has(cell);
+                const isOpen = frame.open.has(cell);
+                const isPath = frame.path.has(cell);
+                const isCurrent = frame.current === cell;
+                const isInspected = frame.inspected === cell;
+                const isHeavy = frame.heavy.has(cell);
+                const isOverridden = weightOverrides.has(cell);
+                const g = frame.gScores.get(cell);
+                const f = frame.fScores.get(cell);
+
+                return (
+                  <div
+                    key={cell}
+                    onPointerDown={() => paintHandlers.onPointerDown(cell)}
+                    onPointerEnter={() => paintHandlers.onPointerEnter(cell)}
+                    className={cn(
+                      "rounded-lg border p-2 select-none",
+                      isBlocked && "border-zinc-500/70 bg-zinc-500/25 text-zinc-100",
+                      isClosed && "border-sky-300/60 bg-sky-500/12",
+                      isOpen && "border-cyan-300/60 bg-cyan-500/12",
+                      isPath && "border-emerald-300/70 bg-emerald-500/20",
+                      isCurrent && "border-amber-300/70 bg-amber-500/20",
+                      isHeavy && !isBlocked && "ring-1 ring-violet-300/50",
+                      isOverridden && !isBlocked && "ring-1 ring-lime-300/60",
+                      isInspected && frame.inspectStatus === "blocked" && "border-red-300/70 bg-red-500/18",
+                      isInspected && frame.inspectStatus === "closed" && "border-orange-300/70 bg-orange-500/18",
+                      isInspected && frame.inspectStatus === "update" && "border-violet-300/70 bg-violet-500/20",
+                      isInspected && frame.inspectStatus === "skip" && "border-orange-300/70 bg-orange-500/20",
+                      isStart && "ring-1 ring-blue-300/70",
+                      isTarget && "ring-1 ring-rose-300/70",
+                      typedRun && canEdit && "cursor-pointer",
+                      (!typedRun || !canEdit) && "cursor-default",
+                    )}
+                  >
+                    <p className="text-muted-foreground text-[10px]">{toGridLabel(cell, typedRun.input.cols)}</p>
+                    <p className="font-mono text-xs">
+                      {isStart ? "S" : isTarget ? "T" : isBlocked ? "#" : typedRun.input.weights[cell]}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">g={formatDistance(g)}</p>
+                    <p className="text-[10px] text-muted-foreground">f={formatDistance(f)}</p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+          {!typedRun ? (
+            <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-border/70 p-4 text-xs">
+              <SearchIcon className="size-3.5" />
+              No A* run available for visualization.
+            </div>
+          ) : null}
+        </div>
+
+        <div className="text-muted-foreground text-xs">
+          Legend: <span className="font-medium">S/T</span> start/target, <span className="font-medium">#</span>{" "}
+          blocked, cyan=open set, blue=closed set, violet ring = heavy, lime ring = weight override.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function deriveAStarFrame(
+  run: {
+    input: AStarInput;
+    result: AStarResult;
+    steps: AStarStepEvent[];
+  } | null,
+  cursor: number,
+): AStarFrame {
+  const frame: AStarFrame = {
+    open: new Set<number>(),
+    closed: new Set<number>(),
+    blocked: new Set<number>(run?.input.blockedCells ?? []),
+    heavy: new Set<number>(run?.input.heavyCells ?? []),
+    path: new Set<number>(),
+    gScores: new Map<number, number>(),
+    fScores: new Map<number, number>(),
+    current: null,
+    inspected: null,
+    inspectStatus: null,
+    completed: false,
+    found: false,
+  };
+
+  if (!run || cursor < 0 || run.steps.length === 0) {
+    if (run) {
+      const startH = getHeuristicEstimate(
+        run.input.startCell,
+        run.input.targetCell,
+        run.input.cols,
+        run.input.allowDiagonal,
+        run.input.heuristicWeight,
+      );
+      frame.open.add(run.input.startCell);
+      frame.gScores.set(run.input.startCell, 0);
+      frame.fScores.set(run.input.startCell, startH);
+    }
+    return frame;
+  }
+
+  const startH = getHeuristicEstimate(
+    run.input.startCell,
+    run.input.targetCell,
+    run.input.cols,
+    run.input.allowDiagonal,
+    run.input.heuristicWeight,
+  );
+  frame.open.add(run.input.startCell);
+  frame.gScores.set(run.input.startCell, 0);
+  frame.fScores.set(run.input.startCell, startH);
+
+  const boundedCursor = Math.min(cursor, run.steps.length - 1);
+  for (let index = 0; index <= boundedCursor; index += 1) {
+    const step = run.steps[index];
+
+    if (step.type === "open-select") {
+      frame.current = step.payload.cell;
+      frame.open.delete(step.payload.cell);
+      frame.closed.add(step.payload.cell);
+      frame.gScores.set(step.payload.cell, step.payload.g);
+      frame.fScores.set(step.payload.cell, step.payload.f);
+      frame.inspected = null;
+      frame.inspectStatus = null;
+      continue;
+    }
+
+    if (step.type === "inspect-neighbor") {
+      frame.inspected = step.payload.to;
+      frame.inspectStatus = step.payload.status;
+      continue;
+    }
+
+    if (step.type === "score-update") {
+      frame.gScores.set(step.payload.cell, step.payload.nextG);
+      frame.fScores.set(step.payload.cell, step.payload.f);
+      if (!frame.closed.has(step.payload.cell)) {
+        frame.open.add(step.payload.cell);
+      }
+      continue;
+    }
+
+    if (step.type === "found") {
+      frame.completed = true;
+      frame.found = true;
+      frame.current = step.payload.cell;
+      frame.path = new Set<number>(run.result.pathCells);
+      continue;
+    }
+
+    if (step.type === "not-found") {
+      frame.completed = true;
+      frame.found = false;
+      frame.current = null;
+      frame.inspected = null;
+      frame.inspectStatus = null;
+      continue;
+    }
+
+    frame.completed = true;
+    frame.found = step.payload.found;
+    frame.path = new Set<number>(run.result.pathCells);
+  }
+
+  return frame;
+}
+
+function formatAStarStepLabel(step: AStarStepEvent): string {
+  if (step.type === "open-select") {
+    return "Open Select";
+  }
+
+  if (step.type === "inspect-neighbor") {
+    return "Inspect Neighbor";
+  }
+
+  if (step.type === "score-update") {
+    return "Score Update";
+  }
+
+  if (step.type === "found") {
+    return "Target Found";
+  }
+
+  if (step.type === "not-found") {
+    return "No Path";
+  }
+
+  return "Complete";
+}
+
+function formatAStarStepMessage(step: AStarStepEvent): string {
+  if (step.type === "open-select") {
+    return `Select cell ${step.payload.cell} with f=${step.payload.f} (g=${step.payload.g}, h=${step.payload.h}).`;
+  }
+
+  if (step.type === "inspect-neighbor") {
+    if (step.payload.status === "blocked") {
+      return `Neighbor ${step.payload.to} from ${step.payload.from} is blocked.`;
+    }
+
+    if (step.payload.status === "closed") {
+      return `Neighbor ${step.payload.to} from ${step.payload.from} is already in the closed set.`;
+    }
+
+    if (step.payload.status === "skip") {
+      return `Neighbor ${step.payload.to} does not improve g-score (${step.payload.candidateG}).`;
+    }
+
+    return `Neighbor ${step.payload.to} gets an improved g-score candidate ${step.payload.candidateG}.`;
+  }
+
+  if (step.type === "score-update") {
+    return `Update node ${step.payload.cell}: g=${step.payload.nextG}, h=${step.payload.h}, f=${step.payload.f}.`;
+  }
+
+  if (step.type === "found") {
+    return `Target reached with total distance ${step.payload.distance} and path length ${step.payload.pathLength}.`;
+  }
+
+  if (step.type === "not-found") {
+    return `No path after expanding ${step.payload.expandedCount} cell(s).`;
+  }
+
+  return step.payload.found
+    ? `Completed with distance ${step.payload.distance} and ${step.payload.relaxations} update(s).`
+    : `Completed without path after expanding ${step.payload.expandedCount} cells.`;
 }
 
 interface BubbleSortFrame {

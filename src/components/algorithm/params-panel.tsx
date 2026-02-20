@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { CircleHelpIcon, ShuffleIcon, SlidersHorizontalIcon } from "lucide-react";
 
+import { A_STAR_DEFAULT_PARAMS, createRandomAStarParams } from "@/algorithms/a-star/spec";
 import {
   BINARY_SEARCH_DEFAULT_PARAMS,
   createRandomBinarySearchParams,
@@ -175,6 +176,19 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
     );
   }
 
+  if (selectedAlgorithmSlug === "a-star") {
+    return (
+      <AStarParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
   if (selectedAlgorithmSlug === "bubble-sort") {
     return (
       <BubbleSortParamsCard
@@ -237,7 +251,7 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
           </Badge>
         </div>
         <CardDescription className="text-xs leading-relaxed">
-          Parameter schema and validation are enabled for Binary Search, BFS, DFS, Dijkstra, Bubble Sort,
+          Parameter schema and validation are enabled for Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort,
           Selection Sort, Insertion Sort, and Merge Sort in this milestone.
         </CardDescription>
       </CardHeader>
@@ -1273,6 +1287,400 @@ function DijkstraParamsCard({
                 ? normalizedResult.found
                   ? `distance ${normalizedResult.distance}, relaxations ${normalizedResult.relaxations}`
                   : `not found, visited ${normalizedResult.visitedCount}`
+                : "n/a"}
+            </span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AStarParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const rows = useMemo(() => {
+    const value = params.rows;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(A_STAR_DEFAULT_PARAMS.rows);
+  }, [params.rows]);
+
+  const cols = useMemo(() => {
+    const value = params.cols;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(A_STAR_DEFAULT_PARAMS.cols);
+  }, [params.cols]);
+
+  const startCell = useMemo(() => {
+    const value = params.startCell;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(A_STAR_DEFAULT_PARAMS.startCell);
+  }, [params.startCell]);
+
+  const targetCell = useMemo(() => {
+    const value = params.targetCell;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(A_STAR_DEFAULT_PARAMS.targetCell);
+  }, [params.targetCell]);
+
+  const blockedCells = useMemo(() => {
+    const value = params.blockedCells;
+    return typeof value === "string" ? value : A_STAR_DEFAULT_PARAMS.blockedCells;
+  }, [params.blockedCells]);
+
+  const heavyCells = useMemo(() => {
+    const value = params.heavyCells;
+    return typeof value === "string" ? value : A_STAR_DEFAULT_PARAMS.heavyCells;
+  }, [params.heavyCells]);
+
+  const weightSeed = useMemo(() => {
+    const value = params.weightSeed;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(A_STAR_DEFAULT_PARAMS.weightSeed);
+  }, [params.weightSeed]);
+
+  const weightOverrides = useMemo(() => {
+    const value = params.weightOverrides;
+    return typeof value === "string" ? value : A_STAR_DEFAULT_PARAMS.weightOverrides;
+  }, [params.weightOverrides]);
+
+  const heuristicWeight = useMemo(() => {
+    const value = params.heuristicWeight;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(A_STAR_DEFAULT_PARAMS.heuristicWeight);
+  }, [params.heuristicWeight]);
+
+  const allowDiagonal = useMemo(
+    () => coerceBoolean(params.allowDiagonal, A_STAR_DEFAULT_PARAMS.allowDiagonal),
+    [params.allowDiagonal],
+  );
+
+  const normalizedInput =
+    run && run.algorithmSlug === "a-star" && typeof run.input === "object" && run.input !== null
+      ? (run.input as {
+          rows: number;
+          cols: number;
+          startCell: number;
+          targetCell: number;
+          blockedCells: number[];
+          heavyCells: number[];
+          allowDiagonal: boolean;
+          weightSeed: number;
+          weightOverrides: string;
+          heuristicWeight: number;
+          weights: number[];
+        })
+      : null;
+
+  const normalizedResult =
+    run && run.algorithmSlug === "a-star" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          found: boolean;
+          distance: number;
+          expandedCount: number;
+          relaxations: number;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomAStarParams();
+    setParams({
+      rows: randomParams.rows,
+      cols: randomParams.cols,
+      startCell: randomParams.startCell,
+      targetCell: randomParams.targetCell,
+      blockedCells: randomParams.blockedCells,
+      heavyCells: randomParams.heavyCells,
+      allowDiagonal: randomParams.allowDiagonal,
+      weightSeed: randomParams.weightSeed,
+      weightOverrides: randomParams.weightOverrides,
+      heuristicWeight: randomParams.heuristicWeight,
+    });
+  };
+
+  const weightOverridesCount = useMemo(
+    () =>
+      normalizedInput
+        ? parseWeightOverrides(normalizedInput.weightOverrides, normalizedInput.weights.length).size
+        : 0,
+    [normalizedInput],
+  );
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            A*
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Configure a weighted grid and heuristic priority. A* combines distance-so-far and estimated
+          remaining cost to focus search toward the target.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <label htmlFor="param-a-star-rows" className="text-xs font-medium">
+              Rows
+            </label>
+            <Input
+              id="param-a-star-rows"
+              type="number"
+              value={rows}
+              onChange={(event) =>
+                setParam("rows", event.target.value.trim().length === 0 ? "" : Number(event.target.value))
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="param-a-star-cols" className="text-xs font-medium">
+              Columns
+            </label>
+            <Input
+              id="param-a-star-cols"
+              type="number"
+              value={cols}
+              onChange={(event) =>
+                setParam("cols", event.target.value.trim().length === 0 ? "" : Number(event.target.value))
+              }
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <label htmlFor="param-a-star-start-cell" className="text-xs font-medium">
+              Start Cell
+            </label>
+            <Input
+              id="param-a-star-start-cell"
+              type="number"
+              value={startCell}
+              onChange={(event) =>
+                setParam(
+                  "startCell",
+                  event.target.value.trim().length === 0 ? "" : Number(event.target.value),
+                )
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="param-a-star-target-cell" className="text-xs font-medium">
+              Target Cell
+            </label>
+            <Input
+              id="param-a-star-target-cell"
+              type="number"
+              value={targetCell}
+              onChange={(event) =>
+                setParam(
+                  "targetCell",
+                  event.target.value.trim().length === 0 ? "" : Number(event.target.value),
+                )
+              }
+            />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1">
+            <label htmlFor="param-a-star-blocked-cells" className="text-xs font-medium">
+              Blocked Cells
+            </label>
+            <InlineHelp text="Blocked cells are walls and cannot be entered by the search." />
+          </div>
+          <Input
+            id="param-a-star-blocked-cells"
+            value={blockedCells}
+            onChange={(event) => setParam("blockedCells", event.target.value)}
+            placeholder={A_STAR_DEFAULT_PARAMS.blockedCells}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1">
+            <label htmlFor="param-a-star-heavy-cells" className="text-xs font-medium">
+              Heavy Cells
+            </label>
+            <InlineHelp text="Heavy cells have increased travel cost and can shift route choices." />
+          </div>
+          <Input
+            id="param-a-star-heavy-cells"
+            value={heavyCells}
+            onChange={(event) => setParam("heavyCells", event.target.value)}
+            placeholder={A_STAR_DEFAULT_PARAMS.heavyCells}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1">
+            <label htmlFor="param-a-star-weight-seed" className="text-xs font-medium">
+              Weight Seed
+            </label>
+            <InlineHelp text="Deterministic seed used to generate base cell weights before overrides." />
+          </div>
+          <Input
+            id="param-a-star-weight-seed"
+            type="number"
+            value={weightSeed}
+            onChange={(event) =>
+              setParam(
+                "weightSeed",
+                event.target.value.trim().length === 0 ? "" : Number(event.target.value),
+              )
+            }
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1">
+            <label htmlFor="param-a-star-weight-overrides" className="text-xs font-medium">
+              Weight Overrides
+            </label>
+            <InlineHelp text="Manual per-cell weights in the format cell:weight. Example: 6:12, 9:3" />
+          </div>
+          <Input
+            id="param-a-star-weight-overrides"
+            value={weightOverrides}
+            onChange={(event) => setParam("weightOverrides", event.target.value)}
+            placeholder="6:12, 9:3"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1">
+            <label htmlFor="param-a-star-heuristic-weight" className="text-xs font-medium">
+              Heuristic Weight
+            </label>
+            <InlineHelp text="Controls how strongly A* prefers cells closer to target (1 keeps classic A* balance)." />
+          </div>
+          <Input
+            id="param-a-star-heuristic-weight"
+            type="number"
+            step="0.1"
+            value={heuristicWeight}
+            onChange={(event) =>
+              setParam(
+                "heuristicWeight",
+                event.target.value.trim().length === 0 ? "" : Number(event.target.value),
+              )
+            }
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1">
+            <p className="text-xs font-medium">Neighbor Policy</p>
+            <InlineHelp text="4-direction allows orthogonal movement. 8-direction also allows diagonal movement." />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={allowDiagonal ? "outline" : "secondary"}
+              onClick={() => setParam("allowDiagonal", false)}
+            >
+              4-Direction
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={allowDiagonal ? "secondary" : "outline"}
+              onClick={() => setParam("allowDiagonal", true)}
+            >
+              8-Direction
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Grid:{" "}
+            <span className="font-mono">
+              {normalizedInput ? `${normalizedInput.rows} x ${normalizedInput.cols}` : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Start / Target:{" "}
+            <span className="font-mono">
+              {normalizedInput ? `${normalizedInput.startCell} / ${normalizedInput.targetCell}` : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Blocked / Heavy:{" "}
+            <span className="font-mono">
+              {normalizedInput
+                ? `${normalizedInput.blockedCells.length} / ${normalizedInput.heavyCells.length}`
+                : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Weight Overrides: <span className="font-mono">{normalizedInput ? weightOverridesCount : "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? normalizedResult.found
+                  ? `distance ${normalizedResult.distance}, expanded ${normalizedResult.expandedCount}`
+                  : `not found, expanded ${normalizedResult.expandedCount}`
                 : "n/a"}
             </span>
           </p>
