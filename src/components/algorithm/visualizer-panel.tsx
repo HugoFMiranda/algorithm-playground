@@ -2203,7 +2203,7 @@ function TopologicalSortVisualizer({ run, cursor }: SharedVisualizerProps) {
   );
   const queuedSet = useMemo(() => new Set(queueDisplay), [queueDisplay]);
   const nodePositions = useMemo(() => createTopologicalNodePositions(typedRun?.input ?? null), [typedRun]);
-  const nodeRadius = 4.8;
+  const nodeRadius = 4.9;
   const activeEdgeKey = frame.inspectedEdge ? `${frame.inspectedEdge[0]}:${frame.inspectedEdge[1]}` : null;
 
   return (
@@ -2286,23 +2286,27 @@ function TopologicalSortVisualizer({ run, cursor }: SharedVisualizerProps) {
                 <defs>
                   <marker
                     id="topological-arrow-default"
-                    markerWidth="7"
-                    markerHeight="7"
-                    refX="6"
-                    refY="3.5"
+                    viewBox="0 0 6 6"
+                    markerWidth="4.4"
+                    markerHeight="4.4"
+                    markerUnits="userSpaceOnUse"
+                    refX="5.1"
+                    refY="3"
                     orient="auto"
                   >
-                    <polygon points="0 0, 7 3.5, 0 7" fill="rgba(148, 163, 184, 0.75)" />
+                    <polygon points="0 0, 6 3, 0 6" fill="rgba(148, 163, 184, 0.78)" />
                   </marker>
                   <marker
                     id="topological-arrow-active"
-                    markerWidth="7"
-                    markerHeight="7"
-                    refX="6"
-                    refY="3.5"
+                    viewBox="0 0 6 6"
+                    markerWidth="4.4"
+                    markerHeight="4.4"
+                    markerUnits="userSpaceOnUse"
+                    refX="5.1"
+                    refY="3"
                     orient="auto"
                   >
-                    <polygon points="0 0, 7 3.5, 0 7" fill="rgba(99, 102, 241, 0.9)" />
+                    <polygon points="0 0, 6 3, 0 6" fill="rgba(99, 102, 241, 0.92)" />
                   </marker>
                 </defs>
 
@@ -2331,7 +2335,8 @@ function TopologicalSortVisualizer({ run, cursor }: SharedVisualizerProps) {
                       x2={segment.x2}
                       y2={segment.y2}
                       stroke={stroke}
-                      strokeWidth={isActive ? 1.6 : 1.15}
+                      strokeWidth={isActive ? 1.3 : 0.95}
+                      vectorEffect="non-scaling-stroke"
                       markerEnd={isActive ? "url(#topological-arrow-active)" : "url(#topological-arrow-default)"}
                     />
                   );
@@ -2373,10 +2378,14 @@ function TopologicalSortVisualizer({ run, cursor }: SharedVisualizerProps) {
                       <circle r={nodeRadius} fill={fill} stroke={stroke} strokeWidth={1.2} />
                       <text
                         x="0"
-                        y="1"
+                        y="0"
+                        dy="0.03em"
                         textAnchor="middle"
-                        dominantBaseline="middle"
-                        className="fill-foreground font-mono text-[3.1px] font-semibold"
+                        dominantBaseline="central"
+                        fontSize="3"
+                        fontWeight="600"
+                        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+                        className="fill-foreground"
                       >
                         {node}
                       </text>
@@ -2508,8 +2517,8 @@ function projectEdgeSegment(from: GraphPoint, to: GraphPoint, radius: number): G
 
   const nx = dx / distance;
   const ny = dy / distance;
-  const startOffset = radius * 0.88;
-  const endOffset = radius * 1.08;
+  const startOffset = radius * 0.92;
+  const endOffset = radius * 0.96;
 
   return {
     x1: from.x + nx * startOffset,
