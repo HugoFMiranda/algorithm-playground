@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { PauseIcon, PlayIcon, RotateCcwIcon, SkipForwardIcon } from "lucide-react";
+import { PauseIcon, PlayIcon, RotateCcwIcon, SkipBackIcon, SkipForwardIcon } from "lucide-react";
 
 import {
   PLAYBACK_MIN_SPEED,
@@ -30,6 +30,7 @@ export function PlaybackControls() {
   const setPlaybackSpeed = useAppStore((state) => state.setPlaybackSpeed);
   const resetPlayback = useAppStore((state) => state.resetPlayback);
   const stepForward = useAppStore((state) => state.stepForward);
+  const stepBackward = useAppStore((state) => state.stepBackward);
 
   const isPlaying = playback.status === "playing";
   const hasRun = run !== null;
@@ -38,6 +39,7 @@ export function PlaybackControls() {
   const maxSpeed = getPlaybackMaxSpeed(selectedAlgorithmSlug);
   const canDecreaseSpeed = hasRun && playback.speed > PLAYBACK_MIN_SPEED;
   const canIncreaseSpeed = hasRun && playback.speed < maxSpeed;
+  const canStepBackward = hasRun && hasSteps && playback.cursor >= 0;
 
   useEffect(() => {
     if (!hasRun || !hasSteps || playback.status !== "playing") {
@@ -80,6 +82,15 @@ export function PlaybackControls() {
     stepForward();
   };
 
+  const handleStepBack = () => {
+    if (!hasRun || !hasSteps || playback.cursor < 0) {
+      return;
+    }
+
+    setPlaybackStatus("paused");
+    stepBackward();
+  };
+
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/80 backdrop-blur">
       <div className="container-page flex min-h-16 flex-wrap items-center gap-2 py-2 sm:flex-nowrap sm:justify-between">
@@ -97,6 +108,10 @@ export function PlaybackControls() {
           <Button type="button" size="sm" variant="outline" onClick={resetPlayback} disabled={!hasRun}>
             <RotateCcwIcon className="size-3.5" />
             Reset
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={handleStepBack} disabled={!canStepBackward}>
+            <SkipBackIcon className="size-3.5" />
+            Back
           </Button>
           <Button type="button" size="sm" variant="outline" onClick={handleStep} disabled={!hasRun || !hasSteps}>
             <SkipForwardIcon className="size-3.5" />

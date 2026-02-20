@@ -40,6 +40,7 @@ interface AppState {
   resetParams: () => void;
   regenerateRun: () => void;
   stepForward: (options?: { keepStatus?: boolean }) => void;
+  stepBackward: (options?: { keepStatus?: boolean }) => void;
 }
 
 const defaultPlayback: PlaybackState = {
@@ -221,6 +222,36 @@ export const useAppStore = create<AppState>((set) => ({
           : shouldKeepStatus
             ? state.playback.status
             : "paused";
+
+      return {
+        playback: {
+          ...state.playback,
+          cursor: nextCursor,
+          status: nextStatus,
+        },
+      };
+    }),
+  stepBackward: (options) =>
+    set((state) => {
+      if (!state.run) {
+        return state;
+      }
+
+      const hasSteps = state.run.steps.length > 0;
+      if (!hasSteps) {
+        return {
+          playback: {
+            ...state.playback,
+            status: "idle",
+            cursor: -1,
+          },
+        };
+      }
+
+      const nextCursor = Math.max(state.playback.cursor - 1, -1);
+      const shouldKeepStatus = options?.keepStatus ?? false;
+      const nextStatus: PlaybackStatus =
+        nextCursor < 0 ? "idle" : shouldKeepStatus ? state.playback.status : "paused";
 
       return {
         playback: {

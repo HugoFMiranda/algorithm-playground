@@ -54,6 +54,30 @@ describe("app store playback", () => {
     expect(state.run?.steps.length).toBeGreaterThan(0);
   });
 
+  it("steps backward by one event and pauses playback", () => {
+    useAppStore.getState().initializeAlgorithm("binary-search");
+    useAppStore.getState().setPlaybackStatus("playing");
+    useAppStore.getState().stepForward({ keepStatus: true });
+    useAppStore.getState().stepForward({ keepStatus: true });
+
+    useAppStore.getState().stepBackward();
+
+    const state = useAppStore.getState();
+    expect(state.playback.cursor).toBe(0);
+    expect(state.playback.status).toBe("paused");
+  });
+
+  it("returns to idle start when stepping backward from first step", () => {
+    useAppStore.getState().initializeAlgorithm("binary-search");
+    useAppStore.getState().stepForward();
+
+    useAppStore.getState().stepBackward();
+
+    const state = useAppStore.getState();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
   it("regenerates run when params change", () => {
     useAppStore.getState().initializeAlgorithm("binary-search");
     useAppStore.getState().setParam("target", 999);
