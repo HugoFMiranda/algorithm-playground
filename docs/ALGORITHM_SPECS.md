@@ -175,9 +175,42 @@ Each algorithm must define:
   - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Quick Sort (`D2`, Phase 2)
-- Objective: teach partition strategy and pivot semantics.
-- Renderer: array.
-- Key events: pivot-set, compare, partition-swap.
+- Objective: teach partitioning behavior, pivot strategy, and recursive divide-and-conquer sorting.
+- Input model:
+  - Numeric list provided as comma/space-separated text.
+  - Engine preserves normalized numeric order from input (no pre-sort).
+  - Empty/invalid arrays fallback to default seed values.
+- Params:
+  - `arrayValues` (string, default: `29, 10, 14, 37, 13, 5, 22, 31`)
+  - `pivotStrategy` (string enum: `last | middle`, default: `last`)
+- Human-friendly explanation:
+  - Quick Sort picks a pivot, partitions smaller values to the left and larger values to the right, then repeats on both sides.
+- Step event contract:
+  - `pivot-set`: chosen pivot metadata for active partition range.
+  - `compare`: compares current element with pivot value.
+  - `partition-swap`: swap event for pivot-move, partition swap, or pivot placement.
+  - `partition-complete`: partition summary with pivot final index and side sizes.
+  - `complete`: terminal aggregate metrics and sorted-state flag.
+- Renderer requirements:
+  - Highlight active partition range, pivot index, compared index, and swap pair.
+  - Distinct styling for finalized pivot positions after partition completion.
+  - Step status message derived from event payload.
+- Metrics tracked:
+  - Total comparisons.
+  - Total swaps.
+  - Total partitions executed.
+  - Maximum recursion depth reached.
+- Edge cases:
+  - Duplicate and negative values preserve deterministic partition behavior.
+  - `pivotStrategy` controls deterministic pivot selection (`last` vs midpoint index).
+  - Single-element arrays emit terminal completion state without partition events.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed params.
+  - Param fallback behavior for malformed input and pivot strategy values.
+  - Pivot strategy toggle remains deterministic.
+  - Renderer completion state matches final sorted output.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Heap Sort (`D3`, Phase 2)
 - Objective: teach heap build and extraction cycles.

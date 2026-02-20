@@ -81,6 +81,19 @@ describe("complexity summary", () => {
     expect(summary?.current).toContain("O(V^2 + E)");
   });
 
+  it("returns quick-sort complexity with run-aware details", () => {
+    const summary = getComplexitySummary("quick-sort", {
+      algorithmSlug: "quick-sort",
+      input: { values: [9, 4, 7, 3, 8, 2] },
+      normalizedParams: { pivotStrategy: "middle" },
+      result: { sortedValues: [2, 3, 4, 7, 8, 9], comparisons: 11, swaps: 7, partitions: 4, maxDepth: 3 },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(n log n)");
+    expect(summary?.timeWorst).toBe("O(n^2)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
     expect(getComplexitySummary("heap-sort", null)).toBeNull();
   });
@@ -98,9 +111,16 @@ describe("complexity summary", () => {
       normalizedParams: { optimizeEarlyExit: true },
       result: { sortedValues: [1, 2, 3, 4], comparisons: 3, swaps: 0, passes: 1 },
     });
+    const quick = getCompactCurrentComplexity("quick-sort", {
+      algorithmSlug: "quick-sort",
+      input: { values: [9, 4, 7, 3, 8, 2] },
+      normalizedParams: { pivotStrategy: "middle" },
+      result: { sortedValues: [2, 3, 4, 7, 8, 9], comparisons: 11, swaps: 7, partitions: 4, maxDepth: 3 },
+    });
 
     expect(binary).toBe("O(log n)");
     expect(bubble).toBe("O(n)");
+    expect(quick).toBe("O(n log n)");
   });
 
   it("returns compact complexity for dijkstra", () => {
