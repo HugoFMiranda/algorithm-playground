@@ -415,6 +415,70 @@ function getDfsComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
   };
 }
 
+function getDijkstraComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
+  let rows = 0;
+  let cols = 0;
+  let blockedCells = 0;
+  let allowDiagonal = false;
+
+  if (run && isRecord(run.input)) {
+    if ("rows" in run.input && isFiniteNumber(run.input.rows)) {
+      rows = run.input.rows;
+    }
+    if ("cols" in run.input && isFiniteNumber(run.input.cols)) {
+      cols = run.input.cols;
+    }
+    if ("blockedCells" in run.input && Array.isArray(run.input.blockedCells)) {
+      blockedCells = run.input.blockedCells.filter(isFiniteNumber).length;
+    }
+    if ("allowDiagonal" in run.input && typeof run.input.allowDiagonal === "boolean") {
+      allowDiagonal = run.input.allowDiagonal;
+    }
+  }
+
+  const vertexCount = Math.max(0, rows * cols - blockedCells);
+  const edgeFactor = allowDiagonal ? 8 : 4;
+  const estimatedEdges = Math.floor((vertexCount * edgeFactor) / 2);
+
+  let visitedCount: number | null = null;
+  let distance: number | null = null;
+  let relaxations: number | null = null;
+  let found: boolean | null = null;
+  if (run && isRecord(run.result)) {
+    if ("visitedCount" in run.result && isFiniteNumber(run.result.visitedCount)) {
+      visitedCount = run.result.visitedCount;
+    }
+    if ("distance" in run.result && isFiniteNumber(run.result.distance)) {
+      distance = run.result.distance;
+    }
+    if ("relaxations" in run.result && isFiniteNumber(run.result.relaxations)) {
+      relaxations = run.result.relaxations;
+    }
+    if ("found" in run.result && typeof run.result.found === "boolean") {
+      found = run.result.found;
+    }
+  }
+
+  const details = [
+    `Grid = ${rows} x ${cols}, blocked = ${blockedCells}`,
+    `Approximate graph size: V=${vertexCount}, E~${estimatedEdges}`,
+    `Neighbor model: ${allowDiagonal ? "8-direction" : "4-direction"}`,
+    `Current implementation uses deterministic min-scan frontier selection`,
+    visitedCount === null ? "Observed visited nodes: pending" : `Observed visited nodes: ${visitedCount}`,
+    relaxations === null ? "Observed relaxations: pending" : `Observed relaxations: ${relaxations}`,
+    found === null ? "Result: pending" : `Result: ${found ? `found at distance ${distance}` : "not found"}`,
+  ];
+
+  return {
+    timeBest: "O(V^2 + E)",
+    timeAverage: "O(V^2 + E)",
+    timeWorst: "O(V^2 + E)",
+    space: "O(V)",
+    current: "O(V^2 + E) on this graph",
+    details,
+  };
+}
+
 export function getComplexitySummary(
   algorithmSlug: string,
   run: AlgorithmRunSnapshot | null,
@@ -433,6 +497,10 @@ export function getComplexitySummary(
 
   if (algorithmSlug === "dfs") {
     return getDfsComplexity(run && run.algorithmSlug === "dfs" ? run : null);
+  }
+
+  if (algorithmSlug === "dijkstra") {
+    return getDijkstraComplexity(run && run.algorithmSlug === "dijkstra" ? run : null);
   }
 
   if (algorithmSlug === "selection-sort") {

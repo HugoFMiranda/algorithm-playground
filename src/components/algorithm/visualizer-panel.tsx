@@ -7,6 +7,8 @@ import type { BfsInput, BfsResult } from "@/algorithms/bfs/spec";
 import type { BfsStepEvent } from "@/algorithms/bfs/engine";
 import type { BubbleSortInput, BubbleSortResult } from "@/algorithms/bubble-sort/spec";
 import type { BubbleSortStepEvent } from "@/algorithms/bubble-sort/engine";
+import type { DijkstraInput, DijkstraResult } from "@/algorithms/dijkstra/spec";
+import type { DijkstraStepEvent } from "@/algorithms/dijkstra/engine";
 import type { DfsInput, DfsResult } from "@/algorithms/dfs/spec";
 import type { DfsStepEvent } from "@/algorithms/dfs/engine";
 import type { InsertionSortInput, InsertionSortResult } from "@/algorithms/insertion-sort/spec";
@@ -57,6 +59,10 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
 
   if (algorithm.slug === "dfs") {
     return <DfsVisualizer run={run} cursor={cursor} />;
+  }
+
+  if (algorithm.slug === "dijkstra") {
+    return <DijkstraVisualizer run={run} cursor={cursor} />;
   }
 
   if (algorithm.slug === "selection-sort") {
@@ -780,6 +786,309 @@ function formatDfsStepMessage(step: DfsStepEvent): string {
   }
 
   return `Search exhausted after ${step.payload.backtracks} backtrack(s), visited ${step.payload.visitedCount} cells.`;
+}
+
+interface DijkstraFrame {
+  visited: Set<number>;
+  frontier: Set<number>;
+  blocked: Set<number>;
+  heavy: Set<number>;
+  path: Set<number>;
+  distances: Map<number, number>;
+  current: number | null;
+  inspected: number | null;
+  inspectStatus: "blocked" | "visited" | "skip" | "update" | null;
+  completed: boolean;
+  found: boolean;
+}
+
+function formatDistance(distance: number | undefined): string {
+  if (distance === undefined) {
+    return "∞";
+  }
+
+  return String(distance);
+}
+
+function DijkstraVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const compactComplexity = getCompactCurrentComplexity("dijkstra", run);
+  const typedRun =
+    run && run.algorithmSlug === "dijkstra"
+      ? {
+          ...run,
+          input: run.input as DijkstraInput,
+          result: run.result as DijkstraResult,
+          steps: run.steps as DijkstraStepEvent[],
+        }
+      : null;
+
+  const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
+  const frame = useMemo(() => deriveDijkstraFrame(typedRun, cursor), [typedRun, cursor]);
+  const stepLabel = activeStep ? formatDijkstraStepLabel(activeStep) : "Ready";
+  const stepMessage = activeStep
+    ? formatDijkstraStepMessage(activeStep)
+    : "Press Play or Step to start execution.";
+  const totalCells = typedRun ? typedRun.input.rows * typedRun.input.cols : 0;
+
+  return (
+    <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg">Visualizer</CardTitle>
+          <div className="flex items-center gap-2">
+            {compactComplexity ? (
+              <Badge variant="outline" className="rounded-full border-border/70">
+                {compactComplexity}
+              </Badge>
+            ) : null}
+            <Badge variant="secondary" className="rounded-full border-border/70">
+              Dijkstra
+            </Badge>
+          </div>
+        </div>
+        <CardDescription>
+          Deterministic weighted-grid shortest path playback with extract-min and relaxation events.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Grid</p>
+            <p className="font-mono text-base">
+              {typedRun ? `${typedRun.input.rows} x ${typedRun.input.cols}` : "n/a"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Visited</p>
+            <p className="font-mono text-base">{typedRun?.result.visitedCount ?? 0}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Distance</p>
+            <p className="font-mono text-base">{typedRun?.result.found ? typedRun.result.distance : "n/a"}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Result</p>
+            <p className="font-mono text-base">
+              {typedRun?.result.found ? "Path Found" : typedRun && frame.completed ? "Not Found" : "Searching"}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="rounded-full border-border/70">
+              {stepLabel}
+            </Badge>
+            <p className="text-muted-foreground">{stepMessage}</p>
+          </div>
+          {typedRun ? (
+            <div
+              className="grid gap-2"
+              style={{ gridTemplateColumns: `repeat(${typedRun.input.cols}, minmax(0, 1fr))` }}
+            >
+              {Array.from({ length: totalCells }, (_, cell) => {
+                const isStart = cell === typedRun.input.startCell;
+                const isTarget = cell === typedRun.input.targetCell;
+                const isBlocked = frame.blocked.has(cell);
+                const isVisited = frame.visited.has(cell);
+                const isFrontier = frame.frontier.has(cell);
+                const isPath = frame.path.has(cell);
+                const isCurrent = frame.current === cell;
+                const isInspected = frame.inspected === cell;
+                const isHeavy = frame.heavy.has(cell);
+                const distance = frame.distances.get(cell);
+
+                return (
+                  <div
+                    key={cell}
+                    className={cn(
+                      "rounded-lg border p-2",
+                      isBlocked && "border-zinc-500/70 bg-zinc-500/25 text-zinc-100",
+                      isVisited && "border-sky-300/60 bg-sky-500/12",
+                      isFrontier && "border-cyan-300/60 bg-cyan-500/12",
+                      isPath && "border-emerald-300/70 bg-emerald-500/20",
+                      isCurrent && "border-amber-300/70 bg-amber-500/20",
+                      isHeavy && !isBlocked && "ring-1 ring-violet-300/50",
+                      isInspected && frame.inspectStatus === "blocked" && "border-red-300/70 bg-red-500/18",
+                      isInspected && frame.inspectStatus === "update" && "border-violet-300/70 bg-violet-500/20",
+                      isInspected && frame.inspectStatus === "skip" && "border-orange-300/70 bg-orange-500/20",
+                      isStart && "ring-1 ring-blue-300/70",
+                      isTarget && "ring-1 ring-rose-300/70",
+                    )}
+                  >
+                    <p className="text-muted-foreground text-[10px]">{toGridLabel(cell, typedRun.input.cols)}</p>
+                    <p className="font-mono text-xs">
+                      {isStart ? "S" : isTarget ? "T" : isBlocked ? "#" : typedRun.input.weights[cell]}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">d={formatDistance(distance)}</p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+          {!typedRun ? (
+            <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-border/70 p-4 text-xs">
+              <SearchIcon className="size-3.5" />
+              No Dijkstra run available for visualization.
+            </div>
+          ) : null}
+        </div>
+
+        <div className="text-muted-foreground text-xs">
+          Legend: <span className="font-medium">S/T</span> start/target, <span className="font-medium">#</span>{" "}
+          blocked, number = cell weight, d = best known distance.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function deriveDijkstraFrame(
+  run: {
+    input: DijkstraInput;
+    result: DijkstraResult;
+    steps: DijkstraStepEvent[];
+  } | null,
+  cursor: number,
+): DijkstraFrame {
+  const frame: DijkstraFrame = {
+    visited: new Set<number>(),
+    frontier: new Set<number>(),
+    blocked: new Set<number>(run?.input.blockedCells ?? []),
+    heavy: new Set<number>(run?.input.heavyCells ?? []),
+    path: new Set<number>(),
+    distances: new Map<number, number>(),
+    current: null,
+    inspected: null,
+    inspectStatus: null,
+    completed: false,
+    found: false,
+  };
+
+  if (!run || cursor < 0 || run.steps.length === 0) {
+    if (run) {
+      frame.frontier.add(run.input.startCell);
+      frame.distances.set(run.input.startCell, 0);
+    }
+    return frame;
+  }
+
+  frame.frontier.add(run.input.startCell);
+  frame.distances.set(run.input.startCell, 0);
+
+  const boundedCursor = Math.min(cursor, run.steps.length - 1);
+  for (let index = 0; index <= boundedCursor; index += 1) {
+    const step = run.steps[index];
+
+    if (step.type === "extract-min") {
+      frame.current = step.payload.cell;
+      frame.frontier.delete(step.payload.cell);
+      frame.visited.add(step.payload.cell);
+      frame.distances.set(step.payload.cell, step.payload.distance);
+      frame.inspected = null;
+      frame.inspectStatus = null;
+      continue;
+    }
+
+    if (step.type === "relax-edge") {
+      frame.inspected = step.payload.to;
+      frame.inspectStatus = step.payload.status;
+      continue;
+    }
+
+    if (step.type === "distance-update") {
+      frame.distances.set(step.payload.cell, step.payload.nextDistance);
+      if (!frame.visited.has(step.payload.cell)) {
+        frame.frontier.add(step.payload.cell);
+      }
+      continue;
+    }
+
+    if (step.type === "found") {
+      frame.completed = true;
+      frame.found = true;
+      frame.current = step.payload.cell;
+      frame.path = new Set<number>(run.result.pathCells);
+      continue;
+    }
+
+    if (step.type === "not-found") {
+      frame.completed = true;
+      frame.found = false;
+      frame.current = null;
+      frame.inspected = null;
+      frame.inspectStatus = null;
+      continue;
+    }
+
+    frame.completed = true;
+    frame.found = step.payload.found;
+    frame.path = new Set<number>(run.result.pathCells);
+  }
+
+  return frame;
+}
+
+function formatDijkstraStepLabel(step: DijkstraStepEvent): string {
+  if (step.type === "extract-min") {
+    return "Extract Min";
+  }
+
+  if (step.type === "relax-edge") {
+    return "Relax Edge";
+  }
+
+  if (step.type === "distance-update") {
+    return "Distance Update";
+  }
+
+  if (step.type === "found") {
+    return "Target Found";
+  }
+
+  if (step.type === "not-found") {
+    return "No Path";
+  }
+
+  return "Complete";
+}
+
+function formatDijkstraStepMessage(step: DijkstraStepEvent): string {
+  if (step.type === "extract-min") {
+    return `Extract cell ${step.payload.cell} with best-known distance ${step.payload.distance}.`;
+  }
+
+  if (step.type === "relax-edge") {
+    if (step.payload.status === "blocked") {
+      return `Edge ${step.payload.from} -> ${step.payload.to} is blocked.`;
+    }
+
+    if (step.payload.status === "visited") {
+      return `Edge ${step.payload.from} -> ${step.payload.to} goes to an already settled cell.`;
+    }
+
+    if (step.payload.status === "skip") {
+      return `Edge ${step.payload.from} -> ${step.payload.to} does not improve distance (${step.payload.candidateDistance}).`;
+    }
+
+    return `Edge ${step.payload.from} -> ${step.payload.to} yields improved candidate ${step.payload.candidateDistance}.`;
+  }
+
+  if (step.type === "distance-update") {
+    return `Update d(${step.payload.cell}) from ${step.payload.previousDistance < 0 ? "∞" : step.payload.previousDistance} to ${step.payload.nextDistance}.`;
+  }
+
+  if (step.type === "found") {
+    return `Target reached with total distance ${step.payload.distance} and path length ${step.payload.pathLength}.`;
+  }
+
+  if (step.type === "not-found") {
+    return `No reachable target after ${step.payload.relaxations} successful relaxation(s).`;
+  }
+
+  return step.payload.found
+    ? `Completed with distance ${step.payload.distance} and ${step.payload.relaxations} relaxation(s).`
+    : `Completed without path after visiting ${step.payload.visitedCount} cells.`;
 }
 
 interface BubbleSortFrame {

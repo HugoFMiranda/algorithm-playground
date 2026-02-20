@@ -4,6 +4,8 @@ import { createBfsRun } from "@/algorithms/bfs/engine";
 import { BFS_DEFAULT_PARAMS } from "@/algorithms/bfs/spec";
 import { createBubbleSortRun } from "@/algorithms/bubble-sort/engine";
 import { BUBBLE_SORT_DEFAULT_PARAMS } from "@/algorithms/bubble-sort/spec";
+import { createDijkstraRun } from "@/algorithms/dijkstra/engine";
+import { DIJKSTRA_DEFAULT_PARAMS } from "@/algorithms/dijkstra/spec";
 import { createDfsRun } from "@/algorithms/dfs/engine";
 import { DFS_DEFAULT_PARAMS } from "@/algorithms/dfs/spec";
 import { createInsertionSortRun } from "@/algorithms/insertion-sort/engine";
@@ -48,6 +50,12 @@ const ALGORITHM_RUNTIME_REGISTRY: Record<string, AlgorithmRuntimeDefinition> = {
     rendererFamily: "grid",
     defaultParams: { ...DFS_DEFAULT_PARAMS },
     createRun: createDfsRun,
+  },
+  dijkstra: {
+    slug: "dijkstra",
+    rendererFamily: "grid",
+    defaultParams: { ...DIJKSTRA_DEFAULT_PARAMS },
+    createRun: createDijkstraRun,
   },
   "binary-search": {
     slug: "binary-search",

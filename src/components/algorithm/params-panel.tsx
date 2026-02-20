@@ -14,6 +14,10 @@ import {
 } from "@/algorithms/bubble-sort/spec";
 import { DFS_DEFAULT_PARAMS, createRandomDfsParams } from "@/algorithms/dfs/spec";
 import {
+  DIJKSTRA_DEFAULT_PARAMS,
+  createRandomDijkstraParams,
+} from "@/algorithms/dijkstra/spec";
+import {
   INSERTION_SORT_DEFAULT_PARAMS,
   createRandomInsertionSortParams,
 } from "@/algorithms/insertion-sort/spec";
@@ -135,6 +139,19 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
     );
   }
 
+  if (selectedAlgorithmSlug === "dijkstra") {
+    return (
+      <DijkstraParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
   if (selectedAlgorithmSlug === "bubble-sort") {
     return (
       <BubbleSortParamsCard
@@ -197,8 +214,8 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
           </Badge>
         </div>
         <CardDescription className="text-xs leading-relaxed">
-          Parameter schema and validation are enabled for Binary Search, BFS, DFS, Bubble Sort, Selection
-          Sort, Insertion Sort, and Merge Sort in this milestone.
+          Parameter schema and validation are enabled for Binary Search, BFS, DFS, Dijkstra, Bubble Sort,
+          Selection Sort, Insertion Sort, and Merge Sort in this milestone.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -864,6 +881,321 @@ function DfsParamsCard({
               {normalizedResult
                 ? normalizedResult.found
                   ? `found at depth ${normalizedResult.depth}, backtracks ${normalizedResult.backtracks}`
+                  : `not found, visited ${normalizedResult.visitedCount}`
+                : "n/a"}
+            </span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DijkstraParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const rows = useMemo(() => {
+    const value = params.rows;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(DIJKSTRA_DEFAULT_PARAMS.rows);
+  }, [params.rows]);
+
+  const cols = useMemo(() => {
+    const value = params.cols;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(DIJKSTRA_DEFAULT_PARAMS.cols);
+  }, [params.cols]);
+
+  const startCell = useMemo(() => {
+    const value = params.startCell;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(DIJKSTRA_DEFAULT_PARAMS.startCell);
+  }, [params.startCell]);
+
+  const targetCell = useMemo(() => {
+    const value = params.targetCell;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(DIJKSTRA_DEFAULT_PARAMS.targetCell);
+  }, [params.targetCell]);
+
+  const blockedCells = useMemo(() => {
+    const value = params.blockedCells;
+    return typeof value === "string" ? value : DIJKSTRA_DEFAULT_PARAMS.blockedCells;
+  }, [params.blockedCells]);
+
+  const heavyCells = useMemo(() => {
+    const value = params.heavyCells;
+    return typeof value === "string" ? value : DIJKSTRA_DEFAULT_PARAMS.heavyCells;
+  }, [params.heavyCells]);
+
+  const weightSeed = useMemo(() => {
+    const value = params.weightSeed;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(DIJKSTRA_DEFAULT_PARAMS.weightSeed);
+  }, [params.weightSeed]);
+
+  const allowDiagonal = useMemo(
+    () => coerceBoolean(params.allowDiagonal, DIJKSTRA_DEFAULT_PARAMS.allowDiagonal),
+    [params.allowDiagonal],
+  );
+
+  const normalizedInput =
+    run && run.algorithmSlug === "dijkstra" && typeof run.input === "object" && run.input !== null
+      ? (run.input as {
+          rows: number;
+          cols: number;
+          startCell: number;
+          targetCell: number;
+          blockedCells: number[];
+          heavyCells: number[];
+          allowDiagonal: boolean;
+          weightSeed: number;
+          weights: number[];
+        })
+      : null;
+
+  const normalizedResult =
+    run && run.algorithmSlug === "dijkstra" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          found: boolean;
+          distance: number;
+          visitedCount: number;
+          relaxations: number;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomDijkstraParams();
+    setParams({
+      rows: randomParams.rows,
+      cols: randomParams.cols,
+      startCell: randomParams.startCell,
+      targetCell: randomParams.targetCell,
+      blockedCells: randomParams.blockedCells,
+      heavyCells: randomParams.heavyCells,
+      allowDiagonal: randomParams.allowDiagonal,
+      weightSeed: randomParams.weightSeed,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Dijkstra
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Configure a weighted grid, optional walls and heavy zones. Dijkstra finds the lowest total-cost
+          path with deterministic relaxations.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <label htmlFor="param-dijkstra-rows" className="text-xs font-medium">
+              Rows
+            </label>
+            <Input
+              id="param-dijkstra-rows"
+              type="number"
+              value={rows}
+              onChange={(event) =>
+                setParam("rows", event.target.value.trim().length === 0 ? "" : Number(event.target.value))
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="param-dijkstra-cols" className="text-xs font-medium">
+              Columns
+            </label>
+            <Input
+              id="param-dijkstra-cols"
+              type="number"
+              value={cols}
+              onChange={(event) =>
+                setParam("cols", event.target.value.trim().length === 0 ? "" : Number(event.target.value))
+              }
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <label htmlFor="param-dijkstra-start-cell" className="text-xs font-medium">
+              Start Cell
+            </label>
+            <Input
+              id="param-dijkstra-start-cell"
+              type="number"
+              value={startCell}
+              onChange={(event) =>
+                setParam(
+                  "startCell",
+                  event.target.value.trim().length === 0 ? "" : Number(event.target.value),
+                )
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="param-dijkstra-target-cell" className="text-xs font-medium">
+              Target Cell
+            </label>
+            <Input
+              id="param-dijkstra-target-cell"
+              type="number"
+              value={targetCell}
+              onChange={(event) =>
+                setParam(
+                  "targetCell",
+                  event.target.value.trim().length === 0 ? "" : Number(event.target.value),
+                )
+              }
+            />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="param-dijkstra-blocked-cells" className="text-xs font-medium">
+            Blocked Cells
+          </label>
+          <Input
+            id="param-dijkstra-blocked-cells"
+            value={blockedCells}
+            onChange={(event) => setParam("blockedCells", event.target.value)}
+            placeholder={DIJKSTRA_DEFAULT_PARAMS.blockedCells}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="param-dijkstra-heavy-cells" className="text-xs font-medium">
+            Heavy Cells
+          </label>
+          <Input
+            id="param-dijkstra-heavy-cells"
+            value={heavyCells}
+            onChange={(event) => setParam("heavyCells", event.target.value)}
+            placeholder={DIJKSTRA_DEFAULT_PARAMS.heavyCells}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="param-dijkstra-weight-seed" className="text-xs font-medium">
+            Weight Seed
+          </label>
+          <Input
+            id="param-dijkstra-weight-seed"
+            type="number"
+            value={weightSeed}
+            onChange={(event) =>
+              setParam(
+                "weightSeed",
+                event.target.value.trim().length === 0 ? "" : Number(event.target.value),
+              )
+            }
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Neighbor Policy</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={allowDiagonal ? "outline" : "secondary"}
+              onClick={() => setParam("allowDiagonal", false)}
+            >
+              4-Direction
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={allowDiagonal ? "secondary" : "outline"}
+              onClick={() => setParam("allowDiagonal", true)}
+            >
+              8-Direction
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Grid:{" "}
+            <span className="font-mono">
+              {normalizedInput ? `${normalizedInput.rows} x ${normalizedInput.cols}` : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Start / Target:{" "}
+            <span className="font-mono">
+              {normalizedInput ? `${normalizedInput.startCell} / ${normalizedInput.targetCell}` : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Blocked / Heavy:{" "}
+            <span className="font-mono">
+              {normalizedInput
+                ? `${normalizedInput.blockedCells.length} / ${normalizedInput.heavyCells.length}`
+                : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? normalizedResult.found
+                  ? `distance ${normalizedResult.distance}, relaxations ${normalizedResult.relaxations}`
                   : `not found, visited ${normalizedResult.visitedCount}`
                 : "n/a"}
             </span>
