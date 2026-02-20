@@ -2505,17 +2505,31 @@ function createTopologicalGraphLayout(
   const paddingX = Math.max(10, width * 0.09);
   const paddingY = Math.max(8, height * 0.08);
   const nodeRadius = maxLayerSize >= 6 ? 4.2 : maxLayerSize >= 4 ? 4.6 : 4.9;
+  const availableHeight = height - paddingY * 2;
+  const centerY = paddingY + availableHeight / 2;
+  const sparseChainLikeLayout = maxLayerSize <= 1 && maxLevel >= 5;
+  const lanePattern = [0, -1, 1, -2, 2, -1, 1];
+  const laneSpacing = Math.max(5.5, Math.min(9, availableHeight / 7));
   const positions: Record<number, GraphPoint> = {};
 
   for (let level = 0; level <= maxLevel; level += 1) {
     const nodes = [...(layeredNodes.get(level) ?? [])].sort((left, right) => left - right);
     const x = maxLevel === 0 ? width / 2 : paddingX + ((width - paddingX * 2) * level) / maxLevel;
-    const verticalStep = (height - paddingY * 2) / (nodes.length + 1);
+    const verticalStep = availableHeight / (nodes.length + 1);
 
     nodes.forEach((node, rowIndex) => {
+      const y =
+        sparseChainLikeLayout && nodes.length === 1
+          ? clampValue(
+              centerY + lanePattern[level % lanePattern.length] * laneSpacing,
+              paddingY + nodeRadius,
+              height - paddingY - nodeRadius,
+            )
+          : paddingY + verticalStep * (rowIndex + 1);
+
       positions[node] = {
         x,
-        y: paddingY + verticalStep * (rowIndex + 1),
+        y,
       };
     });
   }
@@ -2526,6 +2540,10 @@ function createTopologicalGraphLayout(
     height,
     nodeRadius,
   };
+}
+
+function clampValue(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
 }
 
 function createTopologicalEdgeCurvatures(
