@@ -14,6 +14,8 @@ import { createInsertionSortRun } from "@/algorithms/insertion-sort/engine";
 import { INSERTION_SORT_DEFAULT_PARAMS } from "@/algorithms/insertion-sort/spec";
 import { createMergeSortRun } from "@/algorithms/merge-sort/engine";
 import { MERGE_SORT_DEFAULT_PARAMS } from "@/algorithms/merge-sort/spec";
+import { createQuickSortRun } from "@/algorithms/quick-sort/engine";
+import { QUICK_SORT_DEFAULT_PARAMS } from "@/algorithms/quick-sort/spec";
 import { createSelectionSortRun } from "@/algorithms/selection-sort/engine";
 import { SELECTION_SORT_DEFAULT_PARAMS } from "@/algorithms/selection-sort/spec";
 import type { ParamPrimitive, RawParams, StepEventBase } from "@/types/engine";
@@ -88,6 +90,12 @@ const ALGORITHM_RUNTIME_REGISTRY: Record<string, AlgorithmRuntimeDefinition> = {
     rendererFamily: "array",
     defaultParams: { ...MERGE_SORT_DEFAULT_PARAMS },
     createRun: createMergeSortRun,
+  },
+  "quick-sort": {
+    slug: "quick-sort",
+    rendererFamily: "array",
+    defaultParams: { ...QUICK_SORT_DEFAULT_PARAMS },
+    createRun: createQuickSortRun,
   },
 };
 

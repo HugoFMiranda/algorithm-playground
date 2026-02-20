@@ -199,6 +199,53 @@ function getSelectionSortComplexity(run: AlgorithmRunSnapshot | null): Complexit
   };
 }
 
+function getQuickSortComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
+  const values = run ? extractValues(run.input) : [];
+  const n = values.length;
+  const pivotStrategy =
+    run && typeof run.normalizedParams.pivotStrategy === "string"
+      ? run.normalizedParams.pivotStrategy
+      : "last";
+
+  let comparisons: number | null = null;
+  let swaps: number | null = null;
+  let partitions: number | null = null;
+  let maxDepth: number | null = null;
+  if (run && isRecord(run.result)) {
+    if ("comparisons" in run.result && isFiniteNumber(run.result.comparisons)) {
+      comparisons = run.result.comparisons;
+    }
+    if ("swaps" in run.result && isFiniteNumber(run.result.swaps)) {
+      swaps = run.result.swaps;
+    }
+    if ("partitions" in run.result && isFiniteNumber(run.result.partitions)) {
+      partitions = run.result.partitions;
+    }
+    if ("maxDepth" in run.result && isFiniteNumber(run.result.maxDepth)) {
+      maxDepth = run.result.maxDepth;
+    }
+  }
+
+  const details = [
+    `n = ${n}`,
+    `pivotStrategy = ${pivotStrategy}`,
+    `Expected profile: O(n log n) average, O(n^2) worst for unbalanced partitions`,
+    comparisons === null
+      ? "Observed comparisons/swaps/partitions: pending"
+      : `Observed comparisons/swaps/partitions: ${comparisons}/${swaps ?? "?"}/${partitions ?? "?"}`,
+    maxDepth === null ? "Observed recursion depth: pending" : `Observed recursion depth: ${maxDepth}`,
+  ];
+
+  return {
+    timeBest: "O(n log n)",
+    timeAverage: "O(n log n)",
+    timeWorst: "O(n^2)",
+    space: "O(log n)",
+    current: n <= 1 ? "O(1) on this input" : "O(n log n) expected on this input",
+    details,
+  };
+}
+
 function getInsertionSortComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
   const values = run ? extractValues(run.input) : [];
   const n = values.length;
@@ -573,6 +620,10 @@ export function getComplexitySummary(
 
   if (algorithmSlug === "selection-sort") {
     return getSelectionSortComplexity(run && run.algorithmSlug === "selection-sort" ? run : null);
+  }
+
+  if (algorithmSlug === "quick-sort") {
+    return getQuickSortComplexity(run && run.algorithmSlug === "quick-sort" ? run : null);
   }
 
   if (algorithmSlug === "insertion-sort") {

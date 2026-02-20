@@ -74,7 +74,7 @@ export function LibrarySearch({ algorithms }: LibrarySearchProps) {
           </CardTitle>
           <CardDescription className="max-w-2xl text-sm leading-relaxed">
             Search the algorithm catalog and open visualizer pages. Binary Search, BFS, DFS, Dijkstra, A*,
-            Bubble Sort, Selection Sort, Insertion Sort, and Merge Sort currently include complete
+            Bubble Sort, Quick Sort, Selection Sort, Insertion Sort, and Merge Sort currently include complete
             deterministic engine + playback implementations.
           </CardDescription>
         </div>

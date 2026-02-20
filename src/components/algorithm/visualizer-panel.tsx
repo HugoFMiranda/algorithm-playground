@@ -17,6 +17,8 @@ import type { InsertionSortInput, InsertionSortResult } from "@/algorithms/inser
 import type { InsertionSortStepEvent } from "@/algorithms/insertion-sort/engine";
 import type { MergeSortInput, MergeSortResult } from "@/algorithms/merge-sort/spec";
 import type { MergeSortStepEvent } from "@/algorithms/merge-sort/engine";
+import type { QuickSortInput, QuickSortResult } from "@/algorithms/quick-sort/spec";
+import type { QuickSortStepEvent } from "@/algorithms/quick-sort/engine";
 import type { SelectionSortInput, SelectionSortResult } from "@/algorithms/selection-sort/spec";
 import type { SelectionSortStepEvent } from "@/algorithms/selection-sort/engine";
 import type { AlgorithmDefinition } from "@/data/algorithms";
@@ -76,6 +78,10 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
 
   if (algorithm.slug === "selection-sort") {
     return <SelectionSortVisualizer run={run} cursor={cursor} />;
+  }
+
+  if (algorithm.slug === "quick-sort") {
+    return <QuickSortVisualizer run={run} cursor={cursor} />;
   }
 
   if (algorithm.slug === "insertion-sort") {
@@ -2344,6 +2350,268 @@ function formatBubbleSortStepMessage(step: BubbleSortStepEvent): string {
   }
 
   return `Completed in ${step.payload.passes} passes with ${step.payload.comparisons} comparisons.`;
+}
+
+interface QuickSortFrame {
+  values: number[];
+  activeRange: [number, number] | null;
+  pivotIndex: number | null;
+  comparedIndex: number | null;
+  storeIndex: number | null;
+  swapPair: [number, number] | null;
+  finalizedIndices: Set<number>;
+  depth: number | null;
+  completed: boolean;
+}
+
+function QuickSortVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const compactComplexity = getCompactCurrentComplexity("quick-sort", run);
+  const typedRun =
+    run && run.algorithmSlug === "quick-sort"
+      ? {
+          ...run,
+          input: run.input as QuickSortInput,
+          result: run.result as QuickSortResult,
+          steps: run.steps as QuickSortStepEvent[],
+        }
+      : null;
+
+  const values = typedRun?.input.values ?? [];
+  const steps = typedRun?.steps ?? [];
+  const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
+  const frame = useMemo(() => deriveQuickSortFrame(values, steps, cursor), [values, steps, cursor]);
+  const stepLabel = activeStep ? formatQuickSortStepLabel(activeStep) : "Ready";
+  const stepMessage = activeStep ? formatQuickSortStepMessage(activeStep) : "Press Play or Step to start execution.";
+
+  return (
+    <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg">Visualizer</CardTitle>
+          <div className="flex items-center gap-2">
+            {compactComplexity ? (
+              <Badge variant="outline" className="rounded-full border-border/70">
+                {compactComplexity}
+              </Badge>
+            ) : null}
+            <Badge variant="secondary" className="rounded-full border-border/70">
+              Quick Sort
+            </Badge>
+          </div>
+        </div>
+        <CardDescription>
+          Deterministic partition playback with pivot selection, comparisons, and recursive sub-range splits.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Comparisons</p>
+            <p className="font-mono text-base">{typedRun?.result.comparisons ?? 0}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Swaps</p>
+            <p className="font-mono text-base">{typedRun?.result.swaps ?? 0}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Partitions</p>
+            <p className="font-mono text-base">{typedRun?.result.partitions ?? 0}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Depth</p>
+            <p className="font-mono text-base">{frame.depth ?? typedRun?.result.maxDepth ?? "n/a"}</p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="rounded-full border-border/70">
+              {stepLabel}
+            </Badge>
+            <p className="text-muted-foreground">{stepMessage}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            {frame.values.map((value, index) => {
+              const inActiveRange =
+                frame.activeRange !== null && index >= frame.activeRange[0] && index <= frame.activeRange[1];
+              const isPivot = frame.pivotIndex === index;
+              const isCompared = frame.comparedIndex === index;
+              const isStoreIndex = frame.storeIndex === index;
+              const isSwapped =
+                frame.swapPair !== null &&
+                (index === frame.swapPair[0] || index === frame.swapPair[1]);
+              const isFinalized = frame.completed || frame.finalizedIndices.has(index);
+
+              return (
+                <div
+                  key={`${value}-${index}`}
+                  className={cn(
+                    "rounded-lg border p-2",
+                    inActiveRange && "border-sky-300/60 bg-sky-500/10",
+                    isPivot && "border-cyan-300/60 bg-cyan-500/15",
+                    isCompared && "border-indigo-300/60 bg-indigo-500/15",
+                    isStoreIndex && "border-violet-300/60 bg-violet-500/15",
+                    isSwapped && "border-amber-300/60 bg-amber-500/20",
+                    isFinalized && "border-emerald-300/60 bg-emerald-500/15",
+                  )}
+                >
+                  <p className="text-muted-foreground text-[10px]">index {index}</p>
+                  <p className="font-mono text-sm">{value}</p>
+                </div>
+              );
+            })}
+          </div>
+          {frame.values.length === 0 ? (
+            <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-border/70 p-4 text-xs">
+              <ArrowUpDownIcon className="size-3.5" />
+              No values available for visualization.
+            </div>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function deriveQuickSortFrame(
+  initialValues: number[],
+  steps: QuickSortStepEvent[],
+  cursor: number,
+): QuickSortFrame {
+  const frame: QuickSortFrame = {
+    values: [...initialValues],
+    activeRange: null,
+    pivotIndex: null,
+    comparedIndex: null,
+    storeIndex: null,
+    swapPair: null,
+    finalizedIndices: new Set<number>(),
+    depth: null,
+    completed: false,
+  };
+
+  if (cursor < 0 || steps.length === 0) {
+    return frame;
+  }
+
+  const boundedCursor = Math.min(cursor, steps.length - 1);
+  for (let index = 0; index <= boundedCursor; index += 1) {
+    const step = steps[index];
+
+    if (step.type === "pivot-set") {
+      frame.activeRange = [step.payload.low, step.payload.high];
+      frame.pivotIndex = step.payload.activePivotIndex;
+      frame.comparedIndex = null;
+      frame.storeIndex = step.payload.low;
+      frame.swapPair = null;
+      frame.depth = step.payload.depth;
+      continue;
+    }
+
+    if (step.type === "compare") {
+      frame.activeRange = [step.payload.low, step.payload.high];
+      frame.comparedIndex = step.payload.comparedIndex;
+      frame.storeIndex = step.payload.storeIndex;
+      frame.swapPair = null;
+      frame.depth = step.payload.depth;
+      continue;
+    }
+
+    if (step.type === "partition-swap") {
+      if (!step.payload.selfSwap) {
+        const leftValue = frame.values[step.payload.leftIndex];
+        frame.values[step.payload.leftIndex] = frame.values[step.payload.rightIndex];
+        frame.values[step.payload.rightIndex] = leftValue;
+      }
+
+      frame.activeRange = [step.payload.low, step.payload.high];
+      frame.comparedIndex = null;
+      frame.swapPair = [step.payload.leftIndex, step.payload.rightIndex];
+      frame.depth = step.payload.depth;
+      if (step.payload.reason === "pivot-place") {
+        frame.pivotIndex = step.payload.leftIndex;
+      }
+      continue;
+    }
+
+    if (step.type === "partition-complete") {
+      frame.activeRange = [step.payload.low, step.payload.high];
+      frame.pivotIndex = step.payload.pivotIndex;
+      frame.comparedIndex = null;
+      frame.storeIndex = null;
+      frame.swapPair = null;
+      frame.finalizedIndices.add(step.payload.pivotIndex);
+      frame.depth = step.payload.depth;
+      continue;
+    }
+
+    frame.activeRange = null;
+    frame.pivotIndex = null;
+    frame.comparedIndex = null;
+    frame.storeIndex = null;
+    frame.swapPair = null;
+    frame.depth = null;
+    frame.completed = step.payload.isSorted;
+    frame.finalizedIndices = new Set(frame.values.map((_, valueIndex) => valueIndex));
+  }
+
+  return frame;
+}
+
+function formatQuickSortStepLabel(step: QuickSortStepEvent): string {
+  if (step.type === "pivot-set") {
+    return "Pivot Set";
+  }
+
+  if (step.type === "compare") {
+    return "Compare";
+  }
+
+  if (step.type === "partition-swap") {
+    if (step.payload.reason === "pivot-move") {
+      return "Move Pivot";
+    }
+    if (step.payload.reason === "pivot-place") {
+      return "Place Pivot";
+    }
+    return "Partition Swap";
+  }
+
+  if (step.type === "partition-complete") {
+    return "Partition Complete";
+  }
+
+  return "Sorted";
+}
+
+function formatQuickSortStepMessage(step: QuickSortStepEvent): string {
+  if (step.type === "pivot-set") {
+    return `Depth ${step.payload.depth}: choose pivot ${step.payload.pivotValue} using ${step.payload.strategy} strategy on range [${step.payload.low}, ${step.payload.high}].`;
+  }
+
+  if (step.type === "compare") {
+    return `Compare index ${step.payload.comparedIndex} (${step.payload.comparedValue}) with pivot ${step.payload.pivotValue}.`;
+  }
+
+  if (step.type === "partition-swap") {
+    if (step.payload.reason === "pivot-move") {
+      return `Move selected pivot into active end position at index ${step.payload.rightIndex}.`;
+    }
+
+    if (step.payload.reason === "pivot-place") {
+      return step.payload.selfSwap
+        ? `Pivot already in final position at index ${step.payload.leftIndex}.`
+        : `Place pivot into final partition index ${step.payload.leftIndex}.`;
+    }
+
+    return `Swap index ${step.payload.leftIndex} and ${step.payload.rightIndex} inside the active partition.`;
+  }
+
+  if (step.type === "partition-complete") {
+    return `Partition [${step.payload.low}, ${step.payload.high}] complete around pivot ${step.payload.pivotIndex}; left size ${step.payload.leftSize}, right size ${step.payload.rightSize}.`;
+  }
+
+  return `Completed with ${step.payload.comparisons} comparisons over ${step.payload.partitions} partitions.`;
 }
 
 interface SelectionSortFrame {

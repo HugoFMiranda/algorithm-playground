@@ -28,7 +28,8 @@ export function AboutSheet() {
           <SheetTitle>algorithm-playground Phase One</SheetTitle>
           <SheetDescription>
             Core UI, routing, and state scaffolding are available. Binary Search, BFS, DFS, Dijkstra, A*,
-            Bubble Sort, Selection Sort, Insertion Sort, and Merge Sort are implemented as engine-backed
+            Bubble Sort, Quick Sort, Selection Sort, Insertion Sort, and Merge Sort are implemented as
+            engine-backed
             visualization slices.
           </SheetDescription>
         </SheetHeader>
@@ -45,6 +46,7 @@ export function AboutSheet() {
               <Badge variant="secondary">Dijkstra</Badge>
               <Badge variant="secondary">A*</Badge>
               <Badge variant="secondary">Bubble Sort</Badge>
+              <Badge variant="secondary">Quick Sort</Badge>
               <Badge variant="secondary">Selection Sort</Badge>
               <Badge variant="secondary">Insertion Sort</Badge>
               <Badge variant="secondary">Merge Sort</Badge>
