@@ -2202,9 +2202,11 @@ function TopologicalSortVisualizer({ run, cursor }: SharedVisualizerProps) {
     [frame.queue, preferLowerIndex],
   );
   const queuedSet = useMemo(() => new Set(queueDisplay), [queueDisplay]);
-  const nodePositions = useMemo(() => createTopologicalNodePositions(typedRun?.input ?? null), [typedRun]);
-  const nodeRadius = 4.9;
+  const graphLayout = useMemo(() => createTopologicalGraphLayout(typedRun?.input ?? null), [typedRun]);
+  const nodePositions = graphLayout.positions;
+  const nodeRadius = graphLayout.nodeRadius;
   const activeEdgeKey = frame.inspectedEdge ? `${frame.inspectedEdge[0]}:${frame.inspectedEdge[1]}` : null;
+  const edgeCurvatures = useMemo(() => createTopologicalEdgeCurvatures(edges), [edges]);
 
   return (
     <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
@@ -2282,7 +2284,7 @@ function TopologicalSortVisualizer({ run, cursor }: SharedVisualizerProps) {
 
           <div className="rounded-xl border border-border/80 bg-background/70 p-3">
             <div className="overflow-hidden rounded-lg border border-border/70 bg-[radial-gradient(circle_at_20%_10%,rgba(14,165,233,0.08),transparent_52%),radial-gradient(circle_at_80%_88%,rgba(99,102,241,0.08),transparent_48%)]">
-              <svg viewBox="0 0 100 64" className="h-[300px] w-full">
+              <svg viewBox={`0 0 ${graphLayout.width} ${graphLayout.height}`} className="h-[320px] w-full">
                 <defs>
                   <marker
                     id="topological-arrow-default"
@@ -2317,10 +2319,11 @@ function TopologicalSortVisualizer({ run, cursor }: SharedVisualizerProps) {
                     return null;
                   }
 
-                  const segment = projectEdgeSegment(fromPosition, toPosition, nodeRadius);
                   const edgeKey = `${edge[0]}:${edge[1]}`;
                   const isActive = activeEdgeKey === edgeKey;
                   const isFromProcessed = frame.processedNodes.has(edge[0]);
+                  const curve = edgeCurvatures[edgeKey] ?? 0;
+                  const path = projectCurvedEdgePath(fromPosition, toPosition, nodeRadius, curve);
                   const stroke = isActive
                     ? "rgba(99, 102, 241, 0.95)"
                     : isFromProcessed
@@ -2328,12 +2331,10 @@ function TopologicalSortVisualizer({ run, cursor }: SharedVisualizerProps) {
                       : "rgba(148, 163, 184, 0.58)";
 
                   return (
-                    <line
-                      key={`edge-line-${edge[0]}-${edge[1]}-${edgeIndex}`}
-                      x1={segment.x1}
-                      y1={segment.y1}
-                      x2={segment.x2}
-                      y2={segment.y2}
+                    <path
+                      key={`edge-path-${edge[0]}-${edge[1]}-${edgeIndex}`}
+                      d={path}
+                      fill="none"
                       stroke={stroke}
                       strokeWidth={isActive ? 1.3 : 0.95}
                       vectorEffect="non-scaling-stroke"
@@ -2441,18 +2442,23 @@ interface GraphPoint {
   y: number;
 }
 
-interface GraphSegment {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
+interface TopologicalGraphLayout {
+  positions: Record<number, GraphPoint>;
+  width: number;
+  height: number;
+  nodeRadius: number;
 }
 
-function createTopologicalNodePositions(
+function createTopologicalGraphLayout(
   input: Pick<TopologicalSortInput, "nodeCount" | "adjacency" | "indegrees"> | null,
-): Record<number, GraphPoint> {
+): TopologicalGraphLayout {
   if (!input || input.nodeCount <= 0) {
-    return {};
+    return {
+      positions: {},
+      width: 100,
+      height: 64,
+      nodeRadius: 4.9,
+    };
   }
 
   const { nodeCount } = input;
@@ -2489,43 +2495,113 @@ function createTopologicalNodePositions(
     }
   }
 
+  let maxLayerSize = 0;
+  for (let level = 0; level <= maxLevel; level += 1) {
+    maxLayerSize = Math.max(maxLayerSize, layeredNodes.get(level)?.length ?? 0);
+  }
+
+  const width = Math.max(100, Math.min(160, 74 + (maxLevel + 1) * 18));
+  const height = Math.max(64, Math.min(108, 42 + maxLayerSize * 12));
+  const paddingX = Math.max(10, width * 0.09);
+  const paddingY = Math.max(8, height * 0.08);
+  const nodeRadius = maxLayerSize >= 6 ? 4.2 : maxLayerSize >= 4 ? 4.6 : 4.9;
   const positions: Record<number, GraphPoint> = {};
+
   for (let level = 0; level <= maxLevel; level += 1) {
     const nodes = [...(layeredNodes.get(level) ?? [])].sort((left, right) => left - right);
-    const x = maxLevel === 0 ? 50 : 10 + (80 * level) / maxLevel;
-    const verticalStep = 56 / (nodes.length + 1);
+    const x = maxLevel === 0 ? width / 2 : paddingX + ((width - paddingX * 2) * level) / maxLevel;
+    const verticalStep = (height - paddingY * 2) / (nodes.length + 1);
 
     nodes.forEach((node, rowIndex) => {
       positions[node] = {
         x,
-        y: 4 + verticalStep * (rowIndex + 1),
+        y: paddingY + verticalStep * (rowIndex + 1),
       };
     });
   }
 
-  return positions;
+  return {
+    positions,
+    width,
+    height,
+    nodeRadius,
+  };
 }
 
-function projectEdgeSegment(from: GraphPoint, to: GraphPoint, radius: number): GraphSegment {
+function createTopologicalEdgeCurvatures(
+  edges: readonly (readonly [number, number])[],
+): Record<string, number> {
+  const outgoing = new Map<number, number[]>();
+  const incoming = new Map<number, number[]>();
+
+  for (const [from, to] of edges) {
+    const fromTargets = outgoing.get(from);
+    if (fromTargets) {
+      fromTargets.push(to);
+    } else {
+      outgoing.set(from, [to]);
+    }
+
+    const toSources = incoming.get(to);
+    if (toSources) {
+      toSources.push(from);
+    } else {
+      incoming.set(to, [from]);
+    }
+  }
+
+  const curvatures: Record<string, number> = {};
+  for (const [from, to] of edges) {
+    const fromTargets = [...(outgoing.get(from) ?? [])].sort((left, right) => left - right);
+    const toSources = [...(incoming.get(to) ?? [])].sort((left, right) => left - right);
+
+    const outIndex = fromTargets.indexOf(to);
+    const inIndex = toSources.indexOf(from);
+    const outCenter = (fromTargets.length - 1) / 2;
+    const inCenter = (toSources.length - 1) / 2;
+    const outBias = outIndex - outCenter;
+    const inBias = inIndex - inCenter;
+    const fallbackJitter = ((from * 31 + to * 17) % 3) - 1;
+    const baseCurve = outBias * 1.25 + inBias * 0.85;
+    const curve = Math.abs(baseCurve) < 0.1 ? fallbackJitter * 0.45 : baseCurve;
+
+    curvatures[`${from}:${to}`] = curve;
+  }
+
+  return curvatures;
+}
+
+function projectCurvedEdgePath(
+  from: GraphPoint,
+  to: GraphPoint,
+  radius: number,
+  curveBias: number,
+): string {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const distance = Math.hypot(dx, dy);
 
   if (distance <= 0.001) {
-    return { x1: from.x, y1: from.y, x2: to.x, y2: to.y };
+    return `M ${from.x} ${from.y} Q ${from.x} ${from.y} ${to.x} ${to.y}`;
   }
 
   const nx = dx / distance;
   const ny = dy / distance;
   const startOffset = radius * 0.92;
   const endOffset = radius * 0.96;
+  const startX = from.x + nx * startOffset;
+  const startY = from.y + ny * startOffset;
+  const endX = to.x - nx * endOffset;
+  const endY = to.y - ny * endOffset;
+  const midX = (startX + endX) / 2;
+  const midY = (startY + endY) / 2;
+  const perpendicularX = -ny;
+  const perpendicularY = nx;
+  const curveDistance = Math.min(10, distance * 0.16) * curveBias;
+  const controlX = midX + perpendicularX * curveDistance;
+  const controlY = midY + perpendicularY * curveDistance;
 
-  return {
-    x1: from.x + nx * startOffset,
-    y1: from.y + ny * startOffset,
-    x2: to.x - nx * endOffset,
-    y2: to.y - ny * endOffset,
-  };
+  return `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
 }
 
 function deriveTopologicalSortFrame(
