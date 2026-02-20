@@ -63,6 +63,24 @@ describe("complexity summary", () => {
     expect(summary?.current).toContain("O(V^2 + E)");
   });
 
+  it("returns a-star complexity with run-aware details", () => {
+    const summary = getComplexitySummary("a-star", {
+      algorithmSlug: "a-star",
+      input: {
+        rows: 6,
+        cols: 8,
+        blockedCells: [10, 11, 19, 27],
+        allowDiagonal: false,
+      },
+      normalizedParams: {},
+      result: { found: true, distance: 29, expandedCount: 15, relaxations: 20 },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeWorst).toBe("O(V^2 + E)");
+    expect(summary?.current).toContain("O(V^2 + E)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
     expect(getComplexitySummary("heap-sort", null)).toBeNull();
   });
@@ -96,6 +114,22 @@ describe("complexity summary", () => {
       },
       normalizedParams: {},
       result: { found: true, distance: 22, visitedCount: 12, relaxations: 16 },
+    });
+
+    expect(compact).toBe("O(V^2 + E)");
+  });
+
+  it("returns compact complexity for a-star", () => {
+    const compact = getCompactCurrentComplexity("a-star", {
+      algorithmSlug: "a-star",
+      input: {
+        rows: 6,
+        cols: 8,
+        blockedCells: [10, 11, 19, 27],
+        allowDiagonal: true,
+      },
+      normalizedParams: {},
+      result: { found: true, distance: 19, expandedCount: 11, relaxations: 14 },
     });
 
     expect(compact).toBe("O(V^2 + E)");

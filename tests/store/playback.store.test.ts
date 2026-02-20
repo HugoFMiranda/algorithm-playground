@@ -64,6 +64,17 @@ describe("app store playback", () => {
     expect(state.playback.status).toBe("idle");
   });
 
+  it("initializes a-star run from runtime registry", () => {
+    const store = useAppStore.getState();
+    store.initializeAlgorithm("a-star");
+
+    const state = useAppStore.getState();
+    expect(state.selectedAlgorithmSlug).toBe("a-star");
+    expect(state.run).not.toBeNull();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
   it("resets playback when dijkstra grid params are edited", () => {
     useAppStore.getState().initializeAlgorithm("dijkstra");
     useAppStore.getState().setPlaybackStatus("playing");

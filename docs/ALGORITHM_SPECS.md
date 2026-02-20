@@ -338,9 +338,59 @@ Each algorithm must define:
   - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### A* Search (`D2`, Phase 1)
-- Objective: heuristic-guided exploration.
-- Renderer: weighted grid.
-- Key events: score-update, open-set-push, path-reconstruct.
+- Objective: teach heuristic-guided shortest path search on weighted grids.
+- Input model:
+  - Grid dimensions (`rows`, `cols`) define cell indexing from `0` to `(rows * cols - 1)`.
+  - `startCell` and `targetCell` are normalized into valid range.
+  - `blockedCells` and `heavyCells` are parsed from comma/space-separated indices and exclude start/target.
+  - Cell entry weights are generated deterministically from `weightSeed`, with heavy cells receiving higher costs.
+  - `weightOverrides` supports manual `cell:weight` overrides after deterministic generation.
+  - Heuristic estimate uses Manhattan (4-direction) or Chebyshev (8-direction), scaled by `heuristicWeight`.
+- Params:
+  - `rows` (number, default: `6`)
+  - `cols` (number, default: `8`)
+  - `startCell` (number, default: `0`)
+  - `targetCell` (number, default: `47`)
+  - `blockedCells` (string, default: `9, 10, 11, 19, 27, 35`)
+  - `heavyCells` (string, default: `14, 15, 22, 23, 30, 31`)
+  - `allowDiagonal` (boolean, default: `false`)
+  - `weightSeed` (number, default: `5`)
+  - `weightOverrides` (string, default: `""`, format: `cell:weight`)
+  - `heuristicWeight` (number, default: `1`)
+- Human-friendly explanation:
+  - A* scores each candidate by travel cost so far plus an estimate to the target, so it usually reaches goals faster than uninformed search.
+- Step event contract:
+  - `open-select`: selects the open-set node with smallest `f = g + h`.
+  - `inspect-neighbor`: neighbor classification (`blocked`, `closed`, `skip`, `update`).
+  - `score-update`: records improved `g` and derived `f` values plus parent pointer.
+  - `found`: terminal hit with final distance and path metadata.
+  - `not-found`: terminal miss summary.
+  - `complete`: terminal aggregate run summary.
+- Renderer requirements:
+  - Render deterministic weighted grid state from normalized input.
+  - Distinct styling for blocked, heavy, open, closed, current, and final path cells.
+  - Provide direct grid editing tools for start, target, blocked paint/erase, heavy paint/erase, and weight edit.
+  - Support click + drag paint for blocked/heavy edits.
+  - Disable grid editing while playback status is `playing`.
+  - Display per-cell weight and current `g`/`f` overlays.
+  - Step status text derived from event payload.
+- Metrics tracked:
+  - Expanded (closed-set) count.
+  - Successful score updates.
+  - Final shortest distance (if found).
+  - Final path cells.
+- Edge cases:
+  - `startCell === targetCell` emits deterministic zero-distance found state.
+  - Unreachable targets emit deterministic `not-found` terminal state.
+  - Weight overrides on blocked/start/target cells are ignored during normalization.
+  - Heuristic weight and diagonal toggle change exploration deterministically.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed params.
+  - Param fallback behavior for malformed index/boolean/number input.
+  - Playback transition correctness (`idle`, `playing`, `paused`, `completed`).
+  - Renderer completion state matches result payload.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Bidirectional BFS (`D3`, Phase 3)
 - Objective: two-frontier convergence behavior.

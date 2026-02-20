@@ -10,6 +10,13 @@ describe("algorithm examples registry", () => {
     expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
   });
 
+  it("returns a-star snippets in pseudocode and typescript", () => {
+    const examples = getAlgorithmExamplesBySlug("a-star");
+
+    expect(examples).not.toBeNull();
+    expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
+  });
+
   it("returns null for algorithms without examples", () => {
     expect(getAlgorithmExamplesBySlug("heap-sort")).toBeNull();
   });
