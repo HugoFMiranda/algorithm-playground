@@ -266,6 +266,7 @@ function toGridLabel(cell: number, cols: number): string {
 }
 
 type PathGridTool =
+  | "none"
   | "start"
   | "target"
   | "block"
@@ -335,7 +336,7 @@ function useGridPaint(
 
   const onPointerDown = useCallback(
     (cell: number) => {
-      if (!canEdit) {
+      if (!canEdit || activeTool === "none") {
         return;
       }
 
@@ -343,7 +344,7 @@ function useGridPaint(
       lastCellRef.current = cell;
       onApply(cell);
     },
-    [canEdit, onApply],
+    [activeTool, canEdit, onApply],
   );
 
   const onPointerEnter = useCallback(
@@ -407,7 +408,7 @@ function BfsVisualizer({ run, cursor }: SharedVisualizerProps) {
   const stepMessage = activeStep ? formatBfsStepMessage(activeStep) : "Press Play or Step to start execution.";
   const totalCells = typedRun ? typedRun.input.rows * typedRun.input.cols : 0;
   const canEdit = playbackStatus !== "playing";
-  const [activeTool, setActiveTool] = useState<PathGridTool>("block");
+  const [activeTool, setActiveTool] = useState<PathGridTool>("none");
 
   const applyTool = useCallback(
     (cell: number) => {
@@ -506,6 +507,7 @@ function BfsVisualizer({ run, cursor }: SharedVisualizerProps) {
               <GridToolBar
                 activeTool={activeTool}
                 tools={[
+                  { id: "none", label: "None" },
                   { id: "start", label: "Start" },
                   { id: "target", label: "Target" },
                   { id: "block", label: "Block" },
@@ -516,6 +518,8 @@ function BfsVisualizer({ run, cursor }: SharedVisualizerProps) {
               />
               {!canEdit ? (
                 <p className="text-muted-foreground text-[11px]">Pause playback to edit the grid.</p>
+              ) : activeTool === "none" ? (
+                <p className="text-muted-foreground text-[11px]">Safe mode: choose a tool to edit the grid.</p>
               ) : (
                 <p className="text-muted-foreground text-[11px]">Click or drag to apply the active tool.</p>
               )}
@@ -759,7 +763,7 @@ function DfsVisualizer({ run, cursor }: SharedVisualizerProps) {
   const stepMessage = activeStep ? formatDfsStepMessage(activeStep) : "Press Play or Step to start execution.";
   const totalCells = typedRun ? typedRun.input.rows * typedRun.input.cols : 0;
   const canEdit = playbackStatus !== "playing";
-  const [activeTool, setActiveTool] = useState<PathGridTool>("block");
+  const [activeTool, setActiveTool] = useState<PathGridTool>("none");
 
   const applyTool = useCallback(
     (cell: number) => {
@@ -859,6 +863,7 @@ function DfsVisualizer({ run, cursor }: SharedVisualizerProps) {
               <GridToolBar
                 activeTool={activeTool}
                 tools={[
+                  { id: "none", label: "None" },
                   { id: "start", label: "Start" },
                   { id: "target", label: "Target" },
                   { id: "block", label: "Block" },
@@ -869,6 +874,8 @@ function DfsVisualizer({ run, cursor }: SharedVisualizerProps) {
               />
               {!canEdit ? (
                 <p className="text-muted-foreground text-[11px]">Pause playback to edit the grid.</p>
+              ) : activeTool === "none" ? (
+                <p className="text-muted-foreground text-[11px]">Safe mode: choose a tool to edit the grid.</p>
               ) : (
                 <p className="text-muted-foreground text-[11px]">Click or drag to apply the active tool.</p>
               )}
@@ -1127,7 +1134,7 @@ function DijkstraVisualizer({ run, cursor }: SharedVisualizerProps) {
     : "Press Play or Step to start execution.";
   const totalCells = typedRun ? typedRun.input.rows * typedRun.input.cols : 0;
   const canEdit = playbackStatus !== "playing";
-  const [activeTool, setActiveTool] = useState<PathGridTool>("block");
+  const [activeTool, setActiveTool] = useState<PathGridTool>("none");
   const [pendingWeightCell, setPendingWeightCell] = useState<number | null>(null);
   const [pendingWeightValue, setPendingWeightValue] = useState("");
   const weightOverridesText =
@@ -1324,6 +1331,7 @@ function DijkstraVisualizer({ run, cursor }: SharedVisualizerProps) {
               <GridToolBar
                 activeTool={activeTool}
                 tools={[
+                  { id: "none", label: "None" },
                   { id: "start", label: "Start" },
                   { id: "target", label: "Target" },
                   { id: "block", label: "Block" },
@@ -1337,6 +1345,8 @@ function DijkstraVisualizer({ run, cursor }: SharedVisualizerProps) {
               />
               {!canEdit ? (
                 <p className="text-muted-foreground text-[11px]">Pause playback to edit the grid.</p>
+              ) : activeTool === "none" ? (
+                <p className="text-muted-foreground text-[11px]">Safe mode: choose a tool to edit the grid.</p>
               ) : (
                 <p className="text-muted-foreground text-[11px]">Click or drag to apply the active tool.</p>
               )}
@@ -1660,7 +1670,7 @@ function AStarVisualizer({ run, cursor }: SharedVisualizerProps) {
   const stepMessage = activeStep ? formatAStarStepMessage(activeStep) : "Press Play or Step to start execution.";
   const totalCells = typedRun ? typedRun.input.rows * typedRun.input.cols : 0;
   const canEdit = playbackStatus !== "playing";
-  const [activeTool, setActiveTool] = useState<PathGridTool>("block");
+  const [activeTool, setActiveTool] = useState<PathGridTool>("none");
   const [pendingWeightCell, setPendingWeightCell] = useState<number | null>(null);
   const [pendingWeightValue, setPendingWeightValue] = useState("");
   const weightOverridesText =
@@ -1857,6 +1867,7 @@ function AStarVisualizer({ run, cursor }: SharedVisualizerProps) {
               <GridToolBar
                 activeTool={activeTool}
                 tools={[
+                  { id: "none", label: "None" },
                   { id: "start", label: "Start" },
                   { id: "target", label: "Target" },
                   { id: "block", label: "Block" },
@@ -1870,6 +1881,8 @@ function AStarVisualizer({ run, cursor }: SharedVisualizerProps) {
               />
               {!canEdit ? (
                 <p className="text-muted-foreground text-[11px]">Pause playback to edit the grid.</p>
+              ) : activeTool === "none" ? (
+                <p className="text-muted-foreground text-[11px]">Safe mode: choose a tool to edit the grid.</p>
               ) : (
                 <p className="text-muted-foreground text-[11px]">Click or drag to apply the active tool.</p>
               )}
