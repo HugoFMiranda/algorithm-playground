@@ -212,6 +212,9 @@ Each algorithm must define:
 - Renderer requirements:
   - Render deterministic grid state from normalized input.
   - Distinct cell styling for blocked, queued, visited, current, and final path cells.
+  - Provide direct grid editing tools for start, target, blocked paint, and blocked erase.
+  - Support click + drag paint for blocked and erase tools.
+  - Disable grid editing while playback status is `playing`.
   - Highlight neighbor-inspection outcomes on current step.
   - Step status text derived from event payload.
 - Metrics tracked:
@@ -258,6 +261,9 @@ Each algorithm must define:
 - Renderer requirements:
   - Render deterministic grid state from normalized input.
   - Distinct cell styling for blocked, stacked, visited, current, and final path cells.
+  - Provide direct grid editing tools for start, target, blocked paint, and blocked erase.
+  - Support click + drag paint for blocked and erase tools.
+  - Disable grid editing while playback status is `playing`.
   - Highlight neighbor-inspection outcomes and backtrack transitions on current step.
   - Step status text derived from event payload.
 - Metrics tracked:
@@ -294,6 +300,7 @@ Each algorithm must define:
   - `heavyCells` (string, default: `14, 15, 22, 23, 30, 31`)
   - `allowDiagonal` (boolean, default: `false`)
   - `weightSeed` (number, default: `3`)
+  - `weightOverrides` (string, default: `""`, format: `cell:weight`)
 - Human-friendly explanation:
   - Dijkstra always expands the currently cheapest known position first, so when it reaches the target that path cost is optimal.
 - Step event contract:
@@ -306,6 +313,9 @@ Each algorithm must define:
 - Renderer requirements:
   - Render deterministic weighted grid state from normalized input.
   - Distinct styling for blocked, heavy, frontier, settled, current, and final path cells.
+  - Provide direct grid editing tools for start, target, blocked paint/erase, heavy paint/erase, and weight edit.
+  - Support click + drag paint for blocked/heavy edits.
+  - Disable grid editing while playback status is `playing`.
   - Display per-cell weight and best-known distance overlays.
   - Highlight relaxation outcome for inspected neighbor on current step.
   - Step status text derived from event payload.
@@ -317,6 +327,7 @@ Each algorithm must define:
 - Edge cases:
   - `startCell === targetCell` emits deterministic zero-distance found state.
   - Unreachable targets emit deterministic `not-found` terminal state.
+  - Weight overrides on blocked/start/target cells are ignored during normalization.
   - Diagonal toggle and weight seed change traversal deterministically.
 - Acceptance tests:
   - Deterministic output snapshots for fixed params.

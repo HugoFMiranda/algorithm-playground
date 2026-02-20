@@ -11,6 +11,6 @@ describe("algorithm examples registry", () => {
   });
 
   it("returns null for algorithms without examples", () => {
-    expect(getAlgorithmExamplesBySlug("dfs")).toBeNull();
+    expect(getAlgorithmExamplesBySlug("heap-sort")).toBeNull();
   });
 });

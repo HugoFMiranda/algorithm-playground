@@ -14,7 +14,7 @@ describe("algorithm runtime registry", () => {
   });
 
   it("returns null for non-implemented algorithms", () => {
-    expect(getAlgorithmRuntime("dijkstra")).toBeNull();
-    expect(isAlgorithmImplemented("dijkstra")).toBe(false);
+    expect(getAlgorithmRuntime("heap-sort")).toBeNull();
+    expect(isAlgorithmImplemented("heap-sort")).toBe(false);
   });
 });

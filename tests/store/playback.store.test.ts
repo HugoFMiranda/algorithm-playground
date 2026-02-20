@@ -63,4 +63,21 @@ describe("app store playback", () => {
     expect(state.playback.cursor).toBe(-1);
     expect(state.playback.status).toBe("idle");
   });
+
+  it("resets playback when dijkstra grid params are edited", () => {
+    useAppStore.getState().initializeAlgorithm("dijkstra");
+    useAppStore.getState().setPlaybackStatus("playing");
+    useAppStore.getState().stepForward({ keepStatus: true });
+    useAppStore.getState().setParams({
+      blockedCells: "3, 4, 5",
+      heavyCells: "6, 7",
+      weightOverrides: "7:15",
+    });
+
+    const state = useAppStore.getState();
+    expect(state.run?.algorithmSlug).toBe("dijkstra");
+    expect(state.run?.normalizedParams.blockedCells).toBe("3, 4, 5");
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
 });

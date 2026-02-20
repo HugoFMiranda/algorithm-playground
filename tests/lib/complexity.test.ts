@@ -45,8 +45,26 @@ describe("complexity summary", () => {
     expect(summary?.current).toContain("O(n^2)");
   });
 
+  it("returns dijkstra complexity with run-aware details", () => {
+    const summary = getComplexitySummary("dijkstra", {
+      algorithmSlug: "dijkstra",
+      input: {
+        rows: 6,
+        cols: 8,
+        blockedCells: [10, 11, 19, 27],
+        allowDiagonal: false,
+      },
+      normalizedParams: {},
+      result: { found: true, distance: 34, visitedCount: 19, relaxations: 24 },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeWorst).toBe("O(V^2 + E)");
+    expect(summary?.current).toContain("O(V^2 + E)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
-    expect(getComplexitySummary("dijkstra", null)).toBeNull();
+    expect(getComplexitySummary("heap-sort", null)).toBeNull();
   });
 
   it("returns compact complexity for implemented algorithms", () => {
@@ -67,7 +85,23 @@ describe("complexity summary", () => {
     expect(bubble).toBe("O(n)");
   });
 
+  it("returns compact complexity for dijkstra", () => {
+    const compact = getCompactCurrentComplexity("dijkstra", {
+      algorithmSlug: "dijkstra",
+      input: {
+        rows: 6,
+        cols: 8,
+        blockedCells: [10, 11, 19, 27],
+        allowDiagonal: false,
+      },
+      normalizedParams: {},
+      result: { found: true, distance: 22, visitedCount: 12, relaxations: 16 },
+    });
+
+    expect(compact).toBe("O(V^2 + E)");
+  });
+
   it("returns null compact complexity for non-implemented algorithms", () => {
-    expect(getCompactCurrentComplexity("dijkstra", null)).toBeNull();
+    expect(getCompactCurrentComplexity("heap-sort", null)).toBeNull();
   });
 });
