@@ -1996,7 +1996,10 @@ function AStarVisualizer({ run, cursor }: SharedVisualizerProps) {
 
         <div className="text-muted-foreground text-xs">
           Legend: <span className="font-medium">S/T</span> start/target, <span className="font-medium">#</span>{" "}
-          blocked, cyan=open set, blue=closed set, violet ring = heavy, lime ring = weight override.
+          blocked, cyan=open set, blue=closed set, violet ring = heavy, lime ring = weight override,{" "}
+          <span className="font-medium">g</span> = cost from start, <span className="font-medium">h</span> =
+          estimated cost to target, <span className="font-medium">f</span> = <span className="font-medium">g</span>
+          + <span className="font-medium">h</span> (A* priority).
         </div>
       </CardContent>
     </Card>
