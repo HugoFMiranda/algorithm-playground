@@ -5,6 +5,7 @@ import { PauseIcon, PlayIcon, RotateCcwIcon, SkipBackIcon, SkipForwardIcon } fro
 
 import {
   PLAYBACK_MIN_SPEED,
+  getPlaybackEffectiveSpeed,
   getPlaybackMaxSpeed,
   getPlaybackSpeedStep,
 } from "@/lib/playback-config";
@@ -37,8 +38,8 @@ export function PlaybackControls() {
   const hasSteps = (run?.steps.length ?? 0) > 0;
   const speedStep = getPlaybackSpeedStep(selectedAlgorithmSlug);
   const maxSpeed = getPlaybackMaxSpeed(selectedAlgorithmSlug);
-  const canDecreaseSpeed = hasRun && playback.speed > PLAYBACK_MIN_SPEED;
-  const canIncreaseSpeed = hasRun && playback.speed < maxSpeed;
+  const canDecreaseSpeed = hasRun && playback.speed > PLAYBACK_MIN_SPEED + 0.001;
+  const canIncreaseSpeed = hasRun && playback.speed < maxSpeed - 0.001;
   const canStepBackward = hasRun && hasSteps && playback.cursor >= 0;
 
   useEffect(() => {
@@ -46,7 +47,8 @@ export function PlaybackControls() {
       return undefined;
     }
 
-    const intervalMs = Math.max(90, Math.round(700 / playback.speed));
+    const effectiveSpeed = getPlaybackEffectiveSpeed(selectedAlgorithmSlug, playback.speed);
+    const intervalMs = Math.max(20, Math.round(700 / effectiveSpeed));
     const timer = window.setInterval(() => {
       stepForward({ keepStatus: true });
     }, intervalMs);
@@ -54,7 +56,7 @@ export function PlaybackControls() {
     return () => {
       window.clearInterval(timer);
     };
-  }, [hasRun, hasSteps, playback.speed, playback.status, stepForward]);
+  }, [hasRun, hasSteps, playback.speed, playback.status, selectedAlgorithmSlug, stepForward]);
 
   const handlePlayPause = () => {
     if (!hasRun || !hasSteps) {

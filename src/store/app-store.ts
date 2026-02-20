@@ -5,6 +5,7 @@ import {
   PLAYBACK_MIN_SPEED,
   getPlaybackDefaultSpeed,
   getPlaybackMaxSpeed,
+  getPlaybackSpeedStep,
 } from "@/lib/playback-config";
 import type { ParamPrimitive, StepEventBase } from "@/types/engine";
 
@@ -93,6 +94,12 @@ function sanitizeParamPatch(
   return Object.fromEntries(entries);
 }
 
+function normalizePlaybackSpeed(rawSpeed: number, minSpeed: number, maxSpeed: number, speedStep: number): number {
+  const snapped = Math.round(rawSpeed / speedStep) * speedStep;
+  const rounded = Math.round(snapped * 100) / 100;
+  return Math.max(minSpeed, Math.min(rounded, maxSpeed));
+}
+
 export const useAppStore = create<AppState>((set) => ({
   selectedAlgorithmSlug: null,
   playback: defaultPlayback,
@@ -130,15 +137,18 @@ export const useAppStore = create<AppState>((set) => ({
       return { playback: { ...state.playback, status } };
     }),
   setPlaybackSpeed: (speed) =>
-    set((state) => ({
-      playback: {
-        ...state.playback,
-        speed: Math.max(
-          PLAYBACK_MIN_SPEED,
-          Math.min(speed, getPlaybackMaxSpeed(state.selectedAlgorithmSlug)),
-        ),
-      },
-    })),
+    set((state) => {
+      const maxSpeed = getPlaybackMaxSpeed(state.selectedAlgorithmSlug);
+      const speedStep = getPlaybackSpeedStep(state.selectedAlgorithmSlug);
+      const normalizedSpeed = normalizePlaybackSpeed(speed, PLAYBACK_MIN_SPEED, maxSpeed, speedStep);
+
+      return {
+        playback: {
+          ...state.playback,
+          speed: normalizedSpeed,
+        },
+      };
+    }),
   resetPlayback: () =>
     set((state) => ({
       playback: createIdlePlayback(state.playback.speed),

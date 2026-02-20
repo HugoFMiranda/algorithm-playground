@@ -132,6 +132,22 @@ describe("app store playback", () => {
     expect(state.playback.status).toBe("idle");
   });
 
+  it("normalizes playback speed with quarter-step snapping and global max", () => {
+    useAppStore.getState().initializeAlgorithm("a-star");
+
+    useAppStore.getState().setPlaybackSpeed(1.13);
+    expect(useAppStore.getState().playback.speed).toBe(1.25);
+
+    useAppStore.getState().setPlaybackSpeed(0.1);
+    expect(useAppStore.getState().playback.speed).toBe(0.25);
+
+    useAppStore.getState().setPlaybackSpeed(10.8);
+    expect(useAppStore.getState().playback.speed).toBe(10);
+
+    useAppStore.getState().setPlaybackSpeed(1);
+    expect(useAppStore.getState().playback.speed).toBe(1);
+  });
+
   it("resets playback when dijkstra grid params are edited", () => {
     useAppStore.getState().initializeAlgorithm("dijkstra");
     useAppStore.getState().setPlaybackStatus("playing");
