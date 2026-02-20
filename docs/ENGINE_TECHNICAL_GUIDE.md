@@ -184,7 +184,7 @@ Current tests validate:
 
 ## 9. Current Limits and Next Steps
 
-Current implementation is full for Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Selection Sort, Insertion Sort, and Merge Sort. Remaining algorithms keep scaffolded UI placeholders until their engines are integrated.
+Current implementation is full for Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Selection Sort, Insertion Sort, and Merge Sort. Remaining algorithms keep scaffolded UI placeholders until their engines are integrated.
 
 Planned next extensions:
 

@@ -213,9 +213,41 @@ Each algorithm must define:
   - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Heap Sort (`D3`, Phase 2)
-- Objective: teach heap build and extraction cycles.
-- Renderer: array (heap-index overlay).
-- Key events: heapify, sift-down, root-swap.
+- Objective: teach max-heap construction and repeated extraction of the largest element into a growing sorted suffix.
+- Input model:
+  - Numeric list provided as comma/space-separated text.
+  - Engine preserves normalized numeric order from input (no pre-sort).
+  - Empty/invalid arrays fallback to default seed values.
+- Params:
+  - `arrayValues` (string, default: `41, 17, 33, 5, 12, 29, 8, 50`)
+- Human-friendly explanation:
+  - Heap Sort first organizes values into a max heap so the biggest value is always at the root, then swaps that root to the end and rebuilds the heap until everything is sorted.
+- Step event contract:
+  - `heapify-start`: begins a sift-down operation at a root index for current heap size.
+  - `compare`: compares the current candidate node against a child during sift-down.
+  - `swap`: swap event for either `sift-down` or `extract-root`.
+  - `heapify-complete`: confirms current heapify call is complete.
+  - `complete`: terminal aggregate metrics and sorted-state flag.
+- Renderer requirements:
+  - Highlight active heap region (`[0, heapSize)`), compared pair, active root, and swap pair.
+  - Distinct styling for sorted suffix after each root extraction.
+  - Step status message derived from event payload.
+- Metrics tracked:
+  - Total comparisons.
+  - Total swaps.
+  - Total heapify calls.
+  - Total extraction steps.
+- Edge cases:
+  - Duplicate and negative values preserve deterministic heapify and extraction ordering.
+  - Arrays of length `0` or `1` emit terminal completion state without heapify/extract loops.
+  - Invalid array input falls back to deterministic default seed values.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed params.
+  - Param fallback behavior for malformed array input.
+  - Result metrics and completion event are emitted consistently.
+  - Renderer completion state matches final sorted output.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ## Pathfinding
 
