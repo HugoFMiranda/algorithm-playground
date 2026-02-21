@@ -133,13 +133,13 @@ export function LibrarySearch({ algorithms }: LibrarySearchProps) {
             </div>
             <Button
               type="button"
-              size="xs"
+              size="icon-xs"
               variant="outline"
               onClick={() => setFiltersOpen((open) => !open)}
               aria-expanded={filtersOpen}
+              aria-label={filtersOpen ? "Collapse filters" : "Expand filters"}
               aria-controls="library-filter-panel"
             >
-              {filtersOpen ? "Hide" : "Show"} filters
               {filtersOpen ? <ChevronUpIcon className="size-3.5" /> : <ChevronDownIcon className="size-3.5" />}
             </Button>
           </div>
