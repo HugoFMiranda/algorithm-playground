@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CornerDownLeftIcon, SearchIcon } from "lucide-react";
 
 import type { AlgorithmDefinition } from "@/data/algorithms";
+import { getAlgorithmEasyExplanation } from "@/data/easy-explanations";
 import { useAppStore } from "@/store/app-store";
 import { AlgorithmResultItem } from "@/components/library/algorithm-result-item";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +47,7 @@ export function LibrarySearch({ algorithms }: LibrarySearchProps) {
         algorithm.slug,
         algorithm.category,
         algorithm.shortDescription,
+        getAlgorithmEasyExplanation(algorithm.slug),
         ...algorithm.tags,
       ]
         .join(" ")
@@ -71,8 +73,9 @@ export function LibrarySearch({ algorithms }: LibrarySearchProps) {
             Explore visual algorithms.
           </CardTitle>
           <CardDescription className="max-w-2xl text-sm leading-relaxed">
-            Search the algorithm catalog and open visualizer pages. Binary Search and Bubble Sort currently
-            include complete deterministic engine + playback implementations.
+            Search the algorithm catalog and open visualizer pages. Binary Search, BFS, DFS, Dijkstra, A*,
+            Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Selection Sort, Insertion Sort, and Merge
+            Sort currently include complete deterministic engine + playback implementations.
           </CardDescription>
         </div>
       </CardHeader>

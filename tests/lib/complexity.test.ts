@@ -45,8 +45,106 @@ describe("complexity summary", () => {
     expect(summary?.current).toContain("O(n^2)");
   });
 
+  it("returns dijkstra complexity with run-aware details", () => {
+    const summary = getComplexitySummary("dijkstra", {
+      algorithmSlug: "dijkstra",
+      input: {
+        rows: 6,
+        cols: 8,
+        blockedCells: [10, 11, 19, 27],
+        allowDiagonal: false,
+      },
+      normalizedParams: {},
+      result: { found: true, distance: 34, visitedCount: 19, relaxations: 24 },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeWorst).toBe("O(V^2 + E)");
+    expect(summary?.current).toContain("O(V^2 + E)");
+  });
+
+  it("returns a-star complexity with run-aware details", () => {
+    const summary = getComplexitySummary("a-star", {
+      algorithmSlug: "a-star",
+      input: {
+        rows: 6,
+        cols: 8,
+        blockedCells: [10, 11, 19, 27],
+        allowDiagonal: false,
+      },
+      normalizedParams: {},
+      result: { found: true, distance: 29, expandedCount: 15, relaxations: 20 },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeWorst).toBe("O(V^2 + E)");
+    expect(summary?.current).toContain("O(V^2 + E)");
+  });
+
+  it("returns quick-sort complexity with run-aware details", () => {
+    const summary = getComplexitySummary("quick-sort", {
+      algorithmSlug: "quick-sort",
+      input: { values: [9, 4, 7, 3, 8, 2] },
+      normalizedParams: { pivotStrategy: "middle" },
+      result: { sortedValues: [2, 3, 4, 7, 8, 9], comparisons: 11, swaps: 7, partitions: 4, maxDepth: 3 },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(n log n)");
+    expect(summary?.timeWorst).toBe("O(n^2)");
+  });
+
+  it("returns heap-sort complexity with run-aware details", () => {
+    const summary = getComplexitySummary("heap-sort", {
+      algorithmSlug: "heap-sort",
+      input: { values: [9, 4, 7, 3, 8, 2] },
+      normalizedParams: {},
+      result: {
+        sortedValues: [2, 3, 4, 7, 8, 9],
+        comparisons: 14,
+        swaps: 9,
+        heapifyCalls: 7,
+        extractions: 5,
+      },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(n log n)");
+    expect(summary?.timeWorst).toBe("O(n log n)");
+  });
+
+  it("returns topological-sort complexity with run-aware details", () => {
+    const summary = getComplexitySummary("topological-sort", {
+      algorithmSlug: "topological-sort",
+      input: {
+        nodeCount: 6,
+        edges: [
+          [0, 1],
+          [0, 2],
+          [1, 3],
+          [2, 3],
+          [3, 4],
+          [4, 5],
+        ],
+      },
+      normalizedParams: { preferLowerIndex: true },
+      result: {
+        order: [0, 1, 2, 3, 4, 5],
+        cycleDetected: false,
+        processedCount: 6,
+        remainingCount: 0,
+        edgeRelaxations: 6,
+        initialZeroCount: 1,
+      },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(V + E)");
+    expect(summary?.timeWorst).toBe("O(V + E)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
-    expect(getComplexitySummary("dijkstra", null)).toBeNull();
+    expect(getComplexitySummary("union-find", null)).toBeNull();
   });
 
   it("returns compact complexity for implemented algorithms", () => {
@@ -62,12 +160,88 @@ describe("complexity summary", () => {
       normalizedParams: { optimizeEarlyExit: true },
       result: { sortedValues: [1, 2, 3, 4], comparisons: 3, swaps: 0, passes: 1 },
     });
+    const quick = getCompactCurrentComplexity("quick-sort", {
+      algorithmSlug: "quick-sort",
+      input: { values: [9, 4, 7, 3, 8, 2] },
+      normalizedParams: { pivotStrategy: "middle" },
+      result: { sortedValues: [2, 3, 4, 7, 8, 9], comparisons: 11, swaps: 7, partitions: 4, maxDepth: 3 },
+    });
+    const heap = getCompactCurrentComplexity("heap-sort", {
+      algorithmSlug: "heap-sort",
+      input: { values: [9, 4, 7, 3, 8, 2] },
+      normalizedParams: {},
+      result: {
+        sortedValues: [2, 3, 4, 7, 8, 9],
+        comparisons: 14,
+        swaps: 9,
+        heapifyCalls: 7,
+        extractions: 5,
+      },
+    });
+    const topological = getCompactCurrentComplexity("topological-sort", {
+      algorithmSlug: "topological-sort",
+      input: {
+        nodeCount: 6,
+        edges: [
+          [0, 1],
+          [0, 2],
+          [1, 3],
+          [2, 3],
+          [3, 4],
+          [4, 5],
+        ],
+      },
+      normalizedParams: { preferLowerIndex: true },
+      result: {
+        order: [0, 1, 2, 3, 4, 5],
+        cycleDetected: false,
+        processedCount: 6,
+        remainingCount: 0,
+        edgeRelaxations: 6,
+        initialZeroCount: 1,
+      },
+    });
 
     expect(binary).toBe("O(log n)");
     expect(bubble).toBe("O(n)");
+    expect(quick).toBe("O(n log n)");
+    expect(heap).toBe("O(n log n)");
+    expect(topological).toBe("O(V + E)");
+  });
+
+  it("returns compact complexity for dijkstra", () => {
+    const compact = getCompactCurrentComplexity("dijkstra", {
+      algorithmSlug: "dijkstra",
+      input: {
+        rows: 6,
+        cols: 8,
+        blockedCells: [10, 11, 19, 27],
+        allowDiagonal: false,
+      },
+      normalizedParams: {},
+      result: { found: true, distance: 22, visitedCount: 12, relaxations: 16 },
+    });
+
+    expect(compact).toBe("O(V^2 + E)");
+  });
+
+  it("returns compact complexity for a-star", () => {
+    const compact = getCompactCurrentComplexity("a-star", {
+      algorithmSlug: "a-star",
+      input: {
+        rows: 6,
+        cols: 8,
+        blockedCells: [10, 11, 19, 27],
+        allowDiagonal: true,
+      },
+      normalizedParams: {},
+      result: { found: true, distance: 19, expandedCount: 11, relaxations: 14 },
+    });
+
+    expect(compact).toBe("O(V^2 + E)");
   });
 
   it("returns null compact complexity for non-implemented algorithms", () => {
-    expect(getCompactCurrentComplexity("dijkstra", null)).toBeNull();
+    expect(getCompactCurrentComplexity("union-find", null)).toBeNull();
   });
 });

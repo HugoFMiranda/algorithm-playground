@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
-import { PauseIcon, PlayIcon, RotateCcwIcon, SkipForwardIcon } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import { PauseIcon, PlayIcon, RotateCcwIcon, SkipBackIcon, SkipForwardIcon } from "lucide-react";
 
+import {
+  PLAYBACK_MIN_SPEED,
+  getPlaybackEffectiveSpeed,
+  getPlaybackMaxSpeed,
+  getPlaybackSpeedStep,
+} from "@/lib/playback-config";
 import { useAppStore } from "@/store/app-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,22 +25,33 @@ import { Separator } from "@/components/ui/separator";
 
 export function PlaybackControls() {
   const run = useAppStore((state) => state.run);
+  const selectedAlgorithmSlug = useAppStore((state) => state.selectedAlgorithmSlug);
   const playback = useAppStore((state) => state.playback);
   const setPlaybackStatus = useAppStore((state) => state.setPlaybackStatus);
   const setPlaybackSpeed = useAppStore((state) => state.setPlaybackSpeed);
   const resetPlayback = useAppStore((state) => state.resetPlayback);
   const stepForward = useAppStore((state) => state.stepForward);
+  const stepBackward = useAppStore((state) => state.stepBackward);
 
   const isPlaying = playback.status === "playing";
   const hasRun = run !== null;
   const hasSteps = (run?.steps.length ?? 0) > 0;
+  const speedStep = getPlaybackSpeedStep(selectedAlgorithmSlug);
+  const maxSpeed = getPlaybackMaxSpeed(selectedAlgorithmSlug);
+  const effectiveSpeed = useMemo(
+    () => getPlaybackEffectiveSpeed(selectedAlgorithmSlug, playback.speed),
+    [selectedAlgorithmSlug, playback.speed],
+  );
+  const canDecreaseSpeed = hasRun && playback.speed > PLAYBACK_MIN_SPEED + 0.001;
+  const canIncreaseSpeed = hasRun && playback.speed < maxSpeed - 0.001;
+  const canStepBackward = hasRun && hasSteps && playback.cursor >= 0;
 
   useEffect(() => {
     if (!hasRun || !hasSteps || playback.status !== "playing") {
       return undefined;
     }
 
-    const intervalMs = Math.max(90, Math.round(700 / playback.speed));
+    const intervalMs = Math.max(20, Math.round(700 / effectiveSpeed));
     const timer = window.setInterval(() => {
       stepForward({ keepStatus: true });
     }, intervalMs);
@@ -42,7 +59,7 @@ export function PlaybackControls() {
     return () => {
       window.clearInterval(timer);
     };
-  }, [hasRun, hasSteps, playback.speed, playback.status, stepForward]);
+  }, [hasRun, hasSteps, playback.status, effectiveSpeed, stepForward]);
 
   const handlePlayPause = () => {
     if (!hasRun || !hasSteps) {
@@ -70,6 +87,15 @@ export function PlaybackControls() {
     stepForward();
   };
 
+  const handleStepBack = () => {
+    if (!hasRun || !hasSteps || playback.cursor < 0) {
+      return;
+    }
+
+    setPlaybackStatus("paused");
+    stepBackward();
+  };
+
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/80 backdrop-blur">
       <div className="container-page flex min-h-16 flex-wrap items-center gap-2 py-2 sm:flex-nowrap sm:justify-between">
@@ -88,6 +114,10 @@ export function PlaybackControls() {
             <RotateCcwIcon className="size-3.5" />
             Reset
           </Button>
+          <Button type="button" size="sm" variant="outline" onClick={handleStepBack} disabled={!canStepBackward}>
+            <SkipBackIcon className="size-3.5" />
+            Back
+          </Button>
           <Button type="button" size="sm" variant="outline" onClick={handleStep} disabled={!hasRun || !hasSteps}>
             <SkipForwardIcon className="size-3.5" />
             Step
@@ -98,8 +128,8 @@ export function PlaybackControls() {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setPlaybackSpeed(playback.speed - 0.25)}
-            disabled={!hasRun}
+            onClick={() => setPlaybackSpeed(playback.speed - speedStep)}
+            disabled={!canDecreaseSpeed}
           >
             - Speed
           </Button>
@@ -110,8 +140,8 @@ export function PlaybackControls() {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setPlaybackSpeed(playback.speed + 0.25)}
-            disabled={!hasRun}
+            onClick={() => setPlaybackSpeed(playback.speed + speedStep)}
+            disabled={!canIncreaseSpeed}
           >
             + Speed
           </Button>

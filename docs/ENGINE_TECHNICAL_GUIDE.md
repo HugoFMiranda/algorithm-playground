@@ -127,7 +127,9 @@ Important behavior:
 1. `initializeAlgorithm(slug)` loads default params and creates a fresh run.
 2. `setParam` and `setParams` regenerate the run and reset cursor to pre-step (`-1`).
 3. `stepForward` moves cursor by one and sets `completed` at the final step.
-4. `setPlaybackSpeed` clamps to `[0.25, 3]`.
+4. `setPlaybackSpeed` clamps to an algorithm-aware range from `src/lib/playback-config.ts`.
+5. Pathfinding grid edits (start/target/blocked/heavy/weight controls) write through `setParams`, so edits are deterministic and always regenerate from normalized params.
+6. Grid editing is disabled while playback status is `playing` to avoid live run mutation.
 
 Minimal usage:
 
@@ -182,10 +184,10 @@ Current tests validate:
 
 ## 9. Current Limits and Next Steps
 
-Current implementation is full for Binary Search and Bubble Sort. Other algorithms remain placeholders until their engines are added to the registry.
+Current implementation is full for Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Selection Sort, Insertion Sort, and Merge Sort. Remaining algorithms keep scaffolded UI placeholders until their engines are integrated.
 
 Planned next extensions:
 
-1. add BFS with grid-family events,
-2. add DFS with grid/graph-family events,
+1. continue phase-ordered algorithm integrations from `docs/ROADMAP.md`,
+2. keep expanding deterministic grid/graph renderer behavior,
 3. split renderer logic into dedicated `src/renderers/*` modules as algorithm count increases.

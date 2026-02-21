@@ -54,12 +54,113 @@ describe("app store playback", () => {
     expect(state.run?.steps.length).toBeGreaterThan(0);
   });
 
+  it("steps backward by one event and pauses playback", () => {
+    useAppStore.getState().initializeAlgorithm("binary-search");
+    useAppStore.getState().setPlaybackStatus("playing");
+    useAppStore.getState().stepForward({ keepStatus: true });
+    useAppStore.getState().stepForward({ keepStatus: true });
+
+    useAppStore.getState().stepBackward();
+
+    const state = useAppStore.getState();
+    expect(state.playback.cursor).toBe(0);
+    expect(state.playback.status).toBe("paused");
+  });
+
+  it("returns to idle start when stepping backward from first step", () => {
+    useAppStore.getState().initializeAlgorithm("binary-search");
+    useAppStore.getState().stepForward();
+
+    useAppStore.getState().stepBackward();
+
+    const state = useAppStore.getState();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
   it("regenerates run when params change", () => {
     useAppStore.getState().initializeAlgorithm("binary-search");
     useAppStore.getState().setParam("target", 999);
 
     const state = useAppStore.getState();
     expect(state.run?.normalizedParams.target).toBe(999);
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
+  it("initializes a-star run from runtime registry", () => {
+    const store = useAppStore.getState();
+    store.initializeAlgorithm("a-star");
+
+    const state = useAppStore.getState();
+    expect(state.selectedAlgorithmSlug).toBe("a-star");
+    expect(state.run).not.toBeNull();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
+  it("initializes quick-sort run from runtime registry", () => {
+    const store = useAppStore.getState();
+    store.initializeAlgorithm("quick-sort");
+
+    const state = useAppStore.getState();
+    expect(state.selectedAlgorithmSlug).toBe("quick-sort");
+    expect(state.run).not.toBeNull();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
+  it("initializes heap-sort run from runtime registry", () => {
+    const store = useAppStore.getState();
+    store.initializeAlgorithm("heap-sort");
+
+    const state = useAppStore.getState();
+    expect(state.selectedAlgorithmSlug).toBe("heap-sort");
+    expect(state.run).not.toBeNull();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
+  it("initializes topological-sort run from runtime registry", () => {
+    const store = useAppStore.getState();
+    store.initializeAlgorithm("topological-sort");
+
+    const state = useAppStore.getState();
+    expect(state.selectedAlgorithmSlug).toBe("topological-sort");
+    expect(state.run).not.toBeNull();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
+  it("normalizes playback speed with quarter-step snapping and global max", () => {
+    useAppStore.getState().initializeAlgorithm("a-star");
+
+    useAppStore.getState().setPlaybackSpeed(1.13);
+    expect(useAppStore.getState().playback.speed).toBe(1.25);
+
+    useAppStore.getState().setPlaybackSpeed(0.1);
+    expect(useAppStore.getState().playback.speed).toBe(0.25);
+
+    useAppStore.getState().setPlaybackSpeed(10.8);
+    expect(useAppStore.getState().playback.speed).toBe(10);
+
+    useAppStore.getState().setPlaybackSpeed(1);
+    expect(useAppStore.getState().playback.speed).toBe(1);
+  });
+
+  it("resets playback when dijkstra grid params are edited", () => {
+    useAppStore.getState().initializeAlgorithm("dijkstra");
+    useAppStore.getState().setPlaybackStatus("playing");
+    useAppStore.getState().stepForward({ keepStatus: true });
+    useAppStore.getState().setParams({
+      blockedCells: "3, 4, 5",
+      heavyCells: "6, 7",
+      weightOverrides: "7:15",
+    });
+
+    const state = useAppStore.getState();
+    expect(state.run?.algorithmSlug).toBe("dijkstra");
+    expect(state.run?.normalizedParams.blockedCells).toBe("3, 4, 5");
     expect(state.playback.cursor).toBe(-1);
     expect(state.playback.status).toBe("idle");
   });

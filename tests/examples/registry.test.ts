@@ -10,7 +10,35 @@ describe("algorithm examples registry", () => {
     expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
   });
 
+  it("returns a-star snippets in pseudocode and typescript", () => {
+    const examples = getAlgorithmExamplesBySlug("a-star");
+
+    expect(examples).not.toBeNull();
+    expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
+  });
+
+  it("returns quick-sort snippets in pseudocode and typescript", () => {
+    const examples = getAlgorithmExamplesBySlug("quick-sort");
+
+    expect(examples).not.toBeNull();
+    expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
+  });
+
+  it("returns heap-sort snippets in pseudocode and typescript", () => {
+    const examples = getAlgorithmExamplesBySlug("heap-sort");
+
+    expect(examples).not.toBeNull();
+    expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
+  });
+
+  it("returns topological-sort snippets in pseudocode and typescript", () => {
+    const examples = getAlgorithmExamplesBySlug("topological-sort");
+
+    expect(examples).not.toBeNull();
+    expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
+  });
+
   it("returns null for algorithms without examples", () => {
-    expect(getAlgorithmExamplesBySlug("dfs")).toBeNull();
+    expect(getAlgorithmExamplesBySlug("union-find")).toBeNull();
   });
 });

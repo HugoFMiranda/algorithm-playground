@@ -29,6 +29,27 @@ Examples:
 - `feat(renderer): add grid frontier state renderer`
 - `docs(agents): update governance for roadmap scope`
 
+## Release Workflow
+
+- Releases are automated with Release Please on pushes to `main`.
+- Release Please opens/updates a release PR with:
+  - proposed version bump,
+  - `CHANGELOG.md` updates,
+  - release metadata for GitHub Releases.
+- Merge release PRs only after validation passes:
+
+```bash
+npm run test
+npm run lint
+npm run build
+```
+
+- Patch notes are grouped under:
+  - `Added`
+  - `Changed`
+  - `Fixed`
+- Use Conventional Commits consistently so automated notes stay accurate and useful.
+
 ## Code and Architecture Rules
 
 - Keep TypeScript strict and avoid `any`.

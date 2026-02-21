@@ -70,6 +70,17 @@ npm run lint
 npm run build
 ```
 
+## Releases
+
+- Releases are managed with Release Please and Conventional Commits.
+- Each release generates:
+  - a `v0.x.y` Git tag,
+  - a GitHub Release entry,
+  - a `CHANGELOG.md` update.
+- Versioning follows pre-1.0 SemVer (`0.x.y`):
+  - `feat(...)` bumps minor,
+  - `fix(...)` bumps patch.
+
 ## Deployment (Vercel)
 
 1. Push this repository to GitHub/GitLab/Bitbucket.

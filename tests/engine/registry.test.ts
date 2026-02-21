@@ -6,15 +6,27 @@ describe("algorithm runtime registry", () => {
   it("returns runtime definition for implemented algorithms", () => {
     const bubbleSortRuntime = getAlgorithmRuntime("bubble-sort");
     const binarySearchRuntime = getAlgorithmRuntime("binary-search");
+    const aStarRuntime = getAlgorithmRuntime("a-star");
+    const quickSortRuntime = getAlgorithmRuntime("quick-sort");
+    const heapSortRuntime = getAlgorithmRuntime("heap-sort");
+    const topologicalRuntime = getAlgorithmRuntime("topological-sort");
 
     expect(bubbleSortRuntime).not.toBeNull();
     expect(bubbleSortRuntime?.slug).toBe("bubble-sort");
     expect(binarySearchRuntime).not.toBeNull();
     expect(binarySearchRuntime?.slug).toBe("binary-search");
+    expect(aStarRuntime).not.toBeNull();
+    expect(aStarRuntime?.slug).toBe("a-star");
+    expect(quickSortRuntime).not.toBeNull();
+    expect(quickSortRuntime?.slug).toBe("quick-sort");
+    expect(heapSortRuntime).not.toBeNull();
+    expect(heapSortRuntime?.slug).toBe("heap-sort");
+    expect(topologicalRuntime).not.toBeNull();
+    expect(topologicalRuntime?.slug).toBe("topological-sort");
   });
 
   it("returns null for non-implemented algorithms", () => {
-    expect(getAlgorithmRuntime("dijkstra")).toBeNull();
-    expect(isAlgorithmImplemented("dijkstra")).toBe(false);
+    expect(getAlgorithmRuntime("union-find")).toBeNull();
+    expect(isAlgorithmImplemented("union-find")).toBe(false);
   });
 });

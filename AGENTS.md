@@ -14,7 +14,8 @@ Build a professional algorithm visualization hub where users can:
 - Frontend-only Next.js App Router application.
 - No backend requirements in the current roadmap window.
 - Focus on reusable engine and renderer architecture before advanced features.
-- Current implementation checkpoint: Binary Search and Bubble Sort are fully integrated algorithm slices (engine, playback, renderer, params, and code examples).
+- Current implementation checkpoint: Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Selection Sort, Insertion Sort, and Merge Sort are fully integrated algorithm slices (engine, playback, renderer, params, and code examples).
+- Every algorithm must ship with an easy-to-understand explanation surfaced on its algorithm page.
 
 ## Source-of-Truth Policy
 
@@ -66,12 +67,12 @@ Difficulty:
 - `D2`: moderate invariants and event complexity.
 - `D3`: advanced invariants, branching logic, and complex visuals.
 
-Roadmap horizon is 3 phases with 20 planned algorithms.
+Roadmap horizon is 3 phases with 21 planned algorithms.
 
 ## Delivery Sequence
 
 1. Phase 1: foundational sorting + pathfinding + binary search.
-2. Phase 2: graph breadth and additional sorting/tree structures.
+2. Phase 2: graph breadth and additional sorting/tree structures, with Invert Binary Tree prioritized next.
 3. Phase 3: advanced algorithms and comparison tooling.
 
 Canonical order and algorithm list are maintained in `docs/ROADMAP.md` and `src/data/algorithms.ts`.
@@ -80,6 +81,7 @@ Canonical order and algorithm list are maintained in `docs/ROADMAP.md` and `src/
 
 For each implemented algorithm:
 - Typed metadata exists in `src/data/algorithms.ts`.
+- Easy explanation copy exists in `src/data/easy-explanations.ts`.
 - Algorithm spec is documented in `docs/ALGORITHM_SPECS.md`.
 - Engine emits deterministic step streams for fixed input+params.
 - Algorithm renders correctly in its target renderer family.
@@ -101,3 +103,19 @@ For each implemented algorithm:
   - what changed,
   - validation run (`lint`, `build`),
   - docs synchronized (`AGENTS.md` + relevant `docs/*`).
+
+## Release Management
+
+- Release management is automated with Release Please and Conventional Commits.
+- Versioning follows pre-1.0 SemVer (`0.x.y`):
+  - `feat(...)` bumps minor.
+  - `fix(...)` bumps patch.
+  - Breaking changes before `1.0.0` are treated as minor bumps.
+- Each release must include:
+  - Git tag in `v0.x.y` format.
+  - GitHub Release notes.
+  - `CHANGELOG.md` updates with `Added`, `Changed`, and `Fixed` sections.
+- Release PRs must pass:
+  - `npm run test`
+  - `npm run lint`
+  - `npm run build`
