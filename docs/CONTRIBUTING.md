@@ -32,11 +32,16 @@ Examples:
 ## Release Workflow
 
 - Releases are automated with Release Please on pushes to `main`.
+- CI runs on pull requests and pushes to `main`/`develop` with:
+  - `npm run test`
+  - `npm run lint`
+  - `npm run build`
 - Release Please opens/updates a release PR with:
   - proposed version bump,
   - `CHANGELOG.md` updates,
   - release metadata for GitHub Releases.
-- Merge release PRs only after validation passes:
+- Release Please PRs have auto-merge enabled by workflow and merge after required checks pass.
+- Manual verification commands remain:
 
 ```bash
 npm run test

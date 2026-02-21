@@ -73,10 +73,12 @@ npm run build
 ## Releases
 
 - Releases are managed with Release Please and Conventional Commits.
+- CI quality checks run in GitHub Actions on pull requests and pushes to `main`/`develop`.
 - Each release generates:
   - a `v0.x.y` Git tag,
   - a GitHub Release entry,
   - a `CHANGELOG.md` update.
+- Release Please PRs on `main` are configured for auto-merge once required checks pass.
 - Versioning follows pre-1.0 SemVer (`0.x.y`):
   - `feat(...)` bumps minor,
   - `fix(...)` bumps patch.

@@ -107,6 +107,10 @@ For each implemented algorithm:
 ## Release Management
 
 - Release management is automated with Release Please and Conventional Commits.
+- CI quality checks run in GitHub Actions on PRs and pushes to `main`/`develop`:
+  - `npm run test`
+  - `npm run lint`
+  - `npm run build`
 - Versioning follows pre-1.0 SemVer (`0.x.y`):
   - `feat(...)` bumps minor.
   - `fix(...)` bumps patch.
@@ -119,3 +123,4 @@ For each implemented algorithm:
   - `npm run test`
   - `npm run lint`
   - `npm run build`
+- Release Please PRs target `main` and have auto-merge enabled by workflow after required checks pass.

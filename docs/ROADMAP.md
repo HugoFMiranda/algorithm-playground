@@ -113,7 +113,8 @@ Core infra milestones:
 ## Release Gates
 
 Each phase closes only when:
-- `npm run lint` and `npm run build` pass.
+- `npm run test`, `npm run lint`, and `npm run build` pass.
+- CI workflow checks are green on the release PR.
 - New algorithm entries include docs and typed metadata.
 - Step streams are deterministic for identical inputs.
 - `AGENTS.md` and `docs/*` are synchronized for changed process/architecture decisions.
