@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project follows pre-1.0 Semantic Versioning (`0.x.y`).
 
+## [0.3.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.2.0...algorithm-playground-v0.3.0) (2026-02-21)
+
+
+### Added
+
+* **ci:** add quality checks and release-pr auto-merge workflow ([7948d54](https://github.com/HugoFMiranda/algorithm-playground/commit/7948d5472de91e937a233417e3dc99cdc0eef806))
+
 ## [0.2.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.1.0...algorithm-playground-v0.2.0) (2026-02-21)
 
 
