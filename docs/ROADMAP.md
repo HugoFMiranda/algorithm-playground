@@ -117,3 +117,6 @@ Each phase closes only when:
 - New algorithm entries include docs and typed metadata.
 - Step streams are deterministic for identical inputs.
 - `AGENTS.md` and `docs/*` are synchronized for changed process/architecture decisions.
+- Release Please release PR is up to date and mergeable.
+- `CHANGELOG.md` has curated `Added`, `Changed`, and `Fixed` entries for the checkpoint.
+- A version tag (`v0.x.y`) and GitHub Release are published for phase-level milestones.

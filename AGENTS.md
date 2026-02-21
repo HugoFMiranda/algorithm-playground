@@ -103,3 +103,19 @@ For each implemented algorithm:
   - what changed,
   - validation run (`lint`, `build`),
   - docs synchronized (`AGENTS.md` + relevant `docs/*`).
+
+## Release Management
+
+- Release management is automated with Release Please and Conventional Commits.
+- Versioning follows pre-1.0 SemVer (`0.x.y`):
+  - `feat(...)` bumps minor.
+  - `fix(...)` bumps patch.
+  - Breaking changes before `1.0.0` are treated as minor bumps.
+- Each release must include:
+  - Git tag in `v0.x.y` format.
+  - GitHub Release notes.
+  - `CHANGELOG.md` updates with `Added`, `Changed`, and `Fixed` sections.
+- Release PRs must pass:
+  - `npm run test`
+  - `npm run lint`
+  - `npm run build`
