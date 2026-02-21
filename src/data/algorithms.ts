@@ -188,6 +188,16 @@ export const ALGORITHMS: AlgorithmDefinition[] = [
       "Low-level search baseline illustrating midpoint decision boundaries.",
   },
   {
+    name: "Invert Binary Tree",
+    slug: "invert-binary-tree",
+    category: "Trees & Search",
+    difficulty: "D1",
+    roadmapPhase: "Phase 2",
+    tags: ["tree", "recursion", "transformation"],
+    shortDescription:
+      "Mirror a binary tree by swapping each node's left and right children.",
+  },
+  {
     name: "BST Operations",
     slug: "bst-operations",
     category: "Trees & Search",

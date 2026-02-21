@@ -13,6 +13,7 @@ Audience target is broad: learners, interview preparation users, and engineering
 
 - Phase window: 3 phases over approximately 3 months.
 - Current status: UI scaffold completed; Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Selection Sort, Insertion Sort, and Merge Sort shipped as engine-backed vertical slices, with remaining engines pending.
+- Next implementation target: Invert Binary Tree (`D1`, Trees & Search, Phase 2).
 
 ## Difficulty Rubric
 
@@ -52,6 +53,7 @@ Goals:
 - Introduce richer graph/tree interaction patterns.
 
 Algorithms:
+- Invert Binary Tree (`D1`)
 - Quick Sort (`D2`)
 - Heap Sort (`D3`)
 - Topological Sort (`D2`)
@@ -82,7 +84,7 @@ Core infra milestones:
 - Expanded metrics overlays.
 - Worker-backed step generation for heavy workloads.
 
-## Algorithm Portfolio (20)
+## Algorithm Portfolio (21)
 
 | Algorithm | Category | Difficulty | Planned Phase |
 | --- | --- | --- | --- |
@@ -103,6 +105,7 @@ Core infra milestones:
 | Prim MST | Graph Theory | D2 | Phase 2 |
 | Bellman-Ford | Graph Theory | D3 | Phase 3 |
 | Binary Search | Trees & Search | D1 | Phase 1 |
+| Invert Binary Tree | Trees & Search | D1 | Phase 2 |
 | BST Operations | Trees & Search | D2 | Phase 3 |
 | AVL Rotations | Trees & Search | D3 | Phase 3 |
 | Trie Operations | Trees & Search | D2 | Phase 2 |

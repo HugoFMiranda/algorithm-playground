@@ -67,12 +67,12 @@ Difficulty:
 - `D2`: moderate invariants and event complexity.
 - `D3`: advanced invariants, branching logic, and complex visuals.
 
-Roadmap horizon is 3 phases with 20 planned algorithms.
+Roadmap horizon is 3 phases with 21 planned algorithms.
 
 ## Delivery Sequence
 
 1. Phase 1: foundational sorting + pathfinding + binary search.
-2. Phase 2: graph breadth and additional sorting/tree structures.
+2. Phase 2: graph breadth and additional sorting/tree structures, with Invert Binary Tree prioritized next.
 3. Phase 3: advanced algorithms and comparison tooling.
 
 Canonical order and algorithm list are maintained in `docs/ROADMAP.md` and `src/data/algorithms.ts`.

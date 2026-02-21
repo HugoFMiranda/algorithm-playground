@@ -1,6 +1,6 @@
 # Algorithm Specs and Implementation Template
 
-This document defines the per-algorithm plan format and the 20-roadmap backlog.
+This document defines the per-algorithm plan format and the 21-roadmap backlog.
 
 ## Required Spec Template
 
@@ -560,6 +560,36 @@ Each algorithm must define:
   - Renderer completion state matches result payload.
 - Code examples:
   - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
+
+### Invert Binary Tree (`D1`, Phase 2)
+- Objective: teach structural tree transformation by mirroring each subtree.
+- Input model:
+  - Binary tree provided from level-order input with `null` placeholders for missing children.
+  - Empty input produces an empty tree result with deterministic no-op step stream.
+- Params:
+  - `treeValues` (string, default: `4, 2, 7, 1, 3, 6, 9`)
+  - `traversalMode` (string enum: `dfs | bfs`, default: `dfs`)
+- Human-friendly explanation:
+  - Invert Binary Tree mirrors the tree by swapping each node's left and right children.
+- Step event contract:
+  - `visit-node`: active node selected for inversion.
+  - `swap-children`: node children swapped (`left <-> right`).
+  - `complete`: terminal summary including total visited nodes and root snapshot.
+- Renderer requirements:
+  - Tree renderer with clear left/right edge orientation.
+  - Highlight current node and animate child-swap direction.
+  - Step status message derived from event payload.
+- Metrics tracked:
+  - Visited node count.
+  - Swap count.
+- Edge cases:
+  - Empty tree returns immediately.
+  - Single-node tree emits deterministic visit + complete without structural change.
+  - Sparse trees preserve `null` structure while swapping existing children.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed trees and traversal mode.
+  - Param fallback behavior for malformed tree/traversal input.
+  - Renderer completion state matches final inverted tree output.
 
 ### BST Operations (`D2`, Phase 3)
 - Objective: structural changes for insert/search/delete.
