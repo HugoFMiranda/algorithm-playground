@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project follows pre-1.0 Semantic Versioning (`0.x.y`).
 
+## [0.4.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.3.0...algorithm-playground-v0.4.0) (2026-02-21)
+
+
+### Added
+
+* **library:** add algorithm filters and alphabetical ordering ([983a560](https://github.com/HugoFMiranda/algorithm-playground/commit/983a5609f3cf6578f5b66e9d010cfdd803d1e29c))
+* **library:** make search filters collapsible and closed by default ([1d4e51a](https://github.com/HugoFMiranda/algorithm-playground/commit/1d4e51a9caeb50165986b6d5c92c8742718dcad3))
+
 ## [0.3.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.2.0...algorithm-playground-v0.3.0) (2026-02-21)
 
 
