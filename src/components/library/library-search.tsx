@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CornerDownLeftIcon, SearchIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, CornerDownLeftIcon, SearchIcon } from "lucide-react";
 
 import type { AlgorithmDefinition } from "@/data/algorithms";
 import { getAlgorithmEasyExplanation } from "@/data/easy-explanations";
@@ -34,6 +34,7 @@ export function LibrarySearch({ algorithms }: LibrarySearchProps) {
   const router = useRouter();
   const setSelectedAlgorithmSlug = useAppStore((state) => state.setSelectedAlgorithmSlug);
   const [query, setQuery] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
   const [phaseFilter, setPhaseFilter] = useState<string>("all");
@@ -93,6 +94,9 @@ export function LibrarySearch({ algorithms }: LibrarySearchProps) {
 
   const hasActiveFilters =
     categoryFilter !== "all" || difficultyFilter !== "all" || phaseFilter !== "all";
+  const activeFiltersCount = [categoryFilter, difficultyFilter, phaseFilter].filter(
+    (value) => value !== "all",
+  ).length;
 
   const handleSelectAlgorithm = (slug: string) => {
     setSelectedAlgorithmSlug(slug);
@@ -117,34 +121,59 @@ export function LibrarySearch({ algorithms }: LibrarySearchProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-3 pb-4">
-        <div className="space-y-2 rounded-xl border border-border/70 bg-background/70 p-3">
-          <FilterChips
-            label="Category"
-            options={categoryOptions}
-            selected={categoryFilter}
-            onSelect={setCategoryFilter}
-          />
-          <FilterChips
-            label="Difficulty"
-            options={difficultyOptions}
-            selected={difficultyFilter}
-            onSelect={setDifficultyFilter}
-          />
-          <FilterChips label="Phase" options={phaseOptions} selected={phaseFilter} onSelect={setPhaseFilter} />
-          {hasActiveFilters ? (
-            <div className="pt-1">
-              <Button
-                type="button"
-                size="xs"
-                variant="ghost"
-                onClick={() => {
-                  setCategoryFilter("all");
-                  setDifficultyFilter("all");
-                  setPhaseFilter("all");
-                }}
-              >
-                Clear filters
-              </Button>
+        <div className="rounded-xl border border-border/70 bg-background/70">
+          <div className="flex items-center justify-between gap-3 p-3">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium">Filters</p>
+              {hasActiveFilters ? (
+                <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[10px]">
+                  {activeFiltersCount} active
+                </Badge>
+              ) : null}
+            </div>
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              onClick={() => setFiltersOpen((open) => !open)}
+              aria-expanded={filtersOpen}
+              aria-controls="library-filter-panel"
+            >
+              {filtersOpen ? "Hide" : "Show"} filters
+              {filtersOpen ? <ChevronUpIcon className="size-3.5" /> : <ChevronDownIcon className="size-3.5" />}
+            </Button>
+          </div>
+          {filtersOpen ? (
+            <div id="library-filter-panel" className="space-y-2 border-t border-border/70 p-3">
+              <FilterChips
+                label="Category"
+                options={categoryOptions}
+                selected={categoryFilter}
+                onSelect={setCategoryFilter}
+              />
+              <FilterChips
+                label="Difficulty"
+                options={difficultyOptions}
+                selected={difficultyFilter}
+                onSelect={setDifficultyFilter}
+              />
+              <FilterChips label="Phase" options={phaseOptions} selected={phaseFilter} onSelect={setPhaseFilter} />
+              {hasActiveFilters ? (
+                <div className="pt-1">
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => {
+                      setCategoryFilter("all");
+                      setDifficultyFilter("all");
+                      setPhaseFilter("all");
+                    }}
+                  >
+                    Clear filters
+                  </Button>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
