@@ -11,6 +11,7 @@ import { mergeSortExamples } from "@/algorithms/examples/merge-sort";
 import { quickSortExamples } from "@/algorithms/examples/quick-sort";
 import { selectionSortExamples } from "@/algorithms/examples/selection-sort";
 import { topologicalSortExamples } from "@/algorithms/examples/topological-sort";
+import { unionFindExamples } from "@/algorithms/examples/union-find";
 import type { AlgorithmExamples } from "@/types/examples";
 
 const EXAMPLES_REGISTRY: Record<string, AlgorithmExamples> = {
@@ -27,6 +28,7 @@ const EXAMPLES_REGISTRY: Record<string, AlgorithmExamples> = {
   "topological-sort": topologicalSortExamples,
   "heap-sort": heapSortExamples,
   "invert-binary-tree": invertBinaryTreeExamples,
+  "union-find": unionFindExamples,
 };
 
 export function getAlgorithmExamplesBySlug(slug: string): AlgorithmExamples | null {

@@ -174,8 +174,37 @@ describe("complexity summary", () => {
     expect(summary?.timeWorst).toBe("O(n)");
   });
 
+  it("returns union-find complexity with run-aware details", () => {
+    const summary = getComplexitySummary("union-find", {
+      algorithmSlug: "union-find",
+      input: {
+        nodeCount: 8,
+        operations: [
+          { type: "union", left: 0, right: 1 },
+          { type: "union", left: 1, right: 2 },
+          { type: "connected", left: 0, right: 2 },
+          { type: "find", left: 2, right: null },
+        ],
+      },
+      normalizedParams: { pathCompression: true, unionByRank: true },
+      result: {
+        parents: [0, 0, 0, 3, 4, 5, 6, 7],
+        ranks: [1, 0, 0, 0, 0, 0, 0, 0],
+        componentCount: 6,
+        operationsProcessed: 4,
+        successfulUnions: 2,
+        findQueries: 1,
+        connectedQueries: 1,
+      },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(alpha)");
+    expect(summary?.space).toBe("O(n)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
-    expect(getComplexitySummary("union-find", null)).toBeNull();
+    expect(getComplexitySummary("kruskal-mst", null)).toBeNull();
   });
 
   it("returns compact complexity for implemented algorithms", () => {
@@ -256,6 +285,27 @@ describe("complexity summary", () => {
         isEmpty: false,
       },
     });
+    const unionFind = getCompactCurrentComplexity("union-find", {
+      algorithmSlug: "union-find",
+      input: {
+        nodeCount: 8,
+        operations: [
+          { type: "union", left: 0, right: 1 },
+          { type: "union", left: 1, right: 2 },
+          { type: "find", left: 2, right: null },
+        ],
+      },
+      normalizedParams: { pathCompression: true, unionByRank: true },
+      result: {
+        parents: [0, 0, 0, 3, 4, 5, 6, 7],
+        ranks: [1, 0, 0, 0, 0, 0, 0, 0],
+        componentCount: 6,
+        operationsProcessed: 3,
+        successfulUnions: 2,
+        findQueries: 1,
+        connectedQueries: 0,
+      },
+    });
 
     expect(binary).toBe("O(log n)");
     expect(bubble).toBe("O(n)");
@@ -263,6 +313,7 @@ describe("complexity summary", () => {
     expect(heap).toBe("O(n log n)");
     expect(topological).toBe("O(V + E)");
     expect(invertTree).toBe("O(n)");
+    expect(unionFind).toBe("O(alpha)");
   });
 
   it("returns compact complexity for dijkstra", () => {
@@ -298,6 +349,6 @@ describe("complexity summary", () => {
   });
 
   it("returns null compact complexity for non-implemented algorithms", () => {
-    expect(getCompactCurrentComplexity("union-find", null)).toBeNull();
+    expect(getCompactCurrentComplexity("kruskal-mst", null)).toBeNull();
   });
 });

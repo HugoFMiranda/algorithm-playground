@@ -31,6 +31,8 @@ import type { SelectionSortInput, SelectionSortResult } from "@/algorithms/selec
 import type { SelectionSortStepEvent } from "@/algorithms/selection-sort/engine";
 import type { TopologicalSortInput, TopologicalSortResult } from "@/algorithms/topological-sort/spec";
 import type { TopologicalSortStepEvent } from "@/algorithms/topological-sort/engine";
+import type { UnionFindInput, UnionFindResult } from "@/algorithms/union-find/spec";
+import type { UnionFindStepEvent } from "@/algorithms/union-find/engine";
 import type { AlgorithmDefinition } from "@/data/algorithms";
 import { getCompactCurrentComplexity } from "@/lib/complexity";
 import { parseWeightOverrides, serializeCellList, serializeWeightOverrides } from "@/lib/path-grid-edit";
@@ -105,6 +107,10 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
 
   if (algorithm.slug === "topological-sort") {
     return <TopologicalSortVisualizer run={run} cursor={cursor} />;
+  }
+
+  if (algorithm.slug === "union-find") {
+    return <UnionFindVisualizer run={run} cursor={cursor} />;
   }
 
   if (algorithm.slug === "insertion-sort") {
@@ -573,7 +579,8 @@ function BfsVisualizer({ run, cursor }: SharedVisualizerProps) {
                     onPointerEnter={() => paintHandlers.onPointerEnter(cell)}
                     className={cn(
                       "rounded-lg border p-2 select-none",
-                      isBlocked && "border-zinc-500/70 bg-zinc-500/25 text-zinc-100",
+                      isBlocked && "border-zinc-500/70 bg-zinc-500/25 text-zinc-900 dark:text-zinc-100",
+                      isTarget && "border-rose-300/70 bg-rose-500/12 text-rose-900 dark:text-rose-100",
                       isVisited && "border-sky-300/60 bg-sky-500/12",
                       isQueued && "border-cyan-300/60 bg-cyan-500/12",
                       isPath && "border-emerald-300/70 bg-emerald-500/20",
@@ -929,7 +936,8 @@ function DfsVisualizer({ run, cursor }: SharedVisualizerProps) {
                     onPointerEnter={() => paintHandlers.onPointerEnter(cell)}
                     className={cn(
                       "rounded-lg border p-2 select-none",
-                      isBlocked && "border-zinc-500/70 bg-zinc-500/25 text-zinc-100",
+                      isBlocked && "border-zinc-500/70 bg-zinc-500/25 text-zinc-900 dark:text-zinc-100",
+                      isTarget && "border-rose-300/70 bg-rose-500/12 text-rose-900 dark:text-rose-100",
                       isVisited && "border-sky-300/60 bg-sky-500/12",
                       isStacked && "border-cyan-300/60 bg-cyan-500/12",
                       isPath && "border-emerald-300/70 bg-emerald-500/20",
@@ -1441,7 +1449,8 @@ function DijkstraVisualizer({ run, cursor }: SharedVisualizerProps) {
                     onPointerEnter={() => paintHandlers.onPointerEnter(cell)}
                     className={cn(
                       "rounded-lg border p-2 select-none",
-                      isBlocked && "border-zinc-500/70 bg-zinc-500/25 text-zinc-100",
+                      isBlocked && "border-zinc-500/70 bg-zinc-500/25 text-zinc-900 dark:text-zinc-100",
+                      isTarget && "border-rose-300/70 bg-rose-500/12 text-rose-900 dark:text-rose-100",
                       isVisited && "border-sky-300/60 bg-sky-500/12",
                       isFrontier && "border-cyan-300/60 bg-cyan-500/12",
                       isPath && "border-emerald-300/70 bg-emerald-500/20",
@@ -1978,7 +1987,8 @@ function AStarVisualizer({ run, cursor }: SharedVisualizerProps) {
                     onPointerEnter={() => paintHandlers.onPointerEnter(cell)}
                     className={cn(
                       "rounded-lg border p-2 select-none",
-                      isBlocked && "border-zinc-500/70 bg-zinc-500/25 text-zinc-100",
+                      isBlocked && "border-zinc-500/70 bg-zinc-500/25 text-zinc-900 dark:text-zinc-100",
+                      isTarget && "border-rose-300/70 bg-rose-500/12 text-rose-900 dark:text-rose-100",
                       isClosed && "border-sky-300/60 bg-sky-500/12",
                       isOpen && "border-cyan-300/60 bg-cyan-500/12",
                       isPath && "border-emerald-300/70 bg-emerald-500/20",
@@ -4208,6 +4218,469 @@ function formatMergeSortStepMessage(step: MergeSortStepEvent): string {
   }
 
   return `Completed with ${step.payload.comparisons} comparisons and ${step.payload.writes} writes.`;
+}
+
+interface UnionFindFrame {
+  parents: number[];
+  ranks: number[];
+  roots: number[];
+  componentCount: number;
+  activeNode: number | null;
+  activeOtherNode: number | null;
+  activeRoot: number | null;
+  activeOtherRoot: number | null;
+  activeQueryType: "find" | "connected" | null;
+  activeQueryConnected: boolean | null;
+  lastUnionMerged: boolean | null;
+  lastCompressedNode: number | null;
+  operationIndex: number | null;
+  completed: boolean;
+}
+
+function UnionFindVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const compactComplexity = getCompactCurrentComplexity("union-find", run);
+  const typedRun =
+    run && run.algorithmSlug === "union-find"
+      ? {
+          ...run,
+          input: run.input as UnionFindInput,
+          result: run.result as UnionFindResult,
+          steps: run.steps as UnionFindStepEvent[],
+        }
+      : null;
+
+  const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
+  const frame = useMemo(() => deriveUnionFindFrame(typedRun, cursor), [typedRun, cursor]);
+  const stepLabel = activeStep ? formatUnionFindStepLabel(activeStep) : "Ready";
+  const stepMessage = activeStep
+    ? formatUnionFindStepMessage(activeStep)
+    : "Press Play or Step to start execution.";
+  const layout = useMemo(() => createUnionFindLayout(frame.parents), [frame.parents]);
+  const edgePairs = useMemo(
+    () =>
+      frame.parents
+        .map((parent, node) => ({ node, parent }))
+        .filter((edge) => edge.node !== edge.parent),
+    [frame.parents],
+  );
+
+  return (
+    <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg">Visualizer</CardTitle>
+          <div className="flex items-center gap-2">
+            {compactComplexity ? (
+              <Badge variant="outline" className="rounded-full border-border/70">
+                {compactComplexity}
+              </Badge>
+            ) : null}
+            <Badge variant="secondary" className="rounded-full border-border/70">
+              Union-Find
+            </Badge>
+          </div>
+        </div>
+        <CardDescription>
+          Deterministic disjoint-set playback with root tracing, optional path compression, and union updates.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Nodes</p>
+            <p className="font-mono text-base">{frame.parents.length}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Components</p>
+            <p className="font-mono text-base">{frame.componentCount}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Successful Unions</p>
+            <p className="font-mono text-base">{typedRun?.result.successfulUnions ?? 0}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Result</p>
+            <p className="font-mono text-base">{frame.completed ? "Complete" : "Processing"}</p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="rounded-full border-border/70">
+              {stepLabel}
+            </Badge>
+            <p className="text-muted-foreground">{stepMessage}</p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Parents</p>
+              <p className="font-mono text-xs">{frame.parents.length > 0 ? frame.parents.join(", ") : "n/a"}</p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Ranks</p>
+              <p className="font-mono text-xs">{frame.ranks.length > 0 ? frame.ranks.join(", ") : "n/a"}</p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Active Query</p>
+              <p className="font-mono text-xs">
+                {frame.activeQueryType === null
+                  ? "n/a"
+                  : frame.activeQueryType === "find"
+                    ? `find => root ${frame.activeRoot ?? "n/a"}`
+                    : `connected => ${String(frame.activeQueryConnected)}`}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/80 bg-background/70 p-3">
+            <div className="overflow-hidden rounded-lg border border-border/70 bg-[radial-gradient(circle_at_20%_10%,rgba(14,165,233,0.08),transparent_52%),radial-gradient(circle_at_80%_88%,rgba(99,102,241,0.08),transparent_48%)]">
+              <svg viewBox={`0 0 ${layout.width} ${layout.height}`} className="h-[340px] w-full">
+                <defs>
+                  <marker
+                    id="union-find-arrow"
+                    viewBox="0 0 6 6"
+                    markerWidth="4.6"
+                    markerHeight="4.6"
+                    markerUnits="userSpaceOnUse"
+                    refX="5.1"
+                    refY="3"
+                    orient="auto"
+                  >
+                    <polygon points="0 0, 6 3, 0 6" fill="rgba(148, 163, 184, 0.75)" />
+                  </marker>
+                </defs>
+
+                {edgePairs.map((edge) => {
+                  const from = layout.positions[edge.node];
+                  const to = layout.positions[edge.parent];
+                  if (!from || !to) {
+                    return null;
+                  }
+
+                  const isActiveEdge = frame.lastCompressedNode === edge.node;
+
+                  return (
+                    <line
+                      key={`uf-edge-${edge.node}-${edge.parent}`}
+                      x1={from.x}
+                      y1={from.y}
+                      x2={to.x}
+                      y2={to.y}
+                      stroke={isActiveEdge ? "rgba(14, 165, 233, 0.9)" : "rgba(148, 163, 184, 0.6)"}
+                      strokeWidth={isActiveEdge ? 1.6 : 1.1}
+                      vectorEffect="non-scaling-stroke"
+                      markerEnd="url(#union-find-arrow)"
+                    />
+                  );
+                })}
+
+                {layout.nodeIds.map((node) => {
+                  const position = layout.positions[node];
+                  if (!position) {
+                    return null;
+                  }
+
+                  const root = frame.roots[node] ?? node;
+                  const style = getUnionFindGroupStyle(root);
+                  const isActive = frame.activeNode === node;
+                  const isOtherActive = frame.activeOtherNode === node;
+                  const isRoot = frame.parents[node] === node;
+                  const fill = isActive
+                    ? "rgba(245, 158, 11, 0.24)"
+                    : isOtherActive
+                      ? "rgba(14, 165, 233, 0.22)"
+                      : style.fill;
+                  const stroke = isActive
+                    ? "rgba(245, 158, 11, 0.86)"
+                    : isOtherActive
+                      ? "rgba(14, 165, 233, 0.82)"
+                      : style.stroke;
+
+                  return (
+                    <g key={`uf-node-${node}`} transform={`translate(${position.x} ${position.y})`}>
+                      <circle
+                        r={layout.nodeRadius}
+                        fill={fill}
+                        stroke={stroke}
+                        strokeWidth={isRoot ? 1.65 : 1.2}
+                      />
+                      <text
+                        x="0"
+                        y="0"
+                        dy="0.03em"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fontSize="3.3"
+                        fontWeight="700"
+                        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+                        className="fill-foreground"
+                      >
+                        {node}
+                      </text>
+                      <text
+                        x="0"
+                        y={layout.nodeRadius + 3.2}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="fill-muted-foreground font-mono text-[2.2px]"
+                      >
+                        p:{frame.parents[node]}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-amber-500/70" />
+                active
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-sky-500/70" />
+                second operand
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-emerald-500/70" />
+                component cluster
+              </span>
+            </div>
+          </div>
+
+          {layout.nodeIds.length === 0 ? (
+            <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-border/70 p-4 text-xs">
+              <SearchIcon className="size-3.5" />
+              No nodes available for visualization.
+            </div>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface UnionFindLayout {
+  width: number;
+  height: number;
+  nodeRadius: number;
+  nodeIds: number[];
+  positions: Record<number, { x: number; y: number }>;
+}
+
+function createUnionFindLayout(parents: number[]): UnionFindLayout {
+  const nodeCount = parents.length;
+  if (nodeCount === 0) {
+    return {
+      width: 100,
+      height: 100,
+      nodeRadius: 5.5,
+      nodeIds: [],
+      positions: {},
+    };
+  }
+
+  const width = 132;
+  const height = 106;
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const orbit = Math.min(width, height) * 0.34;
+  const nodeRadius = nodeCount > 16 ? 5.1 : nodeCount > 10 ? 5.8 : 6.4;
+  const nodeIds = Array.from({ length: nodeCount }, (_, index) => index);
+  const positions: Record<number, { x: number; y: number }> = {};
+
+  nodeIds.forEach((node) => {
+    const angle = -Math.PI / 2 + (2 * Math.PI * node) / nodeCount;
+    positions[node] = {
+      x: centerX + orbit * Math.cos(angle),
+      y: centerY + orbit * Math.sin(angle),
+    };
+  });
+
+  return {
+    width,
+    height,
+    nodeRadius,
+    nodeIds,
+    positions,
+  };
+}
+
+const UNION_FIND_GROUP_PALETTE = [
+  { fill: "rgba(56, 189, 248, 0.17)", stroke: "rgba(56, 189, 248, 0.74)" },
+  { fill: "rgba(16, 185, 129, 0.17)", stroke: "rgba(16, 185, 129, 0.74)" },
+  { fill: "rgba(167, 139, 250, 0.17)", stroke: "rgba(167, 139, 250, 0.74)" },
+  { fill: "rgba(244, 114, 182, 0.17)", stroke: "rgba(244, 114, 182, 0.74)" },
+  { fill: "rgba(251, 191, 36, 0.17)", stroke: "rgba(251, 191, 36, 0.74)" },
+  { fill: "rgba(74, 222, 128, 0.17)", stroke: "rgba(74, 222, 128, 0.74)" },
+] as const;
+
+function getUnionFindGroupStyle(root: number): { fill: string; stroke: string } {
+  return UNION_FIND_GROUP_PALETTE[Math.abs(root) % UNION_FIND_GROUP_PALETTE.length];
+}
+
+function resolveUnionFindRoot(parents: number[], node: number): number {
+  let current = node;
+  const seen = new Set<number>([node]);
+  while (parents[current] !== current) {
+    current = parents[current];
+    if (seen.has(current)) {
+      break;
+    }
+    seen.add(current);
+    if (seen.size > parents.length + 1) {
+      break;
+    }
+  }
+
+  return current;
+}
+
+function deriveUnionFindFrame(
+  run: {
+    input: UnionFindInput;
+    steps: UnionFindStepEvent[];
+  } | null,
+  cursor: number,
+): UnionFindFrame {
+  const nodeCount = run?.input.nodeCount ?? 0;
+  const baseParents = Array.from({ length: nodeCount }, (_, index) => index);
+  const baseRanks = Array.from({ length: nodeCount }, () => 0);
+  const frame: UnionFindFrame = {
+    parents: baseParents,
+    ranks: baseRanks,
+    roots: baseParents.map((_, index) => index),
+    componentCount: nodeCount,
+    activeNode: null,
+    activeOtherNode: null,
+    activeRoot: null,
+    activeOtherRoot: null,
+    activeQueryType: null,
+    activeQueryConnected: null,
+    lastUnionMerged: null,
+    lastCompressedNode: null,
+    operationIndex: null,
+    completed: false,
+  };
+
+  if (!run || cursor < 0 || run.steps.length === 0) {
+    return frame;
+  }
+
+  const boundedCursor = Math.min(cursor, run.steps.length - 1);
+  for (let index = 0; index <= boundedCursor; index += 1) {
+    const step = run.steps[index];
+
+    if (step.type === "find-root") {
+      frame.operationIndex = step.payload.operationIndex;
+      if (step.payload.context === "union-right" || step.payload.context === "connected-right") {
+        frame.activeOtherNode = step.payload.node;
+        frame.activeOtherRoot = step.payload.root;
+      } else {
+        frame.activeNode = step.payload.node;
+        frame.activeRoot = step.payload.root;
+      }
+      frame.lastCompressedNode = null;
+      continue;
+    }
+
+    if (step.type === "compress-path") {
+      frame.parents[step.payload.node] = step.payload.toParent;
+      frame.lastCompressedNode = step.payload.node;
+      frame.operationIndex = step.payload.operationIndex;
+      continue;
+    }
+
+    if (step.type === "union") {
+      frame.operationIndex = step.payload.operationIndex;
+      frame.activeNode = step.payload.left;
+      frame.activeOtherNode = step.payload.right;
+      frame.activeRoot = step.payload.leftRoot;
+      frame.activeOtherRoot = step.payload.rightRoot;
+      frame.lastUnionMerged = step.payload.merged;
+      frame.activeQueryType = null;
+      frame.activeQueryConnected = null;
+      frame.componentCount = step.payload.componentCount;
+
+      if (step.payload.merged && step.payload.attachedRoot !== null && step.payload.parentRoot !== null) {
+        frame.parents[step.payload.attachedRoot] = step.payload.parentRoot;
+      }
+
+      if (step.payload.rankRaisedRoot !== null && step.payload.nextRank !== null) {
+        frame.ranks[step.payload.rankRaisedRoot] = step.payload.nextRank;
+      }
+
+      continue;
+    }
+
+    if (step.type === "query-result") {
+      frame.operationIndex = step.payload.operationIndex;
+      frame.activeNode = step.payload.node;
+      frame.activeOtherNode = step.payload.otherNode;
+      frame.activeRoot = step.payload.root;
+      frame.activeOtherRoot = step.payload.otherRoot;
+      frame.activeQueryType = step.payload.queryType;
+      frame.activeQueryConnected = step.payload.connected;
+      frame.lastUnionMerged = null;
+      continue;
+    }
+
+    frame.componentCount = step.payload.componentCount;
+    frame.completed = true;
+    frame.activeQueryType = null;
+    frame.activeQueryConnected = null;
+    frame.lastUnionMerged = null;
+  }
+
+  frame.roots = frame.parents.map((_, node) => resolveUnionFindRoot(frame.parents, node));
+  return frame;
+}
+
+function formatUnionFindStepLabel(step: UnionFindStepEvent): string {
+  if (step.type === "find-root") {
+    return "Find Root";
+  }
+
+  if (step.type === "compress-path") {
+    return "Compress Path";
+  }
+
+  if (step.type === "union") {
+    return step.payload.merged ? "Union Merge" : "Union Skip";
+  }
+
+  if (step.type === "query-result") {
+    return step.payload.queryType === "find" ? "Find Result" : "Connected Check";
+  }
+
+  return "Complete";
+}
+
+function formatUnionFindStepMessage(step: UnionFindStepEvent): string {
+  if (step.type === "find-root") {
+    return `Operation #${step.payload.operationIndex + 1}: node ${step.payload.node} reaches root ${step.payload.root} via ${step.payload.trail}.`;
+  }
+
+  if (step.type === "compress-path") {
+    return `Operation #${step.payload.operationIndex + 1}: compress node ${step.payload.node} parent ${step.payload.fromParent} -> ${step.payload.toParent}.`;
+  }
+
+  if (step.type === "union") {
+    return step.payload.merged
+      ? `Operation #${step.payload.operationIndex + 1}: merged roots ${step.payload.leftRoot} and ${step.payload.rightRoot}; components now ${step.payload.componentCount}.`
+      : `Operation #${step.payload.operationIndex + 1}: nodes already share root ${step.payload.leftRoot}.`;
+  }
+
+  if (step.type === "query-result") {
+    if (step.payload.queryType === "find") {
+      return `Operation #${step.payload.operationIndex + 1}: find(${step.payload.node}) = ${step.payload.root}.`;
+    }
+
+    return `Operation #${step.payload.operationIndex + 1}: connected(${step.payload.node}, ${step.payload.otherNode}) = ${String(step.payload.connected)}.`;
+  }
+
+  return `Completed ${step.payload.operationsProcessed} operations with ${step.payload.componentCount} component(s).`;
 }
 
 interface InvertBinaryTreeFrame {

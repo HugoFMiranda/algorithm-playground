@@ -344,6 +344,67 @@ function getTopologicalSortComplexity(run: AlgorithmRunSnapshot | null): Complex
   };
 }
 
+function getUnionFindComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
+  let nodeCount = 0;
+  let operationCount = 0;
+  let pathCompression = true;
+  let unionByRank = true;
+
+  if (run && isRecord(run.input)) {
+    if ("nodeCount" in run.input && isFiniteNumber(run.input.nodeCount)) {
+      nodeCount = run.input.nodeCount;
+    }
+    if ("operations" in run.input && Array.isArray(run.input.operations)) {
+      operationCount = run.input.operations.length;
+    }
+  }
+
+  if (run) {
+    pathCompression = parseBooleanParam(run.normalizedParams.pathCompression, true);
+    unionByRank = parseBooleanParam(run.normalizedParams.unionByRank, true);
+  }
+
+  let componentCount: number | null = null;
+  let successfulUnions: number | null = null;
+  let findQueries: number | null = null;
+  let connectedQueries: number | null = null;
+  if (run && isRecord(run.result)) {
+    if ("componentCount" in run.result && isFiniteNumber(run.result.componentCount)) {
+      componentCount = run.result.componentCount;
+    }
+    if ("successfulUnions" in run.result && isFiniteNumber(run.result.successfulUnions)) {
+      successfulUnions = run.result.successfulUnions;
+    }
+    if ("findQueries" in run.result && isFiniteNumber(run.result.findQueries)) {
+      findQueries = run.result.findQueries;
+    }
+    if ("connectedQueries" in run.result && isFiniteNumber(run.result.connectedQueries)) {
+      connectedQueries = run.result.connectedQueries;
+    }
+  }
+
+  const details = [
+    `Nodes = ${nodeCount}, operations = ${operationCount}`,
+    `pathCompression = ${String(pathCompression)}, unionByRank = ${String(unionByRank)}`,
+    "Amortized behavior trends to near-constant with both optimizations enabled",
+    componentCount === null
+      ? "Observed components: pending"
+      : `Observed components/successful unions: ${componentCount}/${successfulUnions ?? "?"}`,
+    findQueries === null
+      ? "Observed query counts: pending"
+      : `Observed find/connected queries: ${findQueries}/${connectedQueries ?? "?"}`,
+  ];
+
+  return {
+    timeBest: "O(1)",
+    timeAverage: "O(alpha)",
+    timeWorst: pathCompression && unionByRank ? "O(alpha)" : "O(log n)",
+    space: "O(n)",
+    current: operationCount === 0 ? "O(1) on this run" : "O(alpha) amortized on this run",
+    details,
+  };
+}
+
 function getInvertBinaryTreeComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
   let nodeCount = 0;
   if (run && isRecord(run.input) && "nodes" in run.input && Array.isArray(run.input.nodes)) {
@@ -775,6 +836,10 @@ export function getComplexitySummary(
 
   if (algorithmSlug === "topological-sort") {
     return getTopologicalSortComplexity(run && run.algorithmSlug === "topological-sort" ? run : null);
+  }
+
+  if (algorithmSlug === "union-find") {
+    return getUnionFindComplexity(run && run.algorithmSlug === "union-find" ? run : null);
   }
 
   if (algorithmSlug === "insertion-sort") {

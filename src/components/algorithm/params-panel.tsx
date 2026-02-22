@@ -46,6 +46,10 @@ import {
   TOPOLOGICAL_SORT_DEFAULT_PARAMS,
   createRandomTopologicalSortParams,
 } from "@/algorithms/topological-sort/spec";
+import {
+  UNION_FIND_DEFAULT_PARAMS,
+  createRandomUnionFindParams,
+} from "@/algorithms/union-find/spec";
 import { useAppStore } from "@/store/app-store";
 import type { ParamPrimitive } from "@/types/engine";
 import { Badge } from "@/components/ui/badge";
@@ -304,6 +308,19 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
     );
   }
 
+  if (selectedAlgorithmSlug === "union-find") {
+    return (
+      <UnionFindParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
   if (selectedAlgorithmSlug === "invert-binary-tree") {
     return (
       <InvertBinaryTreeParamsCard
@@ -328,8 +345,8 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
         </div>
         <CardDescription className="text-xs leading-relaxed">
           Parameter schema and validation are enabled for Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort,
-          Quick Sort, Heap Sort, Topological Sort, Selection Sort, Insertion Sort, Merge Sort, and Invert
-          Binary Tree in this milestone.
+          Quick Sort, Heap Sort, Topological Sort, Union-Find, Selection Sort, Insertion Sort, Merge Sort,
+          and Invert Binary Tree in this milestone.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -2140,6 +2157,180 @@ function TopologicalSortParamsCard({
             Cycle detected:{" "}
             <span className="font-mono">
               {normalizedResult ? String(normalizedResult.cycleDetected) : "n/a"}
+            </span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function UnionFindParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const nodeCount = useMemo(() => {
+    const value = params.nodeCount;
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(UNION_FIND_DEFAULT_PARAMS.nodeCount);
+  }, [params.nodeCount]);
+
+  const operations = useMemo(() => {
+    const value = params.operations;
+    return typeof value === "string" ? value : UNION_FIND_DEFAULT_PARAMS.operations;
+  }, [params.operations]);
+
+  const pathCompression = useMemo(
+    () => coerceBoolean(params.pathCompression, UNION_FIND_DEFAULT_PARAMS.pathCompression),
+    [params.pathCompression],
+  );
+  const unionByRank = useMemo(
+    () => coerceBoolean(params.unionByRank, UNION_FIND_DEFAULT_PARAMS.unionByRank),
+    [params.unionByRank],
+  );
+
+  const normalizedInput =
+    run && run.algorithmSlug === "union-find" && typeof run.input === "object" && run.input !== null
+      ? (run.input as {
+          nodeCount: number;
+          operations: Array<{ type: string; left: number; right: number | null }>;
+        })
+      : null;
+
+  const normalizedResult =
+    run && run.algorithmSlug === "union-find" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          componentCount: number;
+          successfulUnions: number;
+          findQueries: number;
+          connectedQueries: number;
+          parents: number[];
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomUnionFindParams();
+    setParams({
+      nodeCount: randomParams.nodeCount,
+      operations: randomParams.operations,
+      pathCompression: randomParams.pathCompression,
+      unionByRank: randomParams.unionByRank,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Union-Find
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Configure disjoint-set size and operation script. Supported operations are{" "}
+          <span className="font-mono">union a b</span>, <span className="font-mono">find a</span>, and{" "}
+          <span className="font-mono">connected a b</span>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="param-union-find-node-count" className="text-xs font-medium">
+            Node Count
+          </label>
+          <Input
+            id="param-union-find-node-count"
+            type="number"
+            min={2}
+            max={24}
+            step={1}
+            value={nodeCount}
+            onChange={(event) => {
+              const parsed = Number(event.target.value);
+              setParam("nodeCount", Number.isFinite(parsed) ? parsed : event.target.value);
+            }}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="param-union-find-operations" className="text-xs font-medium">
+              Operation Script
+            </label>
+            <InlineHelp text="Comma-separated operations, e.g. union 0 1, find 1, connected 1 2." />
+          </div>
+          <Input
+            id="param-union-find-operations"
+            value={operations}
+            onChange={(event) => setParam("operations", event.target.value)}
+            placeholder={UNION_FIND_DEFAULT_PARAMS.operations}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Optimization Settings</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={pathCompression ? "secondary" : "outline"}
+              onClick={() => setParam("pathCompression", !pathCompression)}
+            >
+              {pathCompression ? "Path Compression On" : "Path Compression Off"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={unionByRank ? "secondary" : "outline"}
+              onClick={() => setParam("unionByRank", !unionByRank)}
+            >
+              {unionByRank ? "Union By Rank On" : "Union By Rank Off"}
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Node count: <span className="font-mono">{normalizedInput?.nodeCount ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Operation count: <span className="font-mono">{normalizedInput?.operations.length ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result metrics:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? `components ${normalizedResult.componentCount}, unions ${normalizedResult.successfulUnions}, finds ${normalizedResult.findQueries}, connected ${normalizedResult.connectedQueries}`
+                : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Parents:{" "}
+            <span className="font-mono">
+              {normalizedResult ? normalizedResult.parents.join(", ") : "n/a"}
             </span>
           </p>
         </div>

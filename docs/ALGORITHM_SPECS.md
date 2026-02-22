@@ -506,9 +506,49 @@ Each algorithm must define:
   - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Union-Find (`D2`, Phase 2)
-- Objective: disjoint set operations and compression.
-- Renderer: component clusters.
-- Key events: find-root, compress-path, union.
+- Objective: teach disjoint-set connectivity tracking, root discovery, optional path compression, and deterministic union policies.
+- Input model:
+  - Node set is indexed from `0` to `nodeCount - 1`.
+  - Operation script is parsed from comma/newline-separated text.
+  - Supported operations: `union a b`, `find a`, `connected a b`.
+  - Invalid operations and out-of-range indices are dropped during normalization.
+  - Empty/invalid operation scripts fallback to deterministic default operation sequence.
+- Params:
+  - `nodeCount` (number, default: `10`)
+  - `operations` (string, default: `union 0 1, union 1 2, union 3 4, connected 0 2, connected 0 4, find 2, union 2 4, connected 0 4, union 5 6, union 6 7, connected 5 7, find 7`)
+  - `pathCompression` (boolean, default: `true`)
+  - `unionByRank` (boolean, default: `true`)
+- Human-friendly explanation:
+  - Union-Find keeps track of which items belong to the same group by pointing each item toward a representative root. Union merges groups; find/connected queries read group membership efficiently.
+- Step event contract:
+  - `find-root`: traces a node path to current representative root.
+  - `compress-path`: updates parent pointers along traversed path when path compression is enabled.
+  - `union`: merges two root sets or reports no-op when roots already match.
+  - `query-result`: emits deterministic result for `find` and `connected` operations.
+  - `complete`: terminal summary with component count and final parent/rank snapshots.
+- Renderer requirements:
+  - Render node clusters with parent-pointer links.
+  - Distinct styling for active query nodes, compressed path updates, and component grouping.
+  - Show current parent/rank arrays and component count.
+  - Step status message derived from event payload.
+- Metrics tracked:
+  - Component count.
+  - Successful union count.
+  - Find query count.
+  - Connected query count.
+- Edge cases:
+  - Duplicate unions are deterministic no-ops.
+  - Self-union (`union a a`) is deterministic and does not change component count.
+  - Path compression toggle changes emitted compression events deterministically.
+  - Union-by-rank toggle changes parent attachment policy deterministically.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed operation scripts.
+  - Param fallback behavior for malformed node count / operation text / booleans.
+  - Path compression toggle affects `compress-path` emission deterministically.
+  - Union-by-rank toggle affects parent attachment deterministically.
+  - Renderer completion state matches final parent array and component count.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Kruskal MST (`D2`, Phase 2)
 - Objective: greedy edge selection with cycle prevention.
