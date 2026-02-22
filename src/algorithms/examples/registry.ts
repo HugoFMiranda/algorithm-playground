@@ -5,11 +5,13 @@ import { bubbleSortExamples } from "@/algorithms/examples/bubble-sort";
 import { dijkstraExamples } from "@/algorithms/examples/dijkstra";
 import { dfsExamples } from "@/algorithms/examples/dfs";
 import { heapSortExamples } from "@/algorithms/examples/heap-sort";
+import { invertBinaryTreeExamples } from "@/algorithms/examples/invert-binary-tree";
 import { insertionSortExamples } from "@/algorithms/examples/insertion-sort";
 import { mergeSortExamples } from "@/algorithms/examples/merge-sort";
 import { quickSortExamples } from "@/algorithms/examples/quick-sort";
 import { selectionSortExamples } from "@/algorithms/examples/selection-sort";
 import { topologicalSortExamples } from "@/algorithms/examples/topological-sort";
+import { unionFindExamples } from "@/algorithms/examples/union-find";
 import type { AlgorithmExamples } from "@/types/examples";
 
 const EXAMPLES_REGISTRY: Record<string, AlgorithmExamples> = {
@@ -25,6 +27,8 @@ const EXAMPLES_REGISTRY: Record<string, AlgorithmExamples> = {
   "quick-sort": quickSortExamples,
   "topological-sort": topologicalSortExamples,
   "heap-sort": heapSortExamples,
+  "invert-binary-tree": invertBinaryTreeExamples,
+  "union-find": unionFindExamples,
 };
 
 export function getAlgorithmExamplesBySlug(slug: string): AlgorithmExamples | null {

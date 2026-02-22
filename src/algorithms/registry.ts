@@ -12,6 +12,8 @@ import { createDfsRun } from "@/algorithms/dfs/engine";
 import { DFS_DEFAULT_PARAMS } from "@/algorithms/dfs/spec";
 import { createHeapSortRun } from "@/algorithms/heap-sort/engine";
 import { HEAP_SORT_DEFAULT_PARAMS } from "@/algorithms/heap-sort/spec";
+import { createInvertBinaryTreeRun } from "@/algorithms/invert-binary-tree/engine";
+import { INVERT_BINARY_TREE_DEFAULT_PARAMS } from "@/algorithms/invert-binary-tree/spec";
 import { createInsertionSortRun } from "@/algorithms/insertion-sort/engine";
 import { INSERTION_SORT_DEFAULT_PARAMS } from "@/algorithms/insertion-sort/spec";
 import { createMergeSortRun } from "@/algorithms/merge-sort/engine";
@@ -22,6 +24,8 @@ import { createSelectionSortRun } from "@/algorithms/selection-sort/engine";
 import { SELECTION_SORT_DEFAULT_PARAMS } from "@/algorithms/selection-sort/spec";
 import { createTopologicalSortRun } from "@/algorithms/topological-sort/engine";
 import { TOPOLOGICAL_SORT_DEFAULT_PARAMS } from "@/algorithms/topological-sort/spec";
+import { createUnionFindRun } from "@/algorithms/union-find/engine";
+import { UNION_FIND_DEFAULT_PARAMS } from "@/algorithms/union-find/spec";
 import type { ParamPrimitive, RawParams, StepEventBase } from "@/types/engine";
 
 export type RendererFamily = "array" | "grid" | "graph" | "tree";
@@ -112,6 +116,18 @@ const ALGORITHM_RUNTIME_REGISTRY: Record<string, AlgorithmRuntimeDefinition> = {
     rendererFamily: "graph",
     defaultParams: { ...TOPOLOGICAL_SORT_DEFAULT_PARAMS },
     createRun: createTopologicalSortRun,
+  },
+  "invert-binary-tree": {
+    slug: "invert-binary-tree",
+    rendererFamily: "tree",
+    defaultParams: { ...INVERT_BINARY_TREE_DEFAULT_PARAMS },
+    createRun: createInvertBinaryTreeRun,
+  },
+  "union-find": {
+    slug: "union-find",
+    rendererFamily: "graph",
+    defaultParams: { ...UNION_FIND_DEFAULT_PARAMS },
+    createRun: createUnionFindRun,
   },
 };
 

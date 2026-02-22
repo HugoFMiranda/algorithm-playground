@@ -31,6 +31,8 @@ const ALGORITHM_EASY_EXPLANATIONS: Record<string, string> = {
     "Bellman-Ford relaxes edges repeatedly to find shortest paths and can detect negative-weight cycles.",
   "binary-search":
     "Binary Search checks the middle of a sorted list and discards half each step until it finds the target.",
+  "invert-binary-tree":
+    "Invert Binary Tree mirrors a tree by swapping the left and right child at every node.",
   "bst-operations":
     "BST operations follow left-smaller and right-larger rules to search, insert, and delete values efficiently.",
   "avl-rotations":

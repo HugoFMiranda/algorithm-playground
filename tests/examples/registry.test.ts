@@ -38,7 +38,21 @@ describe("algorithm examples registry", () => {
     expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
   });
 
+  it("returns invert-binary-tree snippets in pseudocode and typescript", () => {
+    const examples = getAlgorithmExamplesBySlug("invert-binary-tree");
+
+    expect(examples).not.toBeNull();
+    expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
+  });
+
+  it("returns union-find snippets in pseudocode and typescript", () => {
+    const examples = getAlgorithmExamplesBySlug("union-find");
+
+    expect(examples).not.toBeNull();
+    expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
+  });
+
   it("returns null for algorithms without examples", () => {
-    expect(getAlgorithmExamplesBySlug("union-find")).toBeNull();
+    expect(getAlgorithmExamplesBySlug("kruskal-mst")).toBeNull();
   });
 });

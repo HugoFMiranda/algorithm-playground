@@ -132,6 +132,28 @@ describe("app store playback", () => {
     expect(state.playback.status).toBe("idle");
   });
 
+  it("initializes invert-binary-tree run from runtime registry", () => {
+    const store = useAppStore.getState();
+    store.initializeAlgorithm("invert-binary-tree");
+
+    const state = useAppStore.getState();
+    expect(state.selectedAlgorithmSlug).toBe("invert-binary-tree");
+    expect(state.run).not.toBeNull();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
+  it("initializes union-find run from runtime registry", () => {
+    const store = useAppStore.getState();
+    store.initializeAlgorithm("union-find");
+
+    const state = useAppStore.getState();
+    expect(state.selectedAlgorithmSlug).toBe("union-find");
+    expect(state.run).not.toBeNull();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
   it("normalizes playback speed with quarter-step snapping and global max", () => {
     useAppStore.getState().initializeAlgorithm("a-star");
 

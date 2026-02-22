@@ -23,6 +23,10 @@ import {
   createRandomHeapSortParams,
 } from "@/algorithms/heap-sort/spec";
 import {
+  INVERT_BINARY_TREE_DEFAULT_PARAMS,
+  createRandomInvertBinaryTreeParams,
+} from "@/algorithms/invert-binary-tree/spec";
+import {
   INSERTION_SORT_DEFAULT_PARAMS,
   createRandomInsertionSortParams,
 } from "@/algorithms/insertion-sort/spec";
@@ -42,6 +46,10 @@ import {
   TOPOLOGICAL_SORT_DEFAULT_PARAMS,
   createRandomTopologicalSortParams,
 } from "@/algorithms/topological-sort/spec";
+import {
+  UNION_FIND_DEFAULT_PARAMS,
+  createRandomUnionFindParams,
+} from "@/algorithms/union-find/spec";
 import { useAppStore } from "@/store/app-store";
 import type { ParamPrimitive } from "@/types/engine";
 import { Badge } from "@/components/ui/badge";
@@ -83,6 +91,14 @@ function getSortedResultValues(result: unknown): number[] {
 
   const candidate = result.sortedValues;
   return isNumberArray(candidate) ? candidate : [];
+}
+
+function formatNullableNumberList(values: Array<number | null>): string {
+  if (values.length === 0) {
+    return "empty";
+  }
+
+  return values.map((value) => (value === null ? "null" : String(value))).join(", ");
 }
 
 function coerceBoolean(value: ParamPrimitive | undefined, fallback: boolean): boolean {
@@ -292,6 +308,32 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
     );
   }
 
+  if (selectedAlgorithmSlug === "union-find") {
+    return (
+      <UnionFindParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
+  if (selectedAlgorithmSlug === "invert-binary-tree") {
+    return (
+      <InvertBinaryTreeParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
   return (
     <Card className={className}>
       <CardHeader className="space-y-2">
@@ -303,8 +345,8 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
         </div>
         <CardDescription className="text-xs leading-relaxed">
           Parameter schema and validation are enabled for Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort,
-          Quick Sort, Heap Sort, Topological Sort, Selection Sort, Insertion Sort, and Merge Sort in this
-          milestone.
+          Quick Sort, Heap Sort, Topological Sort, Union-Find, Selection Sort, Insertion Sort, Merge Sort,
+          and Invert Binary Tree in this milestone.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -2127,6 +2169,180 @@ function TopologicalSortParamsCard({
   );
 }
 
+function UnionFindParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const nodeCount = useMemo(() => {
+    const value = params.nodeCount;
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(UNION_FIND_DEFAULT_PARAMS.nodeCount);
+  }, [params.nodeCount]);
+
+  const operations = useMemo(() => {
+    const value = params.operations;
+    return typeof value === "string" ? value : UNION_FIND_DEFAULT_PARAMS.operations;
+  }, [params.operations]);
+
+  const pathCompression = useMemo(
+    () => coerceBoolean(params.pathCompression, UNION_FIND_DEFAULT_PARAMS.pathCompression),
+    [params.pathCompression],
+  );
+  const unionByRank = useMemo(
+    () => coerceBoolean(params.unionByRank, UNION_FIND_DEFAULT_PARAMS.unionByRank),
+    [params.unionByRank],
+  );
+
+  const normalizedInput =
+    run && run.algorithmSlug === "union-find" && typeof run.input === "object" && run.input !== null
+      ? (run.input as {
+          nodeCount: number;
+          operations: Array<{ type: string; left: number; right: number | null }>;
+        })
+      : null;
+
+  const normalizedResult =
+    run && run.algorithmSlug === "union-find" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          componentCount: number;
+          successfulUnions: number;
+          findQueries: number;
+          connectedQueries: number;
+          parents: number[];
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomUnionFindParams();
+    setParams({
+      nodeCount: randomParams.nodeCount,
+      operations: randomParams.operations,
+      pathCompression: randomParams.pathCompression,
+      unionByRank: randomParams.unionByRank,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Union-Find
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Configure disjoint-set size and operation script. Supported operations are{" "}
+          <span className="font-mono">union a b</span>, <span className="font-mono">find a</span>, and{" "}
+          <span className="font-mono">connected a b</span>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="param-union-find-node-count" className="text-xs font-medium">
+            Node Count
+          </label>
+          <Input
+            id="param-union-find-node-count"
+            type="number"
+            min={2}
+            max={24}
+            step={1}
+            value={nodeCount}
+            onChange={(event) => {
+              const parsed = Number(event.target.value);
+              setParam("nodeCount", Number.isFinite(parsed) ? parsed : event.target.value);
+            }}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="param-union-find-operations" className="text-xs font-medium">
+              Operation Script
+            </label>
+            <InlineHelp text="Comma-separated operations, e.g. union 0 1, find 1, connected 1 2." />
+          </div>
+          <Input
+            id="param-union-find-operations"
+            value={operations}
+            onChange={(event) => setParam("operations", event.target.value)}
+            placeholder={UNION_FIND_DEFAULT_PARAMS.operations}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Optimization Settings</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={pathCompression ? "secondary" : "outline"}
+              onClick={() => setParam("pathCompression", !pathCompression)}
+            >
+              {pathCompression ? "Path Compression On" : "Path Compression Off"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={unionByRank ? "secondary" : "outline"}
+              onClick={() => setParam("unionByRank", !unionByRank)}
+            >
+              {unionByRank ? "Union By Rank On" : "Union By Rank Off"}
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Node count: <span className="font-mono">{normalizedInput?.nodeCount ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Operation count: <span className="font-mono">{normalizedInput?.operations.length ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result metrics:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? `components ${normalizedResult.componentCount}, unions ${normalizedResult.successfulUnions}, finds ${normalizedResult.findQueries}, connected ${normalizedResult.connectedQueries}`
+                : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Parents:{" "}
+            <span className="font-mono">
+              {normalizedResult ? normalizedResult.parents.join(", ") : "n/a"}
+            </span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function QuickSortParamsCard({
   className,
   params,
@@ -2491,6 +2707,147 @@ function InsertionSortParamsCard({
           <p className="text-muted-foreground leading-relaxed">
             Sorted:{" "}
             <span className="font-mono">{sortedValues.length > 0 ? sortedValues.join(", ") : "n/a"}</span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function InvertBinaryTreeParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const treeValues = useMemo(() => {
+    const value = params.treeValues;
+    return typeof value === "string" ? value : INVERT_BINARY_TREE_DEFAULT_PARAMS.treeValues;
+  }, [params.treeValues]);
+
+  const traversalMode = useMemo(() => {
+    const value = params.traversalMode;
+    return value === "bfs" ? "bfs" : INVERT_BINARY_TREE_DEFAULT_PARAMS.traversalMode;
+  }, [params.traversalMode]);
+
+  const normalizedInput =
+    run && run.algorithmSlug === "invert-binary-tree" && typeof run.input === "object" && run.input !== null
+      ? (run.input as {
+          nodes: Array<{ id: number; value: number; left: number | null; right: number | null }>;
+          levelOrder: Array<number | null>;
+        })
+      : null;
+
+  const normalizedResult =
+    run && run.algorithmSlug === "invert-binary-tree" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          invertedLevelOrder: Array<number | null>;
+          visitedCount: number;
+          swaps: number;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomInvertBinaryTreeParams();
+    setParams({
+      treeValues: randomParams.treeValues,
+      traversalMode: randomParams.traversalMode,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Invert Binary Tree
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Provide level-order tree values with optional <span className="font-mono">null</span> placeholders.
+          Traversal mode controls deterministic visit order while every visited node still swaps its children.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="param-invert-tree-values" className="text-xs font-medium">
+              Tree Values (Level Order)
+            </label>
+            <InlineHelp text="Example: 4, 2, 7, 1, 3, 6, 9 or 1, 2, 3, null, 4." />
+          </div>
+          <Input
+            id="param-invert-tree-values"
+            value={treeValues}
+            onChange={(event) => setParam("treeValues", event.target.value)}
+            placeholder={INVERT_BINARY_TREE_DEFAULT_PARAMS.treeValues}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Traversal Mode</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={traversalMode === "dfs" ? "secondary" : "outline"}
+              onClick={() => setParam("traversalMode", "dfs")}
+            >
+              DFS
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={traversalMode === "bfs" ? "secondary" : "outline"}
+              onClick={() => setParam("traversalMode", "bfs")}
+            >
+              BFS
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Traversal mode: <span className="font-mono">{traversalMode.toUpperCase()}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Node count: <span className="font-mono">{normalizedInput?.nodes.length ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Level order:{" "}
+            <span className="font-mono">
+              {normalizedInput ? formatNullableNumberList(normalizedInput.levelOrder) : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Inverted:{" "}
+            <span className="font-mono">
+              {normalizedResult ? formatNullableNumberList(normalizedResult.invertedLevelOrder) : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result metrics:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? `visited ${normalizedResult.visitedCount}, swaps ${normalizedResult.swaps}`
+                : "n/a"}
+            </span>
           </p>
         </div>
         <div className="text-muted-foreground flex items-center gap-2 text-xs">

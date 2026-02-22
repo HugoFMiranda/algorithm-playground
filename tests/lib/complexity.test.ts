@@ -143,8 +143,68 @@ describe("complexity summary", () => {
     expect(summary?.timeWorst).toBe("O(V + E)");
   });
 
+  it("returns invert-binary-tree complexity with run-aware details", () => {
+    const summary = getComplexitySummary("invert-binary-tree", {
+      algorithmSlug: "invert-binary-tree",
+      input: {
+        rootId: 0,
+        nodes: [
+          { id: 0, value: 4, left: 1, right: 2 },
+          { id: 1, value: 2, left: 3, right: 4 },
+          { id: 2, value: 7, left: 5, right: 6 },
+          { id: 3, value: 1, left: null, right: null },
+          { id: 4, value: 3, left: null, right: null },
+          { id: 5, value: 6, left: null, right: null },
+          { id: 6, value: 9, left: null, right: null },
+        ],
+      },
+      normalizedParams: { traversalMode: "dfs" },
+      result: {
+        invertedLevelOrder: [4, 7, 2, 9, 6, 3, 1],
+        visitedCount: 7,
+        swaps: 7,
+        traversalOrder: [0, 2, 6, 5, 1, 4, 3],
+        rootValue: 4,
+        isEmpty: false,
+      },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(n)");
+    expect(summary?.timeWorst).toBe("O(n)");
+  });
+
+  it("returns union-find complexity with run-aware details", () => {
+    const summary = getComplexitySummary("union-find", {
+      algorithmSlug: "union-find",
+      input: {
+        nodeCount: 8,
+        operations: [
+          { type: "union", left: 0, right: 1 },
+          { type: "union", left: 1, right: 2 },
+          { type: "connected", left: 0, right: 2 },
+          { type: "find", left: 2, right: null },
+        ],
+      },
+      normalizedParams: { pathCompression: true, unionByRank: true },
+      result: {
+        parents: [0, 0, 0, 3, 4, 5, 6, 7],
+        ranks: [1, 0, 0, 0, 0, 0, 0, 0],
+        componentCount: 6,
+        operationsProcessed: 4,
+        successfulUnions: 2,
+        findQueries: 1,
+        connectedQueries: 1,
+      },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(alpha)");
+    expect(summary?.space).toBe("O(n)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
-    expect(getComplexitySummary("union-find", null)).toBeNull();
+    expect(getComplexitySummary("kruskal-mst", null)).toBeNull();
   });
 
   it("returns compact complexity for implemented algorithms", () => {
@@ -201,12 +261,59 @@ describe("complexity summary", () => {
         initialZeroCount: 1,
       },
     });
+    const invertTree = getCompactCurrentComplexity("invert-binary-tree", {
+      algorithmSlug: "invert-binary-tree",
+      input: {
+        rootId: 0,
+        nodes: [
+          { id: 0, value: 4, left: 1, right: 2 },
+          { id: 1, value: 2, left: 3, right: 4 },
+          { id: 2, value: 7, left: 5, right: 6 },
+          { id: 3, value: 1, left: null, right: null },
+          { id: 4, value: 3, left: null, right: null },
+          { id: 5, value: 6, left: null, right: null },
+          { id: 6, value: 9, left: null, right: null },
+        ],
+      },
+      normalizedParams: { traversalMode: "bfs" },
+      result: {
+        invertedLevelOrder: [4, 7, 2, 9, 6, 3, 1],
+        visitedCount: 7,
+        swaps: 7,
+        traversalOrder: [0, 2, 1, 6, 5, 4, 3],
+        rootValue: 4,
+        isEmpty: false,
+      },
+    });
+    const unionFind = getCompactCurrentComplexity("union-find", {
+      algorithmSlug: "union-find",
+      input: {
+        nodeCount: 8,
+        operations: [
+          { type: "union", left: 0, right: 1 },
+          { type: "union", left: 1, right: 2 },
+          { type: "find", left: 2, right: null },
+        ],
+      },
+      normalizedParams: { pathCompression: true, unionByRank: true },
+      result: {
+        parents: [0, 0, 0, 3, 4, 5, 6, 7],
+        ranks: [1, 0, 0, 0, 0, 0, 0, 0],
+        componentCount: 6,
+        operationsProcessed: 3,
+        successfulUnions: 2,
+        findQueries: 1,
+        connectedQueries: 0,
+      },
+    });
 
     expect(binary).toBe("O(log n)");
     expect(bubble).toBe("O(n)");
     expect(quick).toBe("O(n log n)");
     expect(heap).toBe("O(n log n)");
     expect(topological).toBe("O(V + E)");
+    expect(invertTree).toBe("O(n)");
+    expect(unionFind).toBe("O(alpha)");
   });
 
   it("returns compact complexity for dijkstra", () => {
@@ -242,6 +349,6 @@ describe("complexity summary", () => {
   });
 
   it("returns null compact complexity for non-implemented algorithms", () => {
-    expect(getCompactCurrentComplexity("union-find", null)).toBeNull();
+    expect(getCompactCurrentComplexity("kruskal-mst", null)).toBeNull();
   });
 });
