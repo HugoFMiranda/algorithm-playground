@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project follows pre-1.0 Semantic Versioning (`0.x.y`).
 
+## [0.5.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.4.0...algorithm-playground-v0.5.0) (2026-02-22)
+
+
+### Added
+
+* **algorithms:** implement invert binary tree slice end-to-end ([cc9e097](https://github.com/HugoFMiranda/algorithm-playground/commit/cc9e0972ccadf896ee4316c839fe6e9fedd44725))
+* **algorithms:** integrate union-find slice across app ([b5b96c5](https://github.com/HugoFMiranda/algorithm-playground/commit/b5b96c53a1c2d16e9c5ad4fca8f3e18dec7ea2c4))
+* **library:** add implemented tag in algorithm search ([1f0b30d](https://github.com/HugoFMiranda/algorithm-playground/commit/1f0b30d63269cce5d6349712ff849651afdb99a2))
+
 ## [0.4.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.3.0...algorithm-playground-v0.4.0) (2026-02-21)
 
 
