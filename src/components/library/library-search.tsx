@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/card";
 
 interface LibrarySearchProps {
-  algorithms: AlgorithmDefinition[];
+  algorithms: Array<AlgorithmDefinition & { implemented: boolean }>;
 }
 
 export function LibrarySearch({ algorithms }: LibrarySearchProps) {

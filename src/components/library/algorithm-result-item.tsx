@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { CommandItem, CommandShortcut } from "@/components/ui/command";
 
 interface AlgorithmResultItemProps {
-  algorithm: AlgorithmDefinition;
+  algorithm: AlgorithmDefinition & { implemented: boolean };
   onSelect: (slug: string) => void;
 }
 
@@ -35,6 +35,14 @@ export function AlgorithmResultItem({ algorithm, onSelect }: AlgorithmResultItem
           </div>
         </div>
         <div className="flex flex-wrap gap-1.5">
+          {algorithm.implemented ? (
+            <Badge
+              variant="secondary"
+              className="rounded-full border border-emerald-500/30 bg-emerald-500/12 px-2 py-0 text-[10px] text-emerald-700 dark:text-emerald-300"
+            >
+              Implemented
+            </Badge>
+          ) : null}
           {algorithm.tags.map((tag) => (
             <Badge key={tag} variant="secondary" className="rounded-full px-2 py-0 text-[10px]">
               {tag}

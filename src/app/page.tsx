@@ -3,8 +3,14 @@ import { LibrarySearch } from "@/components/library/library-search";
 import { ThemeToggle } from "@/components/library/theme-toggle";
 import { PageTransition } from "@/components/layout/page-transition";
 import { ALGORITHMS } from "@/data/algorithms";
+import { isAlgorithmImplemented } from "@/algorithms/registry";
 
 export default function LibraryPage() {
+  const algorithms = ALGORITHMS.map((algorithm) => ({
+    ...algorithm,
+    implemented: isAlgorithmImplemented(algorithm.slug),
+  }));
+
   return (
     <PageTransition className="relative min-h-svh overflow-hidden bg-background">
       <div
@@ -18,7 +24,7 @@ export default function LibraryPage() {
         </header>
         <main className="flex flex-1 items-center justify-center pb-16 pt-8 md:pb-24">
           <div className="w-full max-w-4xl">
-            <LibrarySearch algorithms={ALGORITHMS} />
+            <LibrarySearch algorithms={algorithms} />
           </div>
         </main>
       </div>
