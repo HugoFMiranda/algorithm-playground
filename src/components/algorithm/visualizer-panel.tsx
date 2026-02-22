@@ -17,6 +17,12 @@ import type { HeapSortInput, HeapSortResult } from "@/algorithms/heap-sort/spec"
 import type { HeapSortStepEvent } from "@/algorithms/heap-sort/engine";
 import type { InsertionSortInput, InsertionSortResult } from "@/algorithms/insertion-sort/spec";
 import type { InsertionSortStepEvent } from "@/algorithms/insertion-sort/engine";
+import type {
+  InvertBinaryTreeInput,
+  InvertBinaryTreeNode,
+  InvertBinaryTreeResult,
+} from "@/algorithms/invert-binary-tree/spec";
+import type { InvertBinaryTreeStepEvent } from "@/algorithms/invert-binary-tree/engine";
 import type { MergeSortInput, MergeSortResult } from "@/algorithms/merge-sort/spec";
 import type { MergeSortStepEvent } from "@/algorithms/merge-sort/engine";
 import type { QuickSortInput, QuickSortResult } from "@/algorithms/quick-sort/spec";
@@ -55,6 +61,11 @@ interface SharedVisualizerProps {
 export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
   const run = useAppStore((state) => state.run);
   const cursor = useAppStore((state) => state.playback.cursor);
+  const usesTreeViewport =
+    algorithm.slug === "invert-binary-tree" ||
+    algorithm.slug === "bst-operations" ||
+    algorithm.slug === "avl-rotations" ||
+    algorithm.slug === "trie-operations";
 
   if (algorithm.slug === "binary-search") {
     return <BinarySearchVisualizer run={run} cursor={cursor} />;
@@ -104,8 +115,17 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
     return <MergeSortVisualizer run={run} cursor={cursor} />;
   }
 
+  if (algorithm.slug === "invert-binary-tree") {
+    return <InvertBinaryTreeVisualizer run={run} cursor={cursor} />;
+  }
+
   return (
-    <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
+    <Card
+      className={cn(
+        "surface-card border-border/70",
+        usesTreeViewport ? "min-h-[460px] lg:min-h-[700px]" : "min-h-[380px] lg:min-h-[520px]",
+      )}
+    >
       <CardHeader className="space-y-2">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-lg">Visualizer</CardTitle>
@@ -4188,6 +4208,440 @@ function formatMergeSortStepMessage(step: MergeSortStepEvent): string {
   }
 
   return `Completed with ${step.payload.comparisons} comparisons and ${step.payload.writes} writes.`;
+}
+
+interface InvertBinaryTreeFrame {
+  nodes: InvertBinaryTreeNode[];
+  visitedNodeIds: Set<number>;
+  currentNodeId: number | null;
+  lastSwappedNodeId: number | null;
+  visitedCount: number;
+  swaps: number;
+  completed: boolean;
+}
+
+function InvertBinaryTreeVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const compactComplexity = getCompactCurrentComplexity("invert-binary-tree", run);
+  const typedRun =
+    run && run.algorithmSlug === "invert-binary-tree"
+      ? {
+          ...run,
+          input: run.input as InvertBinaryTreeInput,
+          result: run.result as InvertBinaryTreeResult,
+          steps: run.steps as InvertBinaryTreeStepEvent[],
+        }
+      : null;
+
+  const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
+  const frame = useMemo(() => deriveInvertBinaryTreeFrame(typedRun, cursor), [typedRun, cursor]);
+  const rootId = typedRun?.input.rootId ?? null;
+  const stepLabel = activeStep ? formatInvertBinaryTreeStepLabel(activeStep) : "Ready";
+  const stepMessage = activeStep
+    ? formatInvertBinaryTreeStepMessage(activeStep)
+    : "Press Play or Step to start execution.";
+  const beforeLevelOrder = typedRun?.input.levelOrder ?? [];
+  const currentLevelOrder = useMemo(
+    () => toInvertBinaryTreeLevelOrder(rootId, frame.nodes),
+    [rootId, frame.nodes],
+  );
+  const resultLevelOrder = typedRun?.result.invertedLevelOrder ?? [];
+  const layout = useMemo(
+    () => createInvertBinaryTreeLayout(rootId, frame.nodes),
+    [rootId, frame.nodes],
+  );
+
+  return (
+    <Card className="surface-card min-h-[460px] border-border/70 lg:min-h-[700px]">
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg">Visualizer</CardTitle>
+          <div className="flex items-center gap-2">
+            {compactComplexity ? (
+              <Badge variant="outline" className="rounded-full border-border/70">
+                {compactComplexity}
+              </Badge>
+            ) : null}
+            <Badge variant="secondary" className="rounded-full border-border/70">
+              Invert Binary Tree
+            </Badge>
+          </div>
+        </div>
+        <CardDescription>
+          Deterministic tree mirroring playback with per-node visit and child-swap events.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Traversal</p>
+            <p className="font-mono text-base">
+              {typedRun ? String(typedRun.normalizedParams.traversalMode).toUpperCase() : "n/a"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Visited</p>
+            <p className="font-mono text-base">{frame.visitedCount}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Swaps</p>
+            <p className="font-mono text-base">{frame.swaps}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Result</p>
+            <p className="font-mono text-base">
+              {frame.completed
+                ? typedRun?.result.isEmpty
+                  ? "Empty Tree"
+                  : "Inverted"
+                : "Inverting"}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="rounded-full border-border/70">
+              {stepLabel}
+            </Badge>
+            <p className="text-muted-foreground">{stepMessage}</p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Original</p>
+              <p className="font-mono text-xs">{toNullableNumberListText(beforeLevelOrder)}</p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Current Frame</p>
+              <p className="font-mono text-xs">{toNullableNumberListText(currentLevelOrder)}</p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Final Output</p>
+              <p className="font-mono text-xs">{toNullableNumberListText(resultLevelOrder)}</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/80 bg-background/70 p-3">
+            {layout.nodeCount > 0 ? (
+              <div className="overflow-hidden rounded-lg border border-border/70 bg-[radial-gradient(circle_at_20%_10%,rgba(14,165,233,0.08),transparent_52%),radial-gradient(circle_at_80%_88%,rgba(99,102,241,0.08),transparent_48%)]">
+                <svg viewBox={`0 0 ${layout.width} ${layout.height}`} className="h-[460px] w-full">
+                  {layout.edges.map((edge) => {
+                    const from = layout.positions[edge.from];
+                    const to = layout.positions[edge.to];
+                    if (!from || !to) {
+                      return null;
+                    }
+
+                    const stroke =
+                      edge.direction === "left"
+                        ? "rgba(56, 189, 248, 0.56)"
+                        : "rgba(167, 139, 250, 0.56)";
+
+                    return (
+                      <line
+                        key={`edge-${edge.from}-${edge.to}`}
+                        x1={from.x}
+                        y1={from.y}
+                        x2={to.x}
+                        y2={to.y}
+                        stroke={stroke}
+                        strokeWidth={1.2}
+                        vectorEffect="non-scaling-stroke"
+                      />
+                    );
+                  })}
+
+                  {layout.nodeIds.map((nodeId) => {
+                    const position = layout.positions[nodeId];
+                    const node = frame.nodes[nodeId];
+
+                    if (!position || !node) {
+                      return null;
+                    }
+
+                    const isCurrent = frame.currentNodeId === nodeId;
+                    const isSwapped = frame.lastSwappedNodeId === nodeId;
+                    const isVisited = frame.visitedNodeIds.has(nodeId);
+
+                    const fill = isCurrent
+                      ? "rgba(245, 158, 11, 0.24)"
+                      : isSwapped
+                        ? "rgba(14, 165, 233, 0.2)"
+                        : isVisited
+                          ? "rgba(16, 185, 129, 0.22)"
+                          : "rgba(148, 163, 184, 0.16)";
+                    const stroke = isCurrent
+                      ? "rgba(245, 158, 11, 0.86)"
+                      : isSwapped
+                        ? "rgba(14, 165, 233, 0.82)"
+                        : isVisited
+                          ? "rgba(16, 185, 129, 0.76)"
+                          : "rgba(148, 163, 184, 0.7)";
+                    const strokeWidth = isCurrent || isSwapped ? 1.5 : 1.2;
+
+                    return (
+                      <g key={`invert-tree-node-${nodeId}`} transform={`translate(${position.x} ${position.y})`}>
+                        <circle r={layout.nodeRadius} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
+                        <text
+                          x="0"
+                          y="0"
+                          dy="0.03em"
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fontSize="4.2"
+                          fontWeight="700"
+                          fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+                          className="fill-foreground"
+                        >
+                          {node.value}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+            ) : (
+              <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-border/70 p-4 text-xs">
+                <SearchIcon className="size-3.5" />
+                Tree is empty. Use values or randomize to generate a run.
+              </div>
+            )}
+
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-amber-500/75" />
+                current
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-sky-500/75" />
+                swapped
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-emerald-500/75" />
+                visited
+              </span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function toNullableNumberListText(values: Array<number | null>): string {
+  if (values.length === 0) {
+    return "empty";
+  }
+
+  return values.map((value) => (value === null ? "null" : String(value))).join(", ");
+}
+
+function toInvertBinaryTreeLevelOrder(
+  rootId: number | null,
+  nodes: InvertBinaryTreeNode[],
+): Array<number | null> {
+  if (rootId === null) {
+    return [];
+  }
+
+  const values: Array<number | null> = [];
+  const queue: Array<number | null> = [rootId];
+
+  while (queue.length > 0) {
+    const nodeId = queue.shift() as number | null;
+    if (nodeId === null) {
+      values.push(null);
+      continue;
+    }
+
+    const node = nodes[nodeId];
+    if (!node) {
+      values.push(null);
+      continue;
+    }
+
+    values.push(node.value);
+    queue.push(node.left);
+    queue.push(node.right);
+  }
+
+  while (values.length > 0 && values[values.length - 1] === null) {
+    values.pop();
+  }
+
+  return values;
+}
+
+function deriveInvertBinaryTreeFrame(
+  run: {
+    input: InvertBinaryTreeInput;
+    steps: InvertBinaryTreeStepEvent[];
+  } | null,
+  cursor: number,
+): InvertBinaryTreeFrame {
+  const frame: InvertBinaryTreeFrame = {
+    nodes: run?.input.nodes.map((node) => ({ ...node })) ?? [],
+    visitedNodeIds: new Set<number>(),
+    currentNodeId: null,
+    lastSwappedNodeId: null,
+    visitedCount: 0,
+    swaps: 0,
+    completed: false,
+  };
+
+  if (!run || cursor < 0 || run.steps.length === 0) {
+    return frame;
+  }
+
+  const boundedCursor = Math.min(cursor, run.steps.length - 1);
+  for (let index = 0; index <= boundedCursor; index += 1) {
+    const step = run.steps[index];
+
+    if (step.type === "visit-node") {
+      frame.currentNodeId = step.payload.nodeId;
+      frame.visitedNodeIds.add(step.payload.nodeId);
+      frame.visitedCount = step.payload.visitedCount;
+      continue;
+    }
+
+    if (step.type === "swap-children") {
+      const node = frame.nodes[step.payload.nodeId];
+      if (node) {
+        node.left = step.payload.leftNodeId;
+        node.right = step.payload.rightNodeId;
+      }
+      frame.lastSwappedNodeId = step.payload.nodeId;
+      frame.swaps = step.payload.swapCount;
+      continue;
+    }
+
+    frame.currentNodeId = null;
+    frame.visitedCount = step.payload.visitedCount;
+    frame.swaps = step.payload.swaps;
+    frame.completed = true;
+  }
+
+  return frame;
+}
+
+function formatInvertBinaryTreeStepLabel(step: InvertBinaryTreeStepEvent): string {
+  if (step.type === "visit-node") {
+    return "Visit Node";
+  }
+
+  if (step.type === "swap-children") {
+    return "Swap Children";
+  }
+
+  return "Complete";
+}
+
+function formatInvertBinaryTreeStepMessage(step: InvertBinaryTreeStepEvent): string {
+  if (step.type === "visit-node") {
+    return `Visit node ${step.payload.value} at depth ${step.payload.depth}.`;
+  }
+
+  if (step.type === "swap-children") {
+    return `Swap children of node ${step.payload.nodeId}: left=${step.payload.leftValue ?? "null"}, right=${step.payload.rightValue ?? "null"}.`;
+  }
+
+  if (step.payload.isEmpty) {
+    return "Tree is empty. No nodes to invert.";
+  }
+
+  return `Inversion complete: ${step.payload.visitedCount} visited node(s), ${step.payload.swaps} swap(s).`;
+}
+
+interface InvertBinaryTreeLayoutEdge {
+  from: number;
+  to: number;
+  direction: "left" | "right";
+}
+
+interface InvertBinaryTreeLayout {
+  positions: Record<number, { x: number; y: number }>;
+  edges: InvertBinaryTreeLayoutEdge[];
+  nodeIds: number[];
+  nodeCount: number;
+  width: number;
+  height: number;
+  nodeRadius: number;
+}
+
+function createInvertBinaryTreeLayout(
+  rootId: number | null,
+  nodes: InvertBinaryTreeNode[],
+): InvertBinaryTreeLayout {
+  if (rootId === null || !nodes[rootId]) {
+    return {
+      positions: {},
+      edges: [],
+      nodeIds: [],
+      nodeCount: 0,
+      width: 100,
+      height: 100,
+      nodeRadius: 7,
+    };
+  }
+
+  const queue: Array<{ nodeId: number; depth: number; heapIndex: number }> = [
+    { nodeId: rootId, depth: 0, heapIndex: 1 },
+  ];
+  const nodeEntries: Array<{ nodeId: number; depth: number; heapIndex: number }> = [];
+  const edges: InvertBinaryTreeLayoutEdge[] = [];
+
+  while (queue.length > 0) {
+    const current = queue.shift() as { nodeId: number; depth: number; heapIndex: number };
+    const node = nodes[current.nodeId];
+    if (!node) {
+      continue;
+    }
+
+    nodeEntries.push(current);
+
+    if (node.left !== null && nodes[node.left]) {
+      queue.push({ nodeId: node.left, depth: current.depth + 1, heapIndex: current.heapIndex * 2 });
+      edges.push({ from: current.nodeId, to: node.left, direction: "left" });
+    }
+    if (node.right !== null && nodes[node.right]) {
+      queue.push({
+        nodeId: node.right,
+        depth: current.depth + 1,
+        heapIndex: current.heapIndex * 2 + 1,
+      });
+      edges.push({ from: current.nodeId, to: node.right, direction: "right" });
+    }
+  }
+
+  const maxDepth = nodeEntries.reduce((max, entry) => Math.max(max, entry.depth), 0);
+  const width = Math.max(132, Math.min(198, 142 + maxDepth * 18));
+  const height = Math.max(108, Math.min(152, 114 + maxDepth * 22));
+  const nodeRadius = maxDepth >= 4 ? 6.2 : maxDepth >= 3 ? 6.8 : 7.6;
+  const paddingY = 14;
+  const availableHeight = height - paddingY * 2;
+  const positions: Record<number, { x: number; y: number }> = {};
+
+  for (const entry of nodeEntries) {
+    const slots = Math.pow(2, entry.depth);
+    const slotIndex = entry.heapIndex - slots;
+    const x = ((slotIndex + 0.5) / slots) * width;
+    const y =
+      maxDepth === 0
+        ? height / 2
+        : paddingY + (availableHeight * entry.depth) / Math.max(1, maxDepth);
+
+    positions[entry.nodeId] = { x, y };
+  }
+
+  return {
+    positions,
+    edges,
+    nodeIds: nodeEntries.map((entry) => entry.nodeId),
+    nodeCount: nodeEntries.length,
+    width,
+    height,
+    nodeRadius,
+  };
 }
 
 interface BinarySearchFrame {

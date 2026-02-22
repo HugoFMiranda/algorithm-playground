@@ -23,6 +23,10 @@ import {
   createRandomHeapSortParams,
 } from "@/algorithms/heap-sort/spec";
 import {
+  INVERT_BINARY_TREE_DEFAULT_PARAMS,
+  createRandomInvertBinaryTreeParams,
+} from "@/algorithms/invert-binary-tree/spec";
+import {
   INSERTION_SORT_DEFAULT_PARAMS,
   createRandomInsertionSortParams,
 } from "@/algorithms/insertion-sort/spec";
@@ -83,6 +87,14 @@ function getSortedResultValues(result: unknown): number[] {
 
   const candidate = result.sortedValues;
   return isNumberArray(candidate) ? candidate : [];
+}
+
+function formatNullableNumberList(values: Array<number | null>): string {
+  if (values.length === 0) {
+    return "empty";
+  }
+
+  return values.map((value) => (value === null ? "null" : String(value))).join(", ");
 }
 
 function coerceBoolean(value: ParamPrimitive | undefined, fallback: boolean): boolean {
@@ -292,6 +304,19 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
     );
   }
 
+  if (selectedAlgorithmSlug === "invert-binary-tree") {
+    return (
+      <InvertBinaryTreeParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
   return (
     <Card className={className}>
       <CardHeader className="space-y-2">
@@ -303,8 +328,8 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
         </div>
         <CardDescription className="text-xs leading-relaxed">
           Parameter schema and validation are enabled for Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort,
-          Quick Sort, Heap Sort, Topological Sort, Selection Sort, Insertion Sort, and Merge Sort in this
-          milestone.
+          Quick Sort, Heap Sort, Topological Sort, Selection Sort, Insertion Sort, Merge Sort, and Invert
+          Binary Tree in this milestone.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -2491,6 +2516,147 @@ function InsertionSortParamsCard({
           <p className="text-muted-foreground leading-relaxed">
             Sorted:{" "}
             <span className="font-mono">{sortedValues.length > 0 ? sortedValues.join(", ") : "n/a"}</span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function InvertBinaryTreeParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const treeValues = useMemo(() => {
+    const value = params.treeValues;
+    return typeof value === "string" ? value : INVERT_BINARY_TREE_DEFAULT_PARAMS.treeValues;
+  }, [params.treeValues]);
+
+  const traversalMode = useMemo(() => {
+    const value = params.traversalMode;
+    return value === "bfs" ? "bfs" : INVERT_BINARY_TREE_DEFAULT_PARAMS.traversalMode;
+  }, [params.traversalMode]);
+
+  const normalizedInput =
+    run && run.algorithmSlug === "invert-binary-tree" && typeof run.input === "object" && run.input !== null
+      ? (run.input as {
+          nodes: Array<{ id: number; value: number; left: number | null; right: number | null }>;
+          levelOrder: Array<number | null>;
+        })
+      : null;
+
+  const normalizedResult =
+    run && run.algorithmSlug === "invert-binary-tree" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          invertedLevelOrder: Array<number | null>;
+          visitedCount: number;
+          swaps: number;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomInvertBinaryTreeParams();
+    setParams({
+      treeValues: randomParams.treeValues,
+      traversalMode: randomParams.traversalMode,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Invert Binary Tree
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Provide level-order tree values with optional <span className="font-mono">null</span> placeholders.
+          Traversal mode controls deterministic visit order while every visited node still swaps its children.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="param-invert-tree-values" className="text-xs font-medium">
+              Tree Values (Level Order)
+            </label>
+            <InlineHelp text="Example: 4, 2, 7, 1, 3, 6, 9 or 1, 2, 3, null, 4." />
+          </div>
+          <Input
+            id="param-invert-tree-values"
+            value={treeValues}
+            onChange={(event) => setParam("treeValues", event.target.value)}
+            placeholder={INVERT_BINARY_TREE_DEFAULT_PARAMS.treeValues}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Traversal Mode</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={traversalMode === "dfs" ? "secondary" : "outline"}
+              onClick={() => setParam("traversalMode", "dfs")}
+            >
+              DFS
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={traversalMode === "bfs" ? "secondary" : "outline"}
+              onClick={() => setParam("traversalMode", "bfs")}
+            >
+              BFS
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Traversal mode: <span className="font-mono">{traversalMode.toUpperCase()}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Node count: <span className="font-mono">{normalizedInput?.nodes.length ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Level order:{" "}
+            <span className="font-mono">
+              {normalizedInput ? formatNullableNumberList(normalizedInput.levelOrder) : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Inverted:{" "}
+            <span className="font-mono">
+              {normalizedResult ? formatNullableNumberList(normalizedResult.invertedLevelOrder) : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result metrics:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? `visited ${normalizedResult.visitedCount}, swaps ${normalizedResult.swaps}`
+                : "n/a"}
+            </span>
           </p>
         </div>
         <div className="text-muted-foreground flex items-center gap-2 text-xs">

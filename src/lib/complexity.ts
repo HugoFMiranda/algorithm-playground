@@ -344,6 +344,51 @@ function getTopologicalSortComplexity(run: AlgorithmRunSnapshot | null): Complex
   };
 }
 
+function getInvertBinaryTreeComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
+  let nodeCount = 0;
+  if (run && isRecord(run.input) && "nodes" in run.input && Array.isArray(run.input.nodes)) {
+    nodeCount = run.input.nodes.length;
+  }
+
+  const traversalMode =
+    run && run.normalizedParams.traversalMode === "bfs" ? "bfs" : "dfs";
+  const queueOrStackSpace = traversalMode === "bfs" ? "O(w)" : "O(h)";
+
+  let visitedCount: number | null = null;
+  let swaps: number | null = null;
+  let isEmpty: boolean | null = null;
+  if (run && isRecord(run.result)) {
+    if ("visitedCount" in run.result && isFiniteNumber(run.result.visitedCount)) {
+      visitedCount = run.result.visitedCount;
+    }
+    if ("swaps" in run.result && isFiniteNumber(run.result.swaps)) {
+      swaps = run.result.swaps;
+    }
+    if ("isEmpty" in run.result && typeof run.result.isEmpty === "boolean") {
+      isEmpty = run.result.isEmpty;
+    }
+  }
+
+  const details = [
+    `Nodes = ${nodeCount}`,
+    `Traversal mode = ${traversalMode.toUpperCase()}`,
+    `Auxiliary traversal space profile: ${queueOrStackSpace}`,
+    visitedCount === null
+      ? "Observed visited nodes: pending"
+      : `Observed visited nodes/swaps: ${visitedCount}/${swaps ?? "?"}`,
+    isEmpty === null ? "Empty tree: pending" : `Empty tree: ${String(isEmpty)}`,
+  ];
+
+  return {
+    timeBest: "O(1)",
+    timeAverage: "O(n)",
+    timeWorst: "O(n)",
+    space: queueOrStackSpace,
+    current: nodeCount <= 1 ? "O(1) on this tree" : "O(n) on this tree",
+    details,
+  };
+}
+
 function getInsertionSortComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
   const values = run ? extractValues(run.input) : [];
   const n = values.length;
@@ -738,6 +783,10 @@ export function getComplexitySummary(
 
   if (algorithmSlug === "merge-sort") {
     return getMergeSortComplexity(run && run.algorithmSlug === "merge-sort" ? run : null);
+  }
+
+  if (algorithmSlug === "invert-binary-tree") {
+    return getInvertBinaryTreeComplexity(run && run.algorithmSlug === "invert-binary-tree" ? run : null);
   }
 
   return null;

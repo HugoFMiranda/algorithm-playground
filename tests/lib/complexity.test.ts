@@ -143,6 +143,37 @@ describe("complexity summary", () => {
     expect(summary?.timeWorst).toBe("O(V + E)");
   });
 
+  it("returns invert-binary-tree complexity with run-aware details", () => {
+    const summary = getComplexitySummary("invert-binary-tree", {
+      algorithmSlug: "invert-binary-tree",
+      input: {
+        rootId: 0,
+        nodes: [
+          { id: 0, value: 4, left: 1, right: 2 },
+          { id: 1, value: 2, left: 3, right: 4 },
+          { id: 2, value: 7, left: 5, right: 6 },
+          { id: 3, value: 1, left: null, right: null },
+          { id: 4, value: 3, left: null, right: null },
+          { id: 5, value: 6, left: null, right: null },
+          { id: 6, value: 9, left: null, right: null },
+        ],
+      },
+      normalizedParams: { traversalMode: "dfs" },
+      result: {
+        invertedLevelOrder: [4, 7, 2, 9, 6, 3, 1],
+        visitedCount: 7,
+        swaps: 7,
+        traversalOrder: [0, 2, 6, 5, 1, 4, 3],
+        rootValue: 4,
+        isEmpty: false,
+      },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(n)");
+    expect(summary?.timeWorst).toBe("O(n)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
     expect(getComplexitySummary("union-find", null)).toBeNull();
   });
@@ -201,12 +232,37 @@ describe("complexity summary", () => {
         initialZeroCount: 1,
       },
     });
+    const invertTree = getCompactCurrentComplexity("invert-binary-tree", {
+      algorithmSlug: "invert-binary-tree",
+      input: {
+        rootId: 0,
+        nodes: [
+          { id: 0, value: 4, left: 1, right: 2 },
+          { id: 1, value: 2, left: 3, right: 4 },
+          { id: 2, value: 7, left: 5, right: 6 },
+          { id: 3, value: 1, left: null, right: null },
+          { id: 4, value: 3, left: null, right: null },
+          { id: 5, value: 6, left: null, right: null },
+          { id: 6, value: 9, left: null, right: null },
+        ],
+      },
+      normalizedParams: { traversalMode: "bfs" },
+      result: {
+        invertedLevelOrder: [4, 7, 2, 9, 6, 3, 1],
+        visitedCount: 7,
+        swaps: 7,
+        traversalOrder: [0, 2, 1, 6, 5, 4, 3],
+        rootValue: 4,
+        isEmpty: false,
+      },
+    });
 
     expect(binary).toBe("O(log n)");
     expect(bubble).toBe("O(n)");
     expect(quick).toBe("O(n log n)");
     expect(heap).toBe("O(n log n)");
     expect(topological).toBe("O(V + E)");
+    expect(invertTree).toBe("O(n)");
   });
 
   it("returns compact complexity for dijkstra", () => {

@@ -10,6 +10,7 @@ describe("algorithm runtime registry", () => {
     const quickSortRuntime = getAlgorithmRuntime("quick-sort");
     const heapSortRuntime = getAlgorithmRuntime("heap-sort");
     const topologicalRuntime = getAlgorithmRuntime("topological-sort");
+    const invertBinaryTreeRuntime = getAlgorithmRuntime("invert-binary-tree");
 
     expect(bubbleSortRuntime).not.toBeNull();
     expect(bubbleSortRuntime?.slug).toBe("bubble-sort");
@@ -23,6 +24,8 @@ describe("algorithm runtime registry", () => {
     expect(heapSortRuntime?.slug).toBe("heap-sort");
     expect(topologicalRuntime).not.toBeNull();
     expect(topologicalRuntime?.slug).toBe("topological-sort");
+    expect(invertBinaryTreeRuntime).not.toBeNull();
+    expect(invertBinaryTreeRuntime?.slug).toBe("invert-binary-tree");
   });
 
   it("returns null for non-implemented algorithms", () => {

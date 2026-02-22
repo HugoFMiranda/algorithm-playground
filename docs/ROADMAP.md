@@ -12,8 +12,8 @@ Audience target is broad: learners, interview preparation users, and engineering
 ## Planning Horizon
 
 - Phase window: 3 phases over approximately 3 months.
-- Current status: UI scaffold completed; Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Selection Sort, Insertion Sort, and Merge Sort shipped as engine-backed vertical slices, with remaining engines pending.
-- Next implementation target: Invert Binary Tree (`D1`, Trees & Search, Phase 2).
+- Current status: UI scaffold completed; Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Selection Sort, Insertion Sort, Merge Sort, and Invert Binary Tree shipped as engine-backed vertical slices, with remaining engines pending.
+- Next implementation target: Union-Find (`D2`, Graph Theory, Phase 2).
 
 ## Difficulty Rubric
 

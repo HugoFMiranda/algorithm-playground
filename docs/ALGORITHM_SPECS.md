@@ -590,6 +590,8 @@ Each algorithm must define:
   - Deterministic output snapshots for fixed trees and traversal mode.
   - Param fallback behavior for malformed tree/traversal input.
   - Renderer completion state matches final inverted tree output.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### BST Operations (`D2`, Phase 3)
 - Objective: structural changes for insert/search/delete.
