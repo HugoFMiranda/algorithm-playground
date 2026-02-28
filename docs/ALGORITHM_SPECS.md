@@ -551,9 +551,49 @@ Each algorithm must define:
   - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Kruskal MST (`D2`, Phase 2)
-- Objective: greedy edge selection with cycle prevention.
-- Renderer: weighted graph.
-- Key events: edge-consider, union-check, edge-accept.
+- Objective: teach minimum spanning tree construction by sorting edges and greedily accepting only edges that connect different components.
+- Input model:
+  - Node set is indexed from `0` to `nodeCount - 1`.
+  - Weighted undirected edges are provided as text using formats like `u-v:w`, `u>v:w`, or `u:v@w`.
+  - Invalid, out-of-range, self-loop, and duplicate endpoint pairs are normalized away.
+  - Duplicate endpoint pairs keep the lowest deterministic weight.
+  - Empty/invalid input falls back to deterministic weighted default edges.
+- Params:
+  - `nodeCount` (number, default: `8`)
+  - `edges` (string, default: `0-1:4, 0-2:3, 1-2:1, 1-3:2, 2-3:4, 2-4:6, 3-4:5, 3-5:7, 4-5:2, 4-6:8, 5-7:3, 6-7:4`)
+  - `preferLowerIndex` (boolean, default: `true`)
+  - `pathCompression` (boolean, default: `true`)
+  - `unionByRank` (boolean, default: `true`)
+- Human-friendly explanation:
+  - Kruskal sorts all edges by cost and keeps taking the cheapest edge that connects two different groups. If an edge would create a cycle, it is skipped.
+- Step event contract:
+  - `edge-consider`: emits sorted-edge consideration order and current progress count.
+  - `union-check`: emits root comparison and whether edge is accepted or rejected (cycle).
+  - `edge-accept`: emits accepted edge details and running MST weight.
+  - `complete`: terminal run summary with accepted/considered counts, cycle skips, connectivity, and total MST weight.
+- Renderer requirements:
+  - Weighted undirected graph renderer with deterministic node placement.
+  - Distinct styling for active edge, accepted MST edges, and cycle-rejected edges.
+  - Show running totals for accepted edge count, connected components, and total weight.
+  - Step status message derived from event payload.
+- Metrics tracked:
+  - Edges considered.
+  - Edges accepted.
+  - Cycle skips.
+  - Running and final MST total weight.
+  - Final component count and connected flag.
+- Edge cases:
+  - Disconnected graphs produce a minimum spanning forest (`connected=false`).
+  - Equal-weight edges are resolved deterministically using `preferLowerIndex`.
+  - Path compression and union-by-rank toggles keep deterministic output while changing root-link behavior.
+  - Small graphs (`nodeCount <= 1`) terminate immediately with completion summary.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed weighted graphs.
+  - Param fallback behavior for malformed node count / edge text / boolean values.
+  - Tie-breaking and union-policy toggles remain deterministic.
+  - Renderer completion state matches emitted MST/forest result metrics.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Prim MST (`D2`, Phase 2)
 - Objective: grow MST from frontier edges.

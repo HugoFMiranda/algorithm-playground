@@ -16,6 +16,8 @@ import { createInvertBinaryTreeRun } from "@/algorithms/invert-binary-tree/engin
 import { INVERT_BINARY_TREE_DEFAULT_PARAMS } from "@/algorithms/invert-binary-tree/spec";
 import { createInsertionSortRun } from "@/algorithms/insertion-sort/engine";
 import { INSERTION_SORT_DEFAULT_PARAMS } from "@/algorithms/insertion-sort/spec";
+import { createKruskalMstRun } from "@/algorithms/kruskal-mst/engine";
+import { KRUSKAL_MST_DEFAULT_PARAMS } from "@/algorithms/kruskal-mst/spec";
 import { createMergeSortRun } from "@/algorithms/merge-sort/engine";
 import { MERGE_SORT_DEFAULT_PARAMS } from "@/algorithms/merge-sort/spec";
 import { createQuickSortRun } from "@/algorithms/quick-sort/engine";
@@ -128,6 +130,12 @@ const ALGORITHM_RUNTIME_REGISTRY: Record<string, AlgorithmRuntimeDefinition> = {
     rendererFamily: "graph",
     defaultParams: { ...UNION_FIND_DEFAULT_PARAMS },
     createRun: createUnionFindRun,
+  },
+  "kruskal-mst": {
+    slug: "kruskal-mst",
+    rendererFamily: "graph",
+    defaultParams: { ...KRUSKAL_MST_DEFAULT_PARAMS },
+    createRun: createKruskalMstRun,
   },
 };
 

@@ -405,6 +405,63 @@ function getUnionFindComplexity(run: AlgorithmRunSnapshot | null): ComplexitySum
   };
 }
 
+function getKruskalMstComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
+  let nodeCount = 0;
+  let edgeCount = 0;
+
+  if (run && isRecord(run.input)) {
+    if ("nodeCount" in run.input && isFiniteNumber(run.input.nodeCount)) {
+      nodeCount = run.input.nodeCount;
+    }
+    if ("edges" in run.input && Array.isArray(run.input.edges)) {
+      edgeCount = run.input.edges.length;
+    }
+  }
+
+  let totalWeight: number | null = null;
+  let edgesConsidered: number | null = null;
+  let edgesAccepted: number | null = null;
+  let cycleSkips: number | null = null;
+  let connected: boolean | null = null;
+  if (run && isRecord(run.result)) {
+    if ("totalWeight" in run.result && isFiniteNumber(run.result.totalWeight)) {
+      totalWeight = run.result.totalWeight;
+    }
+    if ("edgesConsidered" in run.result && isFiniteNumber(run.result.edgesConsidered)) {
+      edgesConsidered = run.result.edgesConsidered;
+    }
+    if ("edgesAccepted" in run.result && isFiniteNumber(run.result.edgesAccepted)) {
+      edgesAccepted = run.result.edgesAccepted;
+    }
+    if ("cycleSkips" in run.result && isFiniteNumber(run.result.cycleSkips)) {
+      cycleSkips = run.result.cycleSkips;
+    }
+    if ("connected" in run.result && typeof run.result.connected === "boolean") {
+      connected = run.result.connected;
+    }
+  }
+
+  const details = [
+    `Graph size: V=${nodeCount}, E=${edgeCount}`,
+    "Dominant cost is edge sorting, then near-constant amortized union-find checks",
+    edgesConsidered === null
+      ? "Observed considered/accepted edges: pending"
+      : `Observed considered/accepted edges: ${edgesConsidered}/${edgesAccepted ?? "?"}`,
+    cycleSkips === null ? "Observed cycle skips: pending" : `Observed cycle skips: ${cycleSkips}`,
+    totalWeight === null ? "MST total weight: pending" : `MST total weight: ${totalWeight}`,
+    connected === null ? "Connected graph: pending" : `Connected graph: ${String(connected)}`,
+  ];
+
+  return {
+    timeBest: "O(E log E)",
+    timeAverage: "O(E log E)",
+    timeWorst: "O(E log E)",
+    space: "O(V + E)",
+    current: edgeCount <= 1 ? "O(1) on this graph" : "O(E log E) on this graph",
+    details,
+  };
+}
+
 function getInvertBinaryTreeComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
   let nodeCount = 0;
   if (run && isRecord(run.input) && "nodes" in run.input && Array.isArray(run.input.nodes)) {
@@ -840,6 +897,10 @@ export function getComplexitySummary(
 
   if (algorithmSlug === "union-find") {
     return getUnionFindComplexity(run && run.algorithmSlug === "union-find" ? run : null);
+  }
+
+  if (algorithmSlug === "kruskal-mst") {
+    return getKruskalMstComplexity(run && run.algorithmSlug === "kruskal-mst" ? run : null);
   }
 
   if (algorithmSlug === "insertion-sort") {

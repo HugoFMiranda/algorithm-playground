@@ -7,6 +7,7 @@ import { dfsExamples } from "@/algorithms/examples/dfs";
 import { heapSortExamples } from "@/algorithms/examples/heap-sort";
 import { invertBinaryTreeExamples } from "@/algorithms/examples/invert-binary-tree";
 import { insertionSortExamples } from "@/algorithms/examples/insertion-sort";
+import { kruskalMstExamples } from "@/algorithms/examples/kruskal-mst";
 import { mergeSortExamples } from "@/algorithms/examples/merge-sort";
 import { quickSortExamples } from "@/algorithms/examples/quick-sort";
 import { selectionSortExamples } from "@/algorithms/examples/selection-sort";
@@ -29,6 +30,7 @@ const EXAMPLES_REGISTRY: Record<string, AlgorithmExamples> = {
   "heap-sort": heapSortExamples,
   "invert-binary-tree": invertBinaryTreeExamples,
   "union-find": unionFindExamples,
+  "kruskal-mst": kruskalMstExamples,
 };
 
 export function getAlgorithmExamplesBySlug(slug: string): AlgorithmExamples | null {

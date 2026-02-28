@@ -31,6 +31,10 @@ import {
   createRandomInsertionSortParams,
 } from "@/algorithms/insertion-sort/spec";
 import {
+  KRUSKAL_MST_DEFAULT_PARAMS,
+  createRandomKruskalMstParams,
+} from "@/algorithms/kruskal-mst/spec";
+import {
   MERGE_SORT_DEFAULT_PARAMS,
   createRandomMergeSortParams,
 } from "@/algorithms/merge-sort/spec";
@@ -321,6 +325,19 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
     );
   }
 
+  if (selectedAlgorithmSlug === "kruskal-mst") {
+    return (
+      <KruskalMstParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
   if (selectedAlgorithmSlug === "invert-binary-tree") {
     return (
       <InvertBinaryTreeParamsCard
@@ -345,8 +362,8 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
         </div>
         <CardDescription className="text-xs leading-relaxed">
           Parameter schema and validation are enabled for Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort,
-          Quick Sort, Heap Sort, Topological Sort, Union-Find, Selection Sort, Insertion Sort, Merge Sort,
-          and Invert Binary Tree in this milestone.
+          Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Selection Sort, Insertion Sort,
+          Merge Sort, and Invert Binary Tree in this milestone.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -2331,6 +2348,209 @@ function UnionFindParamsCard({
             Parents:{" "}
             <span className="font-mono">
               {normalizedResult ? normalizedResult.parents.join(", ") : "n/a"}
+            </span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function KruskalMstParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const nodeCount = useMemo(() => {
+    const value = params.nodeCount;
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    return String(KRUSKAL_MST_DEFAULT_PARAMS.nodeCount);
+  }, [params.nodeCount]);
+
+  const edges = useMemo(() => {
+    const value = params.edges;
+    return typeof value === "string" ? value : KRUSKAL_MST_DEFAULT_PARAMS.edges;
+  }, [params.edges]);
+
+  const preferLowerIndex = useMemo(
+    () => coerceBoolean(params.preferLowerIndex, KRUSKAL_MST_DEFAULT_PARAMS.preferLowerIndex),
+    [params.preferLowerIndex],
+  );
+  const pathCompression = useMemo(
+    () => coerceBoolean(params.pathCompression, KRUSKAL_MST_DEFAULT_PARAMS.pathCompression),
+    [params.pathCompression],
+  );
+  const unionByRank = useMemo(
+    () => coerceBoolean(params.unionByRank, KRUSKAL_MST_DEFAULT_PARAMS.unionByRank),
+    [params.unionByRank],
+  );
+
+  const normalizedInput =
+    run && run.algorithmSlug === "kruskal-mst" && typeof run.input === "object" && run.input !== null
+      ? (run.input as {
+          nodeCount: number;
+          edges: Array<{ from: number; to: number; weight: number }>;
+        })
+      : null;
+
+  const normalizedResult =
+    run && run.algorithmSlug === "kruskal-mst" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          totalWeight: number;
+          edgesAccepted: number;
+          edgesConsidered: number;
+          cycleSkips: number;
+          connected: boolean;
+          mstEdges: Array<{ from: number; to: number; weight: number }>;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomKruskalMstParams();
+    setParams({
+      nodeCount: randomParams.nodeCount,
+      edges: randomParams.edges,
+      preferLowerIndex: randomParams.preferLowerIndex,
+      pathCompression: randomParams.pathCompression,
+      unionByRank: randomParams.unionByRank,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Kruskal MST
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Configure an undirected weighted graph and union policy controls. Edge format supports{" "}
+          <span className="font-mono">u-v:w</span> (example: <span className="font-mono">0-1:4</span>).
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="param-kruskal-node-count" className="text-xs font-medium">
+            Node Count
+          </label>
+          <Input
+            id="param-kruskal-node-count"
+            type="number"
+            min={2}
+            max={18}
+            step={1}
+            value={nodeCount}
+            onChange={(event) => {
+              const parsed = Number(event.target.value);
+              setParam("nodeCount", Number.isFinite(parsed) ? parsed : event.target.value);
+            }}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="param-kruskal-edges" className="text-xs font-medium">
+              Weighted Edges
+            </label>
+            <InlineHelp text="Use comma-separated edges like 0-1:4, 1-2:3. Out-of-range and invalid edges are ignored." />
+          </div>
+          <Input
+            id="param-kruskal-edges"
+            value={edges}
+            onChange={(event) => setParam("edges", event.target.value)}
+            placeholder={KRUSKAL_MST_DEFAULT_PARAMS.edges}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Tie-Break Ordering</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={preferLowerIndex ? "secondary" : "outline"}
+              onClick={() => setParam("preferLowerIndex", true)}
+            >
+              Lower Index First
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={preferLowerIndex ? "outline" : "secondary"}
+              onClick={() => setParam("preferLowerIndex", false)}
+            >
+              Higher Index First
+            </Button>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Union Settings</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={pathCompression ? "secondary" : "outline"}
+              onClick={() => setParam("pathCompression", !pathCompression)}
+            >
+              {pathCompression ? "Path Compression On" : "Path Compression Off"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={unionByRank ? "secondary" : "outline"}
+              onClick={() => setParam("unionByRank", !unionByRank)}
+            >
+              {unionByRank ? "Union By Rank On" : "Union By Rank Off"}
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Node count: <span className="font-mono">{normalizedInput?.nodeCount ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Edge count: <span className="font-mono">{normalizedInput?.edges.length ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result metrics:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? `accepted ${normalizedResult.edgesAccepted}, considered ${normalizedResult.edgesConsidered}, cycle skips ${normalizedResult.cycleSkips}, weight ${normalizedResult.totalWeight}`
+                : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Connected: <span className="font-mono">{normalizedResult ? String(normalizedResult.connected) : "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            MST edges:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? normalizedResult.mstEdges.map((edge) => `${edge.from}-${edge.to}:${edge.weight}`).join(", ")
+                : "n/a"}
             </span>
           </p>
         </div>
