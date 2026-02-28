@@ -12,6 +12,7 @@ describe("algorithm runtime registry", () => {
     const topologicalRuntime = getAlgorithmRuntime("topological-sort");
     const invertBinaryTreeRuntime = getAlgorithmRuntime("invert-binary-tree");
     const unionFindRuntime = getAlgorithmRuntime("union-find");
+    const kruskalMstRuntime = getAlgorithmRuntime("kruskal-mst");
 
     expect(bubbleSortRuntime).not.toBeNull();
     expect(bubbleSortRuntime?.slug).toBe("bubble-sort");
@@ -29,10 +30,12 @@ describe("algorithm runtime registry", () => {
     expect(invertBinaryTreeRuntime?.slug).toBe("invert-binary-tree");
     expect(unionFindRuntime).not.toBeNull();
     expect(unionFindRuntime?.slug).toBe("union-find");
+    expect(kruskalMstRuntime).not.toBeNull();
+    expect(kruskalMstRuntime?.slug).toBe("kruskal-mst");
   });
 
   it("returns null for non-implemented algorithms", () => {
-    expect(getAlgorithmRuntime("kruskal-mst")).toBeNull();
-    expect(isAlgorithmImplemented("kruskal-mst")).toBe(false);
+    expect(getAlgorithmRuntime("prim-mst")).toBeNull();
+    expect(isAlgorithmImplemented("prim-mst")).toBe(false);
   });
 });

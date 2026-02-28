@@ -203,8 +203,43 @@ describe("complexity summary", () => {
     expect(summary?.space).toBe("O(n)");
   });
 
+  it("returns kruskal-mst complexity with run-aware details", () => {
+    const summary = getComplexitySummary("kruskal-mst", {
+      algorithmSlug: "kruskal-mst",
+      input: {
+        nodeCount: 5,
+        edges: [
+          { from: 0, to: 1, weight: 1 },
+          { from: 1, to: 2, weight: 2 },
+          { from: 2, to: 3, weight: 3 },
+          { from: 3, to: 4, weight: 4 },
+          { from: 0, to: 4, weight: 8 },
+        ],
+      },
+      normalizedParams: { preferLowerIndex: true, pathCompression: true, unionByRank: true },
+      result: {
+        mstEdges: [
+          { from: 0, to: 1, weight: 1 },
+          { from: 1, to: 2, weight: 2 },
+          { from: 2, to: 3, weight: 3 },
+          { from: 3, to: 4, weight: 4 },
+        ],
+        totalWeight: 10,
+        edgesConsidered: 4,
+        edgesAccepted: 4,
+        cycleSkips: 0,
+        components: 1,
+        connected: true,
+      },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(E log E)");
+    expect(summary?.timeWorst).toBe("O(E log E)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
-    expect(getComplexitySummary("kruskal-mst", null)).toBeNull();
+    expect(getComplexitySummary("prim-mst", null)).toBeNull();
   });
 
   it("returns compact complexity for implemented algorithms", () => {
@@ -316,6 +351,38 @@ describe("complexity summary", () => {
     expect(unionFind).toBe("O(alpha)");
   });
 
+  it("returns compact complexity for kruskal-mst", () => {
+    const compact = getCompactCurrentComplexity("kruskal-mst", {
+      algorithmSlug: "kruskal-mst",
+      input: {
+        nodeCount: 5,
+        edges: [
+          { from: 0, to: 1, weight: 1 },
+          { from: 1, to: 2, weight: 2 },
+          { from: 2, to: 3, weight: 3 },
+          { from: 3, to: 4, weight: 4 },
+        ],
+      },
+      normalizedParams: { preferLowerIndex: true, pathCompression: true, unionByRank: true },
+      result: {
+        mstEdges: [
+          { from: 0, to: 1, weight: 1 },
+          { from: 1, to: 2, weight: 2 },
+          { from: 2, to: 3, weight: 3 },
+          { from: 3, to: 4, weight: 4 },
+        ],
+        totalWeight: 10,
+        edgesConsidered: 4,
+        edgesAccepted: 4,
+        cycleSkips: 0,
+        components: 1,
+        connected: true,
+      },
+    });
+
+    expect(compact).toBe("O(E log E)");
+  });
+
   it("returns compact complexity for dijkstra", () => {
     const compact = getCompactCurrentComplexity("dijkstra", {
       algorithmSlug: "dijkstra",
@@ -349,6 +416,6 @@ describe("complexity summary", () => {
   });
 
   it("returns null compact complexity for non-implemented algorithms", () => {
-    expect(getCompactCurrentComplexity("kruskal-mst", null)).toBeNull();
+    expect(getCompactCurrentComplexity("prim-mst", null)).toBeNull();
   });
 });
