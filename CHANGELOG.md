@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project follows pre-1.0 Semantic Versioning (`0.x.y`).
 
+## [0.6.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.5.0...algorithm-playground-v0.6.0) (2026-02-28)
+
+
+### Added
+
+* **algorithms:** implement kruskal mst vertical slice ([02d7138](https://github.com/HugoFMiranda/algorithm-playground/commit/02d713897ba705ab00b60f04e85050e4f40efe15))
+
+
+### Changed
+
+* **readme:** refresh project overview and implementation status ([5ac8a4b](https://github.com/HugoFMiranda/algorithm-playground/commit/5ac8a4b572ac44184a0c737ce48c16e0a6dc4595))
+
 ## [0.5.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.4.0...algorithm-playground-v0.5.0) (2026-02-22)
 
 
