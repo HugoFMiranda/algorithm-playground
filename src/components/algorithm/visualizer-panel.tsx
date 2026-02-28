@@ -17,6 +17,8 @@ import type { HeapSortInput, HeapSortResult } from "@/algorithms/heap-sort/spec"
 import type { HeapSortStepEvent } from "@/algorithms/heap-sort/engine";
 import type { InsertionSortInput, InsertionSortResult } from "@/algorithms/insertion-sort/spec";
 import type { InsertionSortStepEvent } from "@/algorithms/insertion-sort/engine";
+import type { KruskalMstInput, KruskalMstResult } from "@/algorithms/kruskal-mst/spec";
+import type { KruskalMstStepEvent } from "@/algorithms/kruskal-mst/engine";
 import type {
   InvertBinaryTreeInput,
   InvertBinaryTreeNode,
@@ -111,6 +113,10 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
 
   if (algorithm.slug === "union-find") {
     return <UnionFindVisualizer run={run} cursor={cursor} />;
+  }
+
+  if (algorithm.slug === "kruskal-mst") {
+    return <KruskalMstVisualizer run={run} cursor={cursor} />;
   }
 
   if (algorithm.slug === "insertion-sort") {
@@ -4235,6 +4241,377 @@ interface UnionFindFrame {
   lastCompressedNode: number | null;
   operationIndex: number | null;
   completed: boolean;
+}
+
+interface KruskalMstFrame {
+  consideredEdgeKeys: Set<string>;
+  acceptedEdgeKeys: Set<string>;
+  rejectedEdgeKeys: Set<string>;
+  currentEdgeKey: string | null;
+  components: number;
+  totalWeight: number;
+  acceptedCount: number;
+  consideredCount: number;
+  cycleSkips: number;
+  connected: boolean;
+  completed: boolean;
+}
+
+function toKruskalEdgeKey(from: number, to: number, weight: number): string {
+  const left = Math.min(from, to);
+  const right = Math.max(from, to);
+  return `${left}:${right}:${weight}`;
+}
+
+function KruskalMstVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const compactComplexity = getCompactCurrentComplexity("kruskal-mst", run);
+  const typedRun =
+    run && run.algorithmSlug === "kruskal-mst"
+      ? {
+          ...run,
+          input: run.input as KruskalMstInput,
+          result: run.result as KruskalMstResult,
+          steps: run.steps as KruskalMstStepEvent[],
+        }
+      : null;
+
+  const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
+  const frame = useMemo(() => deriveKruskalMstFrame(typedRun, cursor), [typedRun, cursor]);
+  const stepLabel = activeStep ? formatKruskalMstStepLabel(activeStep) : "Ready";
+  const stepMessage = activeStep
+    ? formatKruskalMstStepMessage(activeStep)
+    : "Press Play or Step to start execution.";
+  const nodeCount = typedRun?.input.nodeCount ?? 0;
+  const nodeIds = useMemo(() => Array.from({ length: nodeCount }, (_, index) => index), [nodeCount]);
+  const layout = useMemo(() => createKruskalGraphLayout(nodeCount), [nodeCount]);
+  const mstEdgeText =
+    typedRun && typedRun.result.mstEdges.length > 0
+      ? typedRun.result.mstEdges.map((edge) => `${edge.from}-${edge.to}:${edge.weight}`).join(", ")
+      : "n/a";
+
+  return (
+    <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg">Visualizer</CardTitle>
+          <div className="flex items-center gap-2">
+            {compactComplexity ? (
+              <Badge variant="outline" className="rounded-full border-border/70">
+                {compactComplexity}
+              </Badge>
+            ) : null}
+            <Badge variant="secondary" className="rounded-full border-border/70">
+              Kruskal MST
+            </Badge>
+          </div>
+        </div>
+        <CardDescription>
+          Deterministic greedy edge selection sorted by weight, with cycle checks and accepted MST edges.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Nodes / Edges</p>
+            <p className="font-mono text-base">{nodeCount} / {typedRun?.input.edges.length ?? 0}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Accepted</p>
+            <p className="font-mono text-base">{frame.acceptedCount}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Total Weight</p>
+            <p className="font-mono text-base">{frame.totalWeight}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Result</p>
+            <p className="font-mono text-base">
+              {frame.completed ? (frame.connected ? "Connected MST" : "Forest") : "Processing"}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="rounded-full border-border/70">
+              {stepLabel}
+            </Badge>
+            <p className="text-muted-foreground">{stepMessage}</p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Progress</p>
+              <p className="font-mono text-xs">
+                considered {frame.consideredCount}, accepted {frame.acceptedCount}, cycle skips {frame.cycleSkips}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Components</p>
+              <p className="font-mono text-xs">{frame.components}</p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">MST Edges</p>
+              <p className="font-mono text-xs">{mstEdgeText}</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/80 bg-background/70 p-3">
+            <div className="overflow-hidden rounded-lg border border-border/70 bg-[radial-gradient(circle_at_20%_10%,rgba(14,165,233,0.08),transparent_52%),radial-gradient(circle_at_80%_88%,rgba(99,102,241,0.08),transparent_48%)]">
+              <svg viewBox={`0 0 ${layout.width} ${layout.height}`} className="h-[340px] w-full">
+                {typedRun?.input.edges.map((edge, edgeIndex) => {
+                  const fromPosition = layout.positions[edge.from];
+                  const toPosition = layout.positions[edge.to];
+                  if (!fromPosition || !toPosition) {
+                    return null;
+                  }
+
+                  const edgeKey = toKruskalEdgeKey(edge.from, edge.to, edge.weight);
+                  const isActive = frame.currentEdgeKey === edgeKey;
+                  const isAccepted = frame.acceptedEdgeKeys.has(edgeKey);
+                  const isRejected = frame.rejectedEdgeKeys.has(edgeKey);
+                  const isConsidered = frame.consideredEdgeKeys.has(edgeKey);
+                  const stroke = isAccepted
+                    ? "rgba(16, 185, 129, 0.9)"
+                    : isRejected
+                      ? "rgba(244, 63, 94, 0.82)"
+                      : isActive
+                        ? "rgba(245, 158, 11, 0.95)"
+                        : isConsidered
+                          ? "rgba(14, 165, 233, 0.74)"
+                          : "rgba(148, 163, 184, 0.56)";
+                  const strokeWidth = isAccepted || isActive ? 1.6 : 1.05;
+                  const midX = (fromPosition.x + toPosition.x) / 2;
+                  const midY = (fromPosition.y + toPosition.y) / 2;
+
+                  return (
+                    <g key={`kruskal-edge-${edge.from}-${edge.to}-${edge.weight}-${edgeIndex}`}>
+                      <line
+                        x1={fromPosition.x}
+                        y1={fromPosition.y}
+                        x2={toPosition.x}
+                        y2={toPosition.y}
+                        stroke={stroke}
+                        strokeWidth={strokeWidth}
+                        vectorEffect="non-scaling-stroke"
+                      />
+                      <text
+                        x={midX}
+                        y={midY - 1.8}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="fill-foreground font-mono text-[2.4px]"
+                      >
+                        {edge.weight}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {nodeIds.map((node) => {
+                  const position = layout.positions[node];
+                  if (!position) {
+                    return null;
+                  }
+
+                  return (
+                    <g key={`kruskal-node-${node}`} transform={`translate(${position.x} ${position.y})`}>
+                      <circle
+                        r={layout.nodeRadius}
+                        fill="rgba(15, 23, 42, 0.16)"
+                        stroke="rgba(148, 163, 184, 0.82)"
+                        strokeWidth={1.2}
+                      />
+                      <text
+                        x="0"
+                        y="0"
+                        dy="0.03em"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fontSize="3.2"
+                        fontWeight="700"
+                        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+                        className="fill-foreground"
+                      >
+                        {node}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-amber-500/75" />
+                active edge
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-emerald-500/75" />
+                accepted
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-rose-500/75" />
+                rejected (cycle)
+              </span>
+            </div>
+          </div>
+
+          {nodeIds.length === 0 ? (
+            <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-border/70 p-4 text-xs">
+              <SearchIcon className="size-3.5" />
+              No nodes available for visualization.
+            </div>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface KruskalGraphLayout {
+  width: number;
+  height: number;
+  nodeRadius: number;
+  positions: Record<number, { x: number; y: number }>;
+}
+
+function createKruskalGraphLayout(nodeCount: number): KruskalGraphLayout {
+  if (nodeCount <= 0) {
+    return {
+      width: 100,
+      height: 100,
+      nodeRadius: 5.8,
+      positions: {},
+    };
+  }
+
+  const width = 132;
+  const height = 108;
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const orbit = Math.min(width, height) * 0.36;
+  const nodeRadius = nodeCount > 14 ? 4.8 : nodeCount > 10 ? 5.4 : 6.2;
+  const positions: Record<number, { x: number; y: number }> = {};
+
+  for (let node = 0; node < nodeCount; node += 1) {
+    const angle = -Math.PI / 2 + (2 * Math.PI * node) / nodeCount;
+    positions[node] = {
+      x: centerX + orbit * Math.cos(angle),
+      y: centerY + orbit * Math.sin(angle),
+    };
+  }
+
+  return {
+    width,
+    height,
+    nodeRadius,
+    positions,
+  };
+}
+
+function deriveKruskalMstFrame(
+  run: {
+    input: KruskalMstInput;
+    steps: KruskalMstStepEvent[];
+  } | null,
+  cursor: number,
+): KruskalMstFrame {
+  const nodeCount = run?.input.nodeCount ?? 0;
+  const frame: KruskalMstFrame = {
+    consideredEdgeKeys: new Set<string>(),
+    acceptedEdgeKeys: new Set<string>(),
+    rejectedEdgeKeys: new Set<string>(),
+    currentEdgeKey: null,
+    components: nodeCount,
+    totalWeight: 0,
+    acceptedCount: 0,
+    consideredCount: 0,
+    cycleSkips: 0,
+    connected: false,
+    completed: false,
+  };
+
+  if (!run || cursor < 0 || run.steps.length === 0) {
+    return frame;
+  }
+
+  const boundedCursor = Math.min(cursor, run.steps.length - 1);
+  for (let index = 0; index <= boundedCursor; index += 1) {
+    const step = run.steps[index];
+
+    if (step.type === "edge-consider") {
+      const key = toKruskalEdgeKey(step.payload.from, step.payload.to, step.payload.weight);
+      frame.currentEdgeKey = key;
+      frame.consideredEdgeKeys.add(key);
+      frame.consideredCount = step.payload.consideredCount;
+      continue;
+    }
+
+    if (step.type === "union-check") {
+      const key = toKruskalEdgeKey(step.payload.from, step.payload.to, step.payload.weight);
+      frame.currentEdgeKey = key;
+      frame.components = step.payload.componentCount;
+      if (step.payload.accepted) {
+        frame.acceptedEdgeKeys.add(key);
+        frame.rejectedEdgeKeys.delete(key);
+      } else {
+        frame.rejectedEdgeKeys.add(key);
+      }
+      continue;
+    }
+
+    if (step.type === "edge-accept") {
+      const key = toKruskalEdgeKey(step.payload.from, step.payload.to, step.payload.weight);
+      frame.acceptedEdgeKeys.add(key);
+      frame.rejectedEdgeKeys.delete(key);
+      frame.currentEdgeKey = key;
+      frame.acceptedCount = step.payload.acceptedCount;
+      frame.totalWeight = step.payload.totalWeight;
+      continue;
+    }
+
+    frame.currentEdgeKey = null;
+    frame.consideredCount = step.payload.edgesConsidered;
+    frame.acceptedCount = step.payload.edgesAccepted;
+    frame.cycleSkips = step.payload.cycleSkips;
+    frame.totalWeight = step.payload.totalWeight;
+    frame.components = step.payload.components;
+    frame.connected = step.payload.connected;
+    frame.completed = true;
+  }
+
+  return frame;
+}
+
+function formatKruskalMstStepLabel(step: KruskalMstStepEvent): string {
+  if (step.type === "edge-consider") {
+    return "Consider Edge";
+  }
+  if (step.type === "union-check") {
+    return step.payload.accepted ? "Union Accept" : "Cycle Reject";
+  }
+  if (step.type === "edge-accept") {
+    return "Edge Accepted";
+  }
+  return "Complete";
+}
+
+function formatKruskalMstStepMessage(step: KruskalMstStepEvent): string {
+  if (step.type === "edge-consider") {
+    return `Consider edge ${step.payload.from}-${step.payload.to} (w=${step.payload.weight}).`;
+  }
+  if (step.type === "union-check") {
+    return step.payload.accepted
+      ? `Roots differ (${step.payload.leftRoot}, ${step.payload.rightRoot}), edge accepted.`
+      : `Roots match (${step.payload.leftRoot}); edge rejected to avoid cycle.`;
+  }
+  if (step.type === "edge-accept") {
+    return `Accepted ${step.payload.from}-${step.payload.to}. MST weight is now ${step.payload.totalWeight}.`;
+  }
+  return step.payload.connected
+    ? `Completed connected MST with weight ${step.payload.totalWeight}.`
+    : `Completed forest with ${step.payload.components} components.`;
 }
 
 function UnionFindVisualizer({ run, cursor }: SharedVisualizerProps) {
