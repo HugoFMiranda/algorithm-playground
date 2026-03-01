@@ -3,6 +3,10 @@
 `algorithm-playground` is a frontend-only algorithm visualization hub built with Next.js and TypeScript.
 It focuses on deterministic step playback, reusable renderer patterns, and clear algorithm explanations.
 
+## Disclaimer 
+
+This is a personal project that im doing to save and study some algorithms. Some implementations may not be perfect or in 100% accordance with the math.
+
 ## Current Scope
 
 - Library-first discovery UI with command-style search and implemented-state tagging.
