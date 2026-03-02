@@ -20,6 +20,8 @@ import { createKruskalMstRun } from "@/algorithms/kruskal-mst/engine";
 import { KRUSKAL_MST_DEFAULT_PARAMS } from "@/algorithms/kruskal-mst/spec";
 import { createMergeSortRun } from "@/algorithms/merge-sort/engine";
 import { MERGE_SORT_DEFAULT_PARAMS } from "@/algorithms/merge-sort/spec";
+import { createPrimMstRun } from "@/algorithms/prim-mst/engine";
+import { PRIM_MST_DEFAULT_PARAMS } from "@/algorithms/prim-mst/spec";
 import { createQuickSortRun } from "@/algorithms/quick-sort/engine";
 import { QUICK_SORT_DEFAULT_PARAMS } from "@/algorithms/quick-sort/spec";
 import { createSelectionSortRun } from "@/algorithms/selection-sort/engine";
@@ -136,6 +138,12 @@ const ALGORITHM_RUNTIME_REGISTRY: Record<string, AlgorithmRuntimeDefinition> = {
     rendererFamily: "graph",
     defaultParams: { ...KRUSKAL_MST_DEFAULT_PARAMS },
     createRun: createKruskalMstRun,
+  },
+  "prim-mst": {
+    slug: "prim-mst",
+    rendererFamily: "graph",
+    defaultParams: { ...PRIM_MST_DEFAULT_PARAMS },
+    createRun: createPrimMstRun,
   },
 };
 

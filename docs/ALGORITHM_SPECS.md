@@ -596,9 +596,49 @@ Each algorithm must define:
   - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Prim MST (`D2`, Phase 2)
-- Objective: grow MST from frontier edges.
-- Renderer: weighted graph.
-- Key events: candidate-edge, node-add, edge-lock.
+- Objective: teach minimum spanning tree growth from a chosen start node using cheapest frontier-edge expansion.
+- Input model:
+  - Node set is indexed from `0` to `nodeCount - 1`.
+  - Weighted undirected edges are provided as text using formats like `u-v:w`, `u>v:w`, or `u:v@w`.
+  - Invalid, out-of-range, self-loop, and duplicate endpoint pairs are normalized away.
+  - Duplicate endpoint pairs keep the lowest deterministic weight.
+  - Empty/invalid input falls back to deterministic weighted default edges.
+- Params:
+  - `nodeCount` (number, default: `8`)
+  - `edges` (string, default: `0-1:4, 0-2:3, 1-2:1, 1-3:2, 2-3:4, 2-4:6, 3-4:5, 3-5:7, 4-5:2, 4-6:8, 5-7:3, 6-7:4`)
+  - `startNode` (number, default: `0`)
+  - `preferLowerIndex` (boolean, default: `true`)
+- Human-friendly explanation:
+  - Prim starts from one node, then repeatedly adds the cheapest edge that reaches any new node. If the graph is disconnected, the process restarts on another component and yields a minimum spanning forest.
+- Step event contract:
+  - `candidate-edge`: emits each frontier edge candidate considered during current expansion step.
+  - `edge-lock`: emits the chosen cheapest frontier edge that is committed into the tree.
+  - `node-add`: emits node entry into the growing tree (or seed node for a new disconnected component).
+  - `complete`: terminal run summary with component count, connectivity, and total tree/forest weight.
+- Renderer requirements:
+  - Weighted undirected graph renderer with deterministic node placement.
+  - Distinct styling for frontier candidates, currently selected edge, and locked MST edges.
+  - Distinct node styling for active and already-added nodes.
+  - Show running totals for locked edges, visited nodes, components, and total weight.
+  - Step status message derived from event payload.
+- Metrics tracked:
+  - Frontier candidate inspections.
+  - Locked edge count.
+  - Visited node count.
+  - Component count and connected flag.
+  - Running and final total weight.
+- Edge cases:
+  - Disconnected graphs emit multiple component seeds and return a minimum spanning forest (`connected=false`).
+  - Equal-weight frontier ties are resolved deterministically using `preferLowerIndex`.
+  - Start node is clamped into valid bounds.
+  - Small graphs (`nodeCount <= 1`) terminate quickly with deterministic completion state.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed weighted graphs and start node.
+  - Param fallback behavior for malformed node count / edge text / start node / boolean values.
+  - Tie-breaking toggle remains deterministic.
+  - Renderer completion state matches emitted forest metrics and selected edge set.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Bellman-Ford (`D3`, Phase 3)
 - Objective: repeated relaxations and negative cycle detection.
