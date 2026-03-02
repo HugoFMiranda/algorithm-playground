@@ -38,6 +38,7 @@ import {
   MERGE_SORT_DEFAULT_PARAMS,
   createRandomMergeSortParams,
 } from "@/algorithms/merge-sort/spec";
+import { PRIM_MST_DEFAULT_PARAMS, createRandomPrimMstParams } from "@/algorithms/prim-mst/spec";
 import {
   QUICK_SORT_DEFAULT_PARAMS,
   createRandomQuickSortParams,
@@ -338,6 +339,19 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
     );
   }
 
+  if (selectedAlgorithmSlug === "prim-mst") {
+    return (
+      <PrimMstParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
   if (selectedAlgorithmSlug === "invert-binary-tree") {
     return (
       <InvertBinaryTreeParamsCard
@@ -362,8 +376,8 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
         </div>
         <CardDescription className="text-xs leading-relaxed">
           Parameter schema and validation are enabled for Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort,
-          Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Selection Sort, Insertion Sort,
-          Merge Sort, and Invert Binary Tree in this milestone.
+          Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Selection Sort,
+          Insertion Sort, Merge Sort, and Invert Binary Tree in this milestone.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -2550,6 +2564,211 @@ function KruskalMstParamsCard({
             <span className="font-mono">
               {normalizedResult
                 ? normalizedResult.mstEdges.map((edge) => `${edge.from}-${edge.to}:${edge.weight}`).join(", ")
+                : "n/a"}
+            </span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PrimMstParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const nodeCount = useMemo(() => {
+    const value = params.nodeCount;
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    return String(PRIM_MST_DEFAULT_PARAMS.nodeCount);
+  }, [params.nodeCount]);
+
+  const edges = useMemo(() => {
+    const value = params.edges;
+    return typeof value === "string" ? value : PRIM_MST_DEFAULT_PARAMS.edges;
+  }, [params.edges]);
+
+  const startNode = useMemo(() => {
+    const value = params.startNode;
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    return String(PRIM_MST_DEFAULT_PARAMS.startNode);
+  }, [params.startNode]);
+
+  const preferLowerIndex = useMemo(
+    () => coerceBoolean(params.preferLowerIndex, PRIM_MST_DEFAULT_PARAMS.preferLowerIndex),
+    [params.preferLowerIndex],
+  );
+
+  const normalizedInput =
+    run && run.algorithmSlug === "prim-mst" && typeof run.input === "object" && run.input !== null
+      ? (run.input as {
+          nodeCount: number;
+          startNode: number;
+          edges: Array<{ from: number; to: number; weight: number }>;
+        })
+      : null;
+
+  const normalizedResult =
+    run && run.algorithmSlug === "prim-mst" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          totalWeight: number;
+          visitedCount: number;
+          components: number;
+          connected: boolean;
+          edgeLocks: number;
+          selectedEdges: Array<{ from: number; to: number; weight: number }>;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomPrimMstParams();
+    setParams({
+      nodeCount: randomParams.nodeCount,
+      edges: randomParams.edges,
+      startNode: randomParams.startNode,
+      preferLowerIndex: randomParams.preferLowerIndex,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Prim MST
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Configure an undirected weighted graph and a deterministic start node. Prim grows a tree by
+          repeatedly locking the cheapest frontier edge.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="param-prim-node-count" className="text-xs font-medium">
+            Node Count
+          </label>
+          <Input
+            id="param-prim-node-count"
+            type="number"
+            min={2}
+            max={18}
+            step={1}
+            value={nodeCount}
+            onChange={(event) => {
+              const parsed = Number(event.target.value);
+              setParam("nodeCount", Number.isFinite(parsed) ? parsed : event.target.value);
+            }}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="param-prim-start-node" className="text-xs font-medium">
+            Start Node
+          </label>
+          <Input
+            id="param-prim-start-node"
+            type="number"
+            min={0}
+            value={startNode}
+            onChange={(event) => {
+              const parsed = Number(event.target.value);
+              setParam("startNode", Number.isFinite(parsed) ? parsed : event.target.value);
+            }}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="param-prim-edges" className="text-xs font-medium">
+              Weighted Edges
+            </label>
+            <InlineHelp text="Use comma-separated edges like 0-1:4, 1-2:3. Out-of-range and invalid edges are ignored." />
+          </div>
+          <Input
+            id="param-prim-edges"
+            value={edges}
+            onChange={(event) => setParam("edges", event.target.value)}
+            placeholder={PRIM_MST_DEFAULT_PARAMS.edges}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Tie-Break Ordering</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={preferLowerIndex ? "secondary" : "outline"}
+              onClick={() => setParam("preferLowerIndex", true)}
+            >
+              Lower Index First
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={preferLowerIndex ? "outline" : "secondary"}
+              onClick={() => setParam("preferLowerIndex", false)}
+            >
+              Higher Index First
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Node count: <span className="font-mono">{normalizedInput?.nodeCount ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Start node: <span className="font-mono">{normalizedInput?.startNode ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Edge count: <span className="font-mono">{normalizedInput?.edges.length ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result metrics:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? `locked edges ${normalizedResult.edgeLocks}, visited ${normalizedResult.visitedCount}, components ${normalizedResult.components}, weight ${normalizedResult.totalWeight}`
+                : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Connected: <span className="font-mono">{normalizedResult ? String(normalizedResult.connected) : "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Selected edges:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? normalizedResult.selectedEdges
+                    .map((edge) => `${edge.from}-${edge.to}:${edge.weight}`)
+                    .join(", ")
                 : "n/a"}
             </span>
           </p>

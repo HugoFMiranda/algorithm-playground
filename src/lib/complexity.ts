@@ -462,6 +462,68 @@ function getKruskalMstComplexity(run: AlgorithmRunSnapshot | null): ComplexitySu
   };
 }
 
+function getPrimMstComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
+  let nodeCount = 0;
+  let edgeCount = 0;
+
+  if (run && isRecord(run.input)) {
+    if ("nodeCount" in run.input && isFiniteNumber(run.input.nodeCount)) {
+      nodeCount = run.input.nodeCount;
+    }
+    if ("edges" in run.input && Array.isArray(run.input.edges)) {
+      edgeCount = run.input.edges.length;
+    }
+  }
+
+  let totalWeight: number | null = null;
+  let visitedCount: number | null = null;
+  let components: number | null = null;
+  let connected: boolean | null = null;
+  let frontierCandidates: number | null = null;
+  let edgeLocks: number | null = null;
+  if (run && isRecord(run.result)) {
+    if ("totalWeight" in run.result && isFiniteNumber(run.result.totalWeight)) {
+      totalWeight = run.result.totalWeight;
+    }
+    if ("visitedCount" in run.result && isFiniteNumber(run.result.visitedCount)) {
+      visitedCount = run.result.visitedCount;
+    }
+    if ("components" in run.result && isFiniteNumber(run.result.components)) {
+      components = run.result.components;
+    }
+    if ("connected" in run.result && typeof run.result.connected === "boolean") {
+      connected = run.result.connected;
+    }
+    if ("frontierCandidates" in run.result && isFiniteNumber(run.result.frontierCandidates)) {
+      frontierCandidates = run.result.frontierCandidates;
+    }
+    if ("edgeLocks" in run.result && isFiniteNumber(run.result.edgeLocks)) {
+      edgeLocks = run.result.edgeLocks;
+    }
+  }
+
+  const details = [
+    `Graph size: V=${nodeCount}, E=${edgeCount}`,
+    "Current implementation uses deterministic frontier scans over all edges",
+    visitedCount === null ? "Observed visited nodes: pending" : `Observed visited nodes: ${visitedCount}`,
+    edgeLocks === null
+      ? "Observed locked edges/frontier candidates: pending"
+      : `Observed locked edges/frontier candidates: ${edgeLocks}/${frontierCandidates ?? "?"}`,
+    components === null ? "Observed components: pending" : `Observed components: ${components}`,
+    totalWeight === null ? "Total weight: pending" : `Total weight: ${totalWeight}`,
+    connected === null ? "Connected graph: pending" : `Connected graph: ${String(connected)}`,
+  ];
+
+  return {
+    timeBest: "O(V * E)",
+    timeAverage: "O(V * E)",
+    timeWorst: "O(V * E)",
+    space: "O(V + E)",
+    current: edgeCount <= 1 ? "O(1) on this graph" : "O(V * E) on this graph",
+    details,
+  };
+}
+
 function getInvertBinaryTreeComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
   let nodeCount = 0;
   if (run && isRecord(run.input) && "nodes" in run.input && Array.isArray(run.input.nodes)) {
@@ -901,6 +963,10 @@ export function getComplexitySummary(
 
   if (algorithmSlug === "kruskal-mst") {
     return getKruskalMstComplexity(run && run.algorithmSlug === "kruskal-mst" ? run : null);
+  }
+
+  if (algorithmSlug === "prim-mst") {
+    return getPrimMstComplexity(run && run.algorithmSlug === "prim-mst" ? run : null);
   }
 
   if (algorithmSlug === "insertion-sort") {

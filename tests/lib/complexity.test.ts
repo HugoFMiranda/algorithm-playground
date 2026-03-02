@@ -238,8 +238,44 @@ describe("complexity summary", () => {
     expect(summary?.timeWorst).toBe("O(E log E)");
   });
 
+  it("returns prim-mst complexity with run-aware details", () => {
+    const summary = getComplexitySummary("prim-mst", {
+      algorithmSlug: "prim-mst",
+      input: {
+        nodeCount: 5,
+        startNode: 0,
+        edges: [
+          { from: 0, to: 1, weight: 1 },
+          { from: 1, to: 2, weight: 2 },
+          { from: 2, to: 3, weight: 3 },
+          { from: 3, to: 4, weight: 4 },
+          { from: 0, to: 4, weight: 8 },
+        ],
+      },
+      normalizedParams: { preferLowerIndex: true },
+      result: {
+        selectedEdges: [
+          { from: 0, to: 1, weight: 1 },
+          { from: 1, to: 2, weight: 2 },
+          { from: 2, to: 3, weight: 3 },
+          { from: 3, to: 4, weight: 4 },
+        ],
+        totalWeight: 10,
+        visitedCount: 5,
+        components: 1,
+        connected: true,
+        frontierCandidates: 14,
+        edgeLocks: 4,
+      },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(V * E)");
+    expect(summary?.timeWorst).toBe("O(V * E)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
-    expect(getComplexitySummary("prim-mst", null)).toBeNull();
+    expect(getComplexitySummary("bellman-ford", null)).toBeNull();
   });
 
   it("returns compact complexity for implemented algorithms", () => {
@@ -383,6 +419,39 @@ describe("complexity summary", () => {
     expect(compact).toBe("O(E log E)");
   });
 
+  it("returns compact complexity for prim-mst", () => {
+    const compact = getCompactCurrentComplexity("prim-mst", {
+      algorithmSlug: "prim-mst",
+      input: {
+        nodeCount: 5,
+        startNode: 0,
+        edges: [
+          { from: 0, to: 1, weight: 1 },
+          { from: 1, to: 2, weight: 2 },
+          { from: 2, to: 3, weight: 3 },
+          { from: 3, to: 4, weight: 4 },
+        ],
+      },
+      normalizedParams: { preferLowerIndex: true },
+      result: {
+        selectedEdges: [
+          { from: 0, to: 1, weight: 1 },
+          { from: 1, to: 2, weight: 2 },
+          { from: 2, to: 3, weight: 3 },
+          { from: 3, to: 4, weight: 4 },
+        ],
+        totalWeight: 10,
+        visitedCount: 5,
+        components: 1,
+        connected: true,
+        frontierCandidates: 12,
+        edgeLocks: 4,
+      },
+    });
+
+    expect(compact).toBe("O(V * E)");
+  });
+
   it("returns compact complexity for dijkstra", () => {
     const compact = getCompactCurrentComplexity("dijkstra", {
       algorithmSlug: "dijkstra",
@@ -416,6 +485,6 @@ describe("complexity summary", () => {
   });
 
   it("returns null compact complexity for non-implemented algorithms", () => {
-    expect(getCompactCurrentComplexity("prim-mst", null)).toBeNull();
+    expect(getCompactCurrentComplexity("bellman-ford", null)).toBeNull();
   });
 });

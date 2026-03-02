@@ -13,6 +13,7 @@ describe("algorithm runtime registry", () => {
     const invertBinaryTreeRuntime = getAlgorithmRuntime("invert-binary-tree");
     const unionFindRuntime = getAlgorithmRuntime("union-find");
     const kruskalMstRuntime = getAlgorithmRuntime("kruskal-mst");
+    const primMstRuntime = getAlgorithmRuntime("prim-mst");
 
     expect(bubbleSortRuntime).not.toBeNull();
     expect(bubbleSortRuntime?.slug).toBe("bubble-sort");
@@ -32,10 +33,12 @@ describe("algorithm runtime registry", () => {
     expect(unionFindRuntime?.slug).toBe("union-find");
     expect(kruskalMstRuntime).not.toBeNull();
     expect(kruskalMstRuntime?.slug).toBe("kruskal-mst");
+    expect(primMstRuntime).not.toBeNull();
+    expect(primMstRuntime?.slug).toBe("prim-mst");
   });
 
   it("returns null for non-implemented algorithms", () => {
-    expect(getAlgorithmRuntime("prim-mst")).toBeNull();
-    expect(isAlgorithmImplemented("prim-mst")).toBe(false);
+    expect(getAlgorithmRuntime("bellman-ford")).toBeNull();
+    expect(isAlgorithmImplemented("bellman-ford")).toBe(false);
   });
 });

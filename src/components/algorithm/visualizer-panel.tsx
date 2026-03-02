@@ -19,6 +19,8 @@ import type { InsertionSortInput, InsertionSortResult } from "@/algorithms/inser
 import type { InsertionSortStepEvent } from "@/algorithms/insertion-sort/engine";
 import type { KruskalMstInput, KruskalMstResult } from "@/algorithms/kruskal-mst/spec";
 import type { KruskalMstStepEvent } from "@/algorithms/kruskal-mst/engine";
+import type { PrimMstInput, PrimMstResult } from "@/algorithms/prim-mst/spec";
+import type { PrimMstStepEvent } from "@/algorithms/prim-mst/engine";
 import type {
   InvertBinaryTreeInput,
   InvertBinaryTreeNode,
@@ -117,6 +119,10 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
 
   if (algorithm.slug === "kruskal-mst") {
     return <KruskalMstVisualizer run={run} cursor={cursor} />;
+  }
+
+  if (algorithm.slug === "prim-mst") {
+    return <PrimMstVisualizer run={run} cursor={cursor} />;
   }
 
   if (algorithm.slug === "insertion-sort") {
@@ -4612,6 +4618,316 @@ function formatKruskalMstStepMessage(step: KruskalMstStepEvent): string {
   return step.payload.connected
     ? `Completed connected MST with weight ${step.payload.totalWeight}.`
     : `Completed forest with ${step.payload.components} components.`;
+}
+
+interface PrimMstFrame {
+  candidateEdgeKeys: Set<string>;
+  lockedEdgeKeys: Set<string>;
+  visitedNodes: Set<number>;
+  currentEdgeKey: string | null;
+  currentNode: number | null;
+  visitedCount: number;
+  components: number;
+  totalWeight: number;
+  frontierCandidates: number;
+  edgeLocks: number;
+  connected: boolean;
+  completed: boolean;
+}
+
+function PrimMstVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const compactComplexity = getCompactCurrentComplexity("prim-mst", run);
+  const typedRun =
+    run && run.algorithmSlug === "prim-mst"
+      ? {
+          ...run,
+          input: run.input as PrimMstInput,
+          result: run.result as PrimMstResult,
+          steps: run.steps as PrimMstStepEvent[],
+        }
+      : null;
+
+  const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
+  const frame = useMemo(() => derivePrimMstFrame(typedRun, cursor), [typedRun, cursor]);
+  const stepLabel = activeStep ? formatPrimMstStepLabel(activeStep) : "Ready";
+  const stepMessage = activeStep ? formatPrimMstStepMessage(activeStep) : "Press Play or Step to start execution.";
+  const nodeCount = typedRun?.input.nodeCount ?? 0;
+  const nodeIds = useMemo(() => Array.from({ length: nodeCount }, (_, index) => index), [nodeCount]);
+  const layout = useMemo(() => createKruskalGraphLayout(nodeCount), [nodeCount]);
+  const selectedEdgeText =
+    typedRun && typedRun.result.selectedEdges.length > 0
+      ? typedRun.result.selectedEdges.map((edge) => `${edge.from}-${edge.to}:${edge.weight}`).join(", ")
+      : "n/a";
+
+  return (
+    <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg">Visualizer</CardTitle>
+          <div className="flex items-center gap-2">
+            {compactComplexity ? (
+              <Badge variant="outline" className="rounded-full border-border/70">
+                {compactComplexity}
+              </Badge>
+            ) : null}
+            <Badge variant="secondary" className="rounded-full border-border/70">
+              Prim MST
+            </Badge>
+          </div>
+        </div>
+        <CardDescription>
+          Deterministic frontier growth from a start node, locking the cheapest edge to each new node.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Nodes / Edges</p>
+            <p className="font-mono text-base">{nodeCount} / {typedRun?.input.edges.length ?? 0}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Visited</p>
+            <p className="font-mono text-base">{frame.visitedCount}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Total Weight</p>
+            <p className="font-mono text-base">{frame.totalWeight}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Result</p>
+            <p className="font-mono text-base">
+              {frame.completed ? (frame.connected ? "Connected MST" : "Forest") : "Processing"}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="rounded-full border-border/70">
+              {stepLabel}
+            </Badge>
+            <p className="text-muted-foreground">{stepMessage}</p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Progress</p>
+              <p className="font-mono text-xs">
+                candidates {frame.frontierCandidates}, locked {frame.edgeLocks}, components {frame.components}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Current Node</p>
+              <p className="font-mono text-xs">{frame.currentNode ?? "n/a"}</p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Selected Edges</p>
+              <p className="font-mono text-xs">{selectedEdgeText}</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/80 bg-background/70 p-3">
+            <div className="overflow-hidden rounded-lg border border-border/70 bg-[radial-gradient(circle_at_20%_10%,rgba(14,165,233,0.08),transparent_52%),radial-gradient(circle_at_80%_88%,rgba(99,102,241,0.08),transparent_48%)]">
+              <svg viewBox={`0 0 ${layout.width} ${layout.height}`} className="h-[340px] w-full">
+                {typedRun?.input.edges.map((edge, edgeIndex) => {
+                  const fromPosition = layout.positions[edge.from];
+                  const toPosition = layout.positions[edge.to];
+                  if (!fromPosition || !toPosition) {
+                    return null;
+                  }
+
+                  const edgeKey = toKruskalEdgeKey(edge.from, edge.to, edge.weight);
+                  const isCurrent = frame.currentEdgeKey === edgeKey;
+                  const isLocked = frame.lockedEdgeKeys.has(edgeKey);
+                  const isCandidate = frame.candidateEdgeKeys.has(edgeKey);
+                  const stroke = isLocked
+                    ? "rgba(16, 185, 129, 0.9)"
+                    : isCurrent
+                      ? "rgba(245, 158, 11, 0.95)"
+                      : isCandidate
+                        ? "rgba(14, 165, 233, 0.74)"
+                        : "rgba(148, 163, 184, 0.56)";
+                  const strokeWidth = isLocked || isCurrent ? 1.6 : 1.05;
+                  const midX = (fromPosition.x + toPosition.x) / 2;
+                  const midY = (fromPosition.y + toPosition.y) / 2;
+
+                  return (
+                    <g key={`prim-edge-${edge.from}-${edge.to}-${edge.weight}-${edgeIndex}`}>
+                      <line
+                        x1={fromPosition.x}
+                        y1={fromPosition.y}
+                        x2={toPosition.x}
+                        y2={toPosition.y}
+                        stroke={stroke}
+                        strokeWidth={strokeWidth}
+                        vectorEffect="non-scaling-stroke"
+                      />
+                      <text
+                        x={midX}
+                        y={midY - 1.8}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="fill-foreground font-mono text-[2.4px]"
+                      >
+                        {edge.weight}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {nodeIds.map((node) => {
+                  const position = layout.positions[node];
+                  if (!position) {
+                    return null;
+                  }
+
+                  const isCurrentNode = frame.currentNode === node;
+                  const isVisited = frame.visitedNodes.has(node);
+                  const fill = isCurrentNode
+                    ? "rgba(245, 158, 11, 0.24)"
+                    : isVisited
+                      ? "rgba(16, 185, 129, 0.22)"
+                      : "rgba(15, 23, 42, 0.16)";
+                  const stroke = isCurrentNode
+                    ? "rgba(245, 158, 11, 0.86)"
+                    : isVisited
+                      ? "rgba(16, 185, 129, 0.82)"
+                      : "rgba(148, 163, 184, 0.82)";
+
+                  return (
+                    <g key={`prim-node-${node}`} transform={`translate(${position.x} ${position.y})`}>
+                      <circle r={layout.nodeRadius} fill={fill} stroke={stroke} strokeWidth={1.2} />
+                      <text
+                        x="0"
+                        y="0"
+                        dy="0.03em"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fontSize="3.2"
+                        fontWeight="700"
+                        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+                        className="fill-foreground"
+                      >
+                        {node}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+          </div>
+
+          {nodeIds.length === 0 ? (
+            <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-border/70 p-4 text-xs">
+              <SearchIcon className="size-3.5" />
+              No nodes available for visualization.
+            </div>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function derivePrimMstFrame(
+  run: {
+    input: PrimMstInput;
+    steps: PrimMstStepEvent[];
+  } | null,
+  cursor: number,
+): PrimMstFrame {
+  const frame: PrimMstFrame = {
+    candidateEdgeKeys: new Set<string>(),
+    lockedEdgeKeys: new Set<string>(),
+    visitedNodes: new Set<number>(),
+    currentEdgeKey: null,
+    currentNode: null,
+    visitedCount: 0,
+    components: 0,
+    totalWeight: 0,
+    frontierCandidates: 0,
+    edgeLocks: 0,
+    connected: false,
+    completed: false,
+  };
+
+  if (!run || cursor < 0 || run.steps.length === 0) {
+    return frame;
+  }
+
+  const boundedCursor = Math.min(cursor, run.steps.length - 1);
+  for (let index = 0; index <= boundedCursor; index += 1) {
+    const step = run.steps[index];
+
+    if (step.type === "candidate-edge") {
+      const key = toKruskalEdgeKey(step.payload.from, step.payload.to, step.payload.weight);
+      frame.currentEdgeKey = key;
+      frame.candidateEdgeKeys.add(key);
+      frame.frontierCandidates = step.payload.candidateCount;
+      frame.components = step.payload.componentIndex;
+      continue;
+    }
+
+    if (step.type === "edge-lock") {
+      const key = toKruskalEdgeKey(step.payload.from, step.payload.to, step.payload.weight);
+      frame.currentEdgeKey = key;
+      frame.lockedEdgeKeys.add(key);
+      frame.edgeLocks = step.payload.lockedEdges;
+      frame.totalWeight = step.payload.totalWeight;
+      frame.components = step.payload.componentIndex;
+      continue;
+    }
+
+    if (step.type === "node-add") {
+      frame.currentNode = step.payload.node;
+      frame.visitedCount = step.payload.nodeCount;
+      frame.visitedNodes.add(step.payload.node);
+      frame.components = step.payload.componentIndex;
+      continue;
+    }
+
+    frame.currentEdgeKey = null;
+    frame.currentNode = null;
+    frame.totalWeight = step.payload.totalWeight;
+    frame.visitedCount = step.payload.visitedCount;
+    frame.components = step.payload.components;
+    frame.frontierCandidates = step.payload.frontierCandidates;
+    frame.edgeLocks = step.payload.edgeLocks;
+    frame.connected = step.payload.connected;
+    frame.completed = true;
+  }
+
+  return frame;
+}
+
+function formatPrimMstStepLabel(step: PrimMstStepEvent): string {
+  if (step.type === "candidate-edge") {
+    return "Candidate Edge";
+  }
+  if (step.type === "edge-lock") {
+    return "Edge Lock";
+  }
+  if (step.type === "node-add") {
+    return step.payload.isSeed ? "Component Seed" : "Node Add";
+  }
+  return "Complete";
+}
+
+function formatPrimMstStepMessage(step: PrimMstStepEvent): string {
+  if (step.type === "candidate-edge") {
+    return `Candidate ${step.payload.from}-${step.payload.to} (w=${step.payload.weight}), current best=${step.payload.bestWeight}.`;
+  }
+  if (step.type === "edge-lock") {
+    return `Lock edge ${step.payload.from}-${step.payload.to}; weight sum is now ${step.payload.totalWeight}.`;
+  }
+  if (step.type === "node-add") {
+    return step.payload.isSeed
+      ? `Start component ${step.payload.componentIndex} at node ${step.payload.node}.`
+      : `Add node ${step.payload.node} via ${step.payload.from} with edge weight ${step.payload.weight}.`;
+  }
+  return step.payload.connected
+    ? `Completed connected MST with total weight ${step.payload.totalWeight}.`
+    : `Completed spanning forest with ${step.payload.components} components.`;
 }
 
 function UnionFindVisualizer({ run, cursor }: SharedVisualizerProps) {
