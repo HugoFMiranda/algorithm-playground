@@ -724,6 +724,49 @@ Each algorithm must define:
 - Key events: imbalance-detected, rotate-left, rotate-right.
 
 ### Trie Operations (`D2`, Phase 2)
-- Objective: prefix-sharing and branching lookup.
-- Renderer: trie tree.
-- Key events: node-create, traverse-char, word-terminal-set.
+- Objective: teach prefix-sharing insertion and deterministic lookup semantics for exact-word and prefix queries.
+- Input model:
+  - Word corpus is provided as comma/space-separated tokens.
+  - Query script is provided as comma/newline-separated commands.
+  - Supported query commands: `search <term>` and `prefix <term>`.
+  - Word and query tokens are normalized to alphabetic characters only.
+  - Case behavior is controlled by `caseSensitive`.
+  - Duplicate words are deduplicated while preserving first occurrence order.
+  - Empty/invalid words or queries fallback to deterministic defaults.
+- Params:
+  - `words` (string, default: `cat, car, dog, dart, deal`)
+  - `queries` (string, default: `search car, search cap, prefix da, prefix ca`)
+  - `caseSensitive` (boolean, default: `false`)
+- Human-friendly explanation:
+  - A trie stores words by character paths. Shared prefixes reuse nodes, so exact-word search and prefix checks both walk only the needed characters.
+- Step event contract:
+  - `node-create`: emits creation of a new trie node for a character during insertion.
+  - `traverse-char`: emits each character traversal for insertion and query operations.
+  - `word-terminal-set`: marks a node as terminal when a full word is inserted.
+  - `query-result`: emits deterministic search/prefix query outcomes.
+  - `complete`: terminal summary with node/terminal/query metrics.
+- Renderer requirements:
+  - Trie renderer with root and character-node hierarchy context.
+  - Distinct styling for current traversal node and terminal nodes.
+  - Show active token/character and operation mode (`insert`, `search`, `prefix`).
+  - Present query outcomes and aggregate metrics.
+  - Step status message derived from event payload.
+- Metrics tracked:
+  - Created node count.
+  - Terminal node count.
+  - Inserted word count.
+  - Query count.
+  - Search hit count.
+  - Prefix hit count.
+- Edge cases:
+  - Empty corpus falls back to default words.
+  - Missing paths during query traversal emit deterministic miss outcomes.
+  - Duplicate words do not create duplicate terminal updates.
+  - Case-sensitive mode preserves casing; case-insensitive mode normalizes to lowercase.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed word/query scripts.
+  - Param fallback behavior for malformed words/query commands/booleans.
+  - Query outcomes remain deterministic across repeated runs.
+  - Renderer completion state matches emitted trie/query summary metrics.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.

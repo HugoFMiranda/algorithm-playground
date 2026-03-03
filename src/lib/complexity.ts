@@ -524,6 +524,66 @@ function getPrimMstComplexity(run: AlgorithmRunSnapshot | null): ComplexitySumma
   };
 }
 
+function getTrieOperationsComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
+  let wordCount = 0;
+  let queryCount = 0;
+  let totalWordChars = 0;
+  let totalQueryChars = 0;
+
+  if (run && isRecord(run.input)) {
+    if ("words" in run.input && Array.isArray(run.input.words)) {
+      const words = run.input.words.filter((word): word is string => typeof word === "string");
+      wordCount = words.length;
+      totalWordChars = words.reduce((sum, word) => sum + word.length, 0);
+    }
+    if ("queries" in run.input && Array.isArray(run.input.queries)) {
+      const terms = run.input.queries
+        .filter(
+          (query): query is { term: string } =>
+            typeof query === "object" && query !== null && "term" in query && typeof query.term === "string",
+        )
+        .map((query) => query.term);
+      queryCount = terms.length;
+      totalQueryChars = terms.reduce((sum, term) => sum + term.length, 0);
+    }
+  }
+
+  let createdNodes: number | null = null;
+  let terminalNodes: number | null = null;
+  let searchHits: number | null = null;
+  let prefixHits: number | null = null;
+  if (run && isRecord(run.result)) {
+    if ("createdNodes" in run.result && isFiniteNumber(run.result.createdNodes)) {
+      createdNodes = run.result.createdNodes;
+    }
+    if ("terminalNodes" in run.result && isFiniteNumber(run.result.terminalNodes)) {
+      terminalNodes = run.result.terminalNodes;
+    }
+    if ("searchHits" in run.result && isFiniteNumber(run.result.searchHits)) {
+      searchHits = run.result.searchHits;
+    }
+    if ("prefixHits" in run.result && isFiniteNumber(run.result.prefixHits)) {
+      prefixHits = run.result.prefixHits;
+    }
+  }
+
+  const details = [
+    `Words=${wordCount} (${totalWordChars} chars), queries=${queryCount} (${totalQueryChars} chars)`,
+    "Trie insert/search/prefix walk each character once per token",
+    createdNodes === null ? "Observed created/terminal nodes: pending" : `Observed created/terminal nodes: ${createdNodes}/${terminalNodes ?? "?"}`,
+    searchHits === null ? "Observed query hits: pending" : `Observed search/prefix hits: ${searchHits}/${prefixHits ?? "?"}`,
+  ];
+
+  return {
+    timeBest: "O(1)",
+    timeAverage: "O(total chars)",
+    timeWorst: "O(total chars)",
+    space: "O(total chars)",
+    current: wordCount + queryCount === 0 ? "O(1) on this run" : "O(total chars) on this run",
+    details,
+  };
+}
+
 function getInvertBinaryTreeComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
   let nodeCount = 0;
   if (run && isRecord(run.input) && "nodes" in run.input && Array.isArray(run.input.nodes)) {
@@ -967,6 +1027,10 @@ export function getComplexitySummary(
 
   if (algorithmSlug === "prim-mst") {
     return getPrimMstComplexity(run && run.algorithmSlug === "prim-mst" ? run : null);
+  }
+
+  if (algorithmSlug === "trie-operations") {
+    return getTrieOperationsComplexity(run && run.algorithmSlug === "trie-operations" ? run : null);
   }
 
   if (algorithmSlug === "insertion-sort") {

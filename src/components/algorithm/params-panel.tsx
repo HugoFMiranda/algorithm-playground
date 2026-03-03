@@ -52,6 +52,10 @@ import {
   createRandomTopologicalSortParams,
 } from "@/algorithms/topological-sort/spec";
 import {
+  TRIE_OPERATIONS_DEFAULT_PARAMS,
+  createRandomTrieOperationsParams,
+} from "@/algorithms/trie-operations/spec";
+import {
   UNION_FIND_DEFAULT_PARAMS,
   createRandomUnionFindParams,
 } from "@/algorithms/union-find/spec";
@@ -352,6 +356,19 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
     );
   }
 
+  if (selectedAlgorithmSlug === "trie-operations") {
+    return (
+      <TrieOperationsParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
   if (selectedAlgorithmSlug === "invert-binary-tree") {
     return (
       <InvertBinaryTreeParamsCard
@@ -377,7 +394,7 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
         <CardDescription className="text-xs leading-relaxed">
           Parameter schema and validation are enabled for Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort,
           Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Selection Sort,
-          Insertion Sort, Merge Sort, and Invert Binary Tree in this milestone.
+          Insertion Sort, Merge Sort, Invert Binary Tree, and Trie Operations in this milestone.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -2769,6 +2786,169 @@ function PrimMstParamsCard({
                 ? normalizedResult.selectedEdges
                     .map((edge) => `${edge.from}-${edge.to}:${edge.weight}`)
                     .join(", ")
+                : "n/a"}
+            </span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TrieOperationsParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const words = useMemo(() => {
+    const value = params.words;
+    return typeof value === "string" ? value : TRIE_OPERATIONS_DEFAULT_PARAMS.words;
+  }, [params.words]);
+
+  const queries = useMemo(() => {
+    const value = params.queries;
+    return typeof value === "string" ? value : TRIE_OPERATIONS_DEFAULT_PARAMS.queries;
+  }, [params.queries]);
+
+  const caseSensitive = useMemo(
+    () => coerceBoolean(params.caseSensitive, TRIE_OPERATIONS_DEFAULT_PARAMS.caseSensitive),
+    [params.caseSensitive],
+  );
+
+  const normalizedInput =
+    run && run.algorithmSlug === "trie-operations" && typeof run.input === "object" && run.input !== null
+      ? (run.input as {
+          words: string[];
+          queries: Array<{ type: "search" | "prefix"; term: string }>;
+          caseSensitive: boolean;
+        })
+      : null;
+
+  const normalizedResult =
+    run && run.algorithmSlug === "trie-operations" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          createdNodes: number;
+          terminalNodes: number;
+          wordsInserted: number;
+          queryCount: number;
+          searchHits: number;
+          prefixHits: number;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomTrieOperationsParams();
+    setParams({
+      words: randomParams.words,
+      queries: randomParams.queries,
+      caseSensitive: randomParams.caseSensitive,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Trie Operations
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Insert words into a trie and execute deterministic query commands. Supported query commands are{" "}
+          <span className="font-mono">search term</span> and <span className="font-mono">prefix term</span>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="param-trie-words" className="text-xs font-medium">
+            Words
+          </label>
+          <Input
+            id="param-trie-words"
+            value={words}
+            onChange={(event) => setParam("words", event.target.value)}
+            placeholder={TRIE_OPERATIONS_DEFAULT_PARAMS.words}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="param-trie-queries" className="text-xs font-medium">
+              Queries
+            </label>
+            <InlineHelp text="Examples: search car, search cart, prefix ca, prefix do." />
+          </div>
+          <Input
+            id="param-trie-queries"
+            value={queries}
+            onChange={(event) => setParam("queries", event.target.value)}
+            placeholder={TRIE_OPERATIONS_DEFAULT_PARAMS.queries}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Case Handling</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={caseSensitive ? "outline" : "secondary"}
+              onClick={() => setParam("caseSensitive", false)}
+            >
+              Case Insensitive
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={caseSensitive ? "secondary" : "outline"}
+              onClick={() => setParam("caseSensitive", true)}
+            >
+              Case Sensitive
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Case sensitive: <span className="font-mono">{normalizedInput ? String(normalizedInput.caseSensitive) : "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Words ({normalizedInput?.words.length ?? "n/a"}):{" "}
+            <span className="font-mono">
+              {normalizedInput && normalizedInput.words.length > 0
+                ? normalizedInput.words.join(", ")
+                : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Queries ({normalizedInput?.queries.length ?? "n/a"}):{" "}
+            <span className="font-mono">
+              {normalizedInput && normalizedInput.queries.length > 0
+                ? normalizedInput.queries.map((query) => `${query.type} ${query.term}`).join(", ")
+                : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result metrics:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? `nodes ${normalizedResult.createdNodes}, terminal ${normalizedResult.terminalNodes}, searches ${normalizedResult.searchHits}, prefixes ${normalizedResult.prefixHits}`
                 : "n/a"}
             </span>
           </p>

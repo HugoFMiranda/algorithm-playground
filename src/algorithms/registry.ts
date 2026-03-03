@@ -28,6 +28,8 @@ import { createSelectionSortRun } from "@/algorithms/selection-sort/engine";
 import { SELECTION_SORT_DEFAULT_PARAMS } from "@/algorithms/selection-sort/spec";
 import { createTopologicalSortRun } from "@/algorithms/topological-sort/engine";
 import { TOPOLOGICAL_SORT_DEFAULT_PARAMS } from "@/algorithms/topological-sort/spec";
+import { createTrieOperationsRun } from "@/algorithms/trie-operations/engine";
+import { TRIE_OPERATIONS_DEFAULT_PARAMS } from "@/algorithms/trie-operations/spec";
 import { createUnionFindRun } from "@/algorithms/union-find/engine";
 import { UNION_FIND_DEFAULT_PARAMS } from "@/algorithms/union-find/spec";
 import type { ParamPrimitive, RawParams, StepEventBase } from "@/types/engine";
@@ -144,6 +146,12 @@ const ALGORITHM_RUNTIME_REGISTRY: Record<string, AlgorithmRuntimeDefinition> = {
     rendererFamily: "graph",
     defaultParams: { ...PRIM_MST_DEFAULT_PARAMS },
     createRun: createPrimMstRun,
+  },
+  "trie-operations": {
+    slug: "trie-operations",
+    rendererFamily: "tree",
+    defaultParams: { ...TRIE_OPERATIONS_DEFAULT_PARAMS },
+    createRun: createTrieOperationsRun,
   },
 };
 

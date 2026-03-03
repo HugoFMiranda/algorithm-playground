@@ -14,7 +14,7 @@ Build a professional algorithm visualization hub where users can:
 - Frontend-only Next.js App Router application.
 - No backend requirements in the current roadmap window.
 - Focus on reusable engine and renderer architecture before advanced features.
-- Current implementation checkpoint: Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Selection Sort, Insertion Sort, Merge Sort, and Invert Binary Tree are fully integrated algorithm slices (engine, playback, renderer, params, and code examples).
+- Current implementation checkpoint: Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Trie Operations, Selection Sort, Insertion Sort, Merge Sort, and Invert Binary Tree are fully integrated algorithm slices (engine, playback, renderer, params, and code examples).
 - Every algorithm must ship with an easy-to-understand explanation surfaced on its algorithm page.
 
 ## Source-of-Truth Policy
@@ -72,7 +72,7 @@ Roadmap horizon is 3 phases with 21 planned algorithms.
 ## Delivery Sequence
 
 1. Phase 1: foundational sorting + pathfinding + binary search.
-2. Phase 2: graph breadth and additional sorting/tree structures, with Trie Operations prioritized next.
+2. Phase 2: graph breadth and additional sorting/tree structures, with Bidirectional BFS prioritized next.
 3. Phase 3: advanced algorithms and comparison tooling.
 
 Canonical order and algorithm list are maintained in `docs/ROADMAP.md` and `src/data/algorithms.ts`.

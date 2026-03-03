@@ -13,6 +13,7 @@ import { primMstExamples } from "@/algorithms/examples/prim-mst";
 import { quickSortExamples } from "@/algorithms/examples/quick-sort";
 import { selectionSortExamples } from "@/algorithms/examples/selection-sort";
 import { topologicalSortExamples } from "@/algorithms/examples/topological-sort";
+import { trieOperationsExamples } from "@/algorithms/examples/trie-operations";
 import { unionFindExamples } from "@/algorithms/examples/union-find";
 import type { AlgorithmExamples } from "@/types/examples";
 
@@ -33,6 +34,7 @@ const EXAMPLES_REGISTRY: Record<string, AlgorithmExamples> = {
   "union-find": unionFindExamples,
   "kruskal-mst": kruskalMstExamples,
   "prim-mst": primMstExamples,
+  "trie-operations": trieOperationsExamples,
 };
 
 export function getAlgorithmExamplesBySlug(slug: string): AlgorithmExamples | null {

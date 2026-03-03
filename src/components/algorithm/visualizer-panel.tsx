@@ -35,6 +35,8 @@ import type { SelectionSortInput, SelectionSortResult } from "@/algorithms/selec
 import type { SelectionSortStepEvent } from "@/algorithms/selection-sort/engine";
 import type { TopologicalSortInput, TopologicalSortResult } from "@/algorithms/topological-sort/spec";
 import type { TopologicalSortStepEvent } from "@/algorithms/topological-sort/engine";
+import type { TrieOperationsInput, TrieOperationsResult } from "@/algorithms/trie-operations/spec";
+import type { TrieOperationsStepEvent } from "@/algorithms/trie-operations/engine";
 import type { UnionFindInput, UnionFindResult } from "@/algorithms/union-find/spec";
 import type { UnionFindStepEvent } from "@/algorithms/union-find/engine";
 import type { AlgorithmDefinition } from "@/data/algorithms";
@@ -135,6 +137,10 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
 
   if (algorithm.slug === "invert-binary-tree") {
     return <InvertBinaryTreeVisualizer run={run} cursor={cursor} />;
+  }
+
+  if (algorithm.slug === "trie-operations") {
+    return <TrieOperationsVisualizer run={run} cursor={cursor} />;
   }
 
   return (
@@ -5716,6 +5722,262 @@ function formatInvertBinaryTreeStepMessage(step: InvertBinaryTreeStepEvent): str
   }
 
   return `Inversion complete: ${step.payload.visitedCount} visited node(s), ${step.payload.swaps} swap(s).`;
+}
+
+interface TrieOperationsFrame {
+  nodes: Array<{ id: number; char: string; parentId: number | null; depth: number; terminal: boolean }>;
+  currentNodeId: number | null;
+  currentToken: string | null;
+  currentChar: string | null;
+  activeMode: "insert" | "search" | "prefix" | null;
+  wordsInserted: number;
+  searchHits: number;
+  prefixHits: number;
+  completed: boolean;
+}
+
+function TrieOperationsVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const compactComplexity = getCompactCurrentComplexity("trie-operations", run);
+  const typedRun =
+    run && run.algorithmSlug === "trie-operations"
+      ? {
+          ...run,
+          input: run.input as TrieOperationsInput,
+          result: run.result as TrieOperationsResult,
+          steps: run.steps as TrieOperationsStepEvent[],
+        }
+      : null;
+
+  const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
+  const frame = useMemo(() => deriveTrieOperationsFrame(typedRun, cursor), [typedRun, cursor]);
+  const stepLabel = activeStep ? formatTrieOperationsStepLabel(activeStep) : "Ready";
+  const stepMessage = activeStep
+    ? formatTrieOperationsStepMessage(activeStep)
+    : "Press Play or Step to start execution.";
+  const sortedNodes = useMemo(
+    () => [...frame.nodes].sort((left, right) => left.depth - right.depth || left.id - right.id),
+    [frame.nodes],
+  );
+  const queryText =
+    typedRun && typedRun.input.queries.length > 0
+      ? typedRun.input.queries.map((query) => `${query.type} ${query.term}`).join(", ")
+      : "n/a";
+
+  return (
+    <Card className="surface-card min-h-[460px] border-border/70 lg:min-h-[700px]">
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg">Visualizer</CardTitle>
+          <div className="flex items-center gap-2">
+            {compactComplexity ? (
+              <Badge variant="outline" className="rounded-full border-border/70">
+                {compactComplexity}
+              </Badge>
+            ) : null}
+            <Badge variant="secondary" className="rounded-full border-border/70">
+              Trie Operations
+            </Badge>
+          </div>
+        </div>
+        <CardDescription>
+          Deterministic trie insertion and query playback with node creation, character traversal, and terminal
+          markers.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Words / Queries</p>
+            <p className="font-mono text-base">
+              {typedRun?.input.words.length ?? 0} / {typedRun?.input.queries.length ?? 0}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Nodes</p>
+            <p className="font-mono text-base">{frame.nodes.length}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Hits</p>
+            <p className="font-mono text-base">
+              s:{frame.searchHits} p:{frame.prefixHits}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Result</p>
+            <p className="font-mono text-base">{frame.completed ? "Complete" : "Processing"}</p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="rounded-full border-border/70">
+              {stepLabel}
+            </Badge>
+            <p className="text-muted-foreground">{stepMessage}</p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Current Traversal</p>
+              <p className="font-mono text-xs">
+                {frame.activeMode ? `${frame.activeMode} "${frame.currentToken ?? ""}" @ ${frame.currentChar ?? "?"}` : "n/a"}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Words</p>
+              <p className="font-mono text-xs">
+                {typedRun?.input.words.length ? typedRun.input.words.join(", ") : "n/a"}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Queries</p>
+              <p className="font-mono text-xs">{queryText}</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/80 bg-background/70 p-3">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {sortedNodes.map((node) => {
+                const isCurrent = frame.currentNodeId === node.id;
+                return (
+                  <div
+                    key={`trie-node-${node.id}`}
+                    className={cn(
+                      "rounded-lg border p-2",
+                      "border-border/70 bg-background/70",
+                      isCurrent && "border-amber-300/70 bg-amber-500/15",
+                      node.terminal && "border-emerald-300/70",
+                    )}
+                  >
+                    <p className="text-muted-foreground text-[10px]">
+                      node {node.id} depth {node.depth} parent {node.parentId ?? "root"}
+                    </p>
+                    <p className="font-mono text-sm">
+                      {node.id === 0 ? "<root>" : node.char}
+                      {node.terminal ? " *" : ""}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function deriveTrieOperationsFrame(
+  run: {
+    steps: TrieOperationsStepEvent[];
+    result: TrieOperationsResult;
+  } | null,
+  cursor: number,
+): TrieOperationsFrame {
+  const frame: TrieOperationsFrame = {
+    nodes: [{ id: 0, char: "", parentId: null, depth: 0, terminal: false }],
+    currentNodeId: null,
+    currentToken: null,
+    currentChar: null,
+    activeMode: null,
+    wordsInserted: 0,
+    searchHits: 0,
+    prefixHits: 0,
+    completed: false,
+  };
+
+  if (!run || cursor < 0 || run.steps.length === 0) {
+    return frame;
+  }
+
+  const boundedCursor = Math.min(cursor, run.steps.length - 1);
+  for (let index = 0; index <= boundedCursor; index += 1) {
+    const step = run.steps[index];
+
+    if (step.type === "node-create") {
+      frame.nodes.push({
+        id: step.payload.nodeId,
+        char: step.payload.char,
+        parentId: step.payload.parentId,
+        depth: step.payload.depth,
+        terminal: false,
+      });
+      continue;
+    }
+
+    if (step.type === "traverse-char") {
+      frame.currentNodeId = step.payload.toNodeId ?? step.payload.fromNodeId;
+      frame.currentToken = step.payload.token;
+      frame.currentChar = step.payload.char;
+      frame.activeMode = step.payload.mode;
+      continue;
+    }
+
+    if (step.type === "word-terminal-set") {
+      const node = frame.nodes.find((candidate) => candidate.id === step.payload.nodeId);
+      if (node) {
+        node.terminal = true;
+      }
+      frame.wordsInserted = step.payload.wordIndex + 1;
+      continue;
+    }
+
+    if (step.type === "query-result") {
+      if (step.payload.queryType === "search" && step.payload.matched) {
+        frame.searchHits += 1;
+      }
+      if (step.payload.queryType === "prefix" && step.payload.matched) {
+        frame.prefixHits += 1;
+      }
+      continue;
+    }
+
+    frame.currentNodeId = null;
+    frame.currentToken = null;
+    frame.currentChar = null;
+    frame.activeMode = null;
+    frame.wordsInserted = step.payload.wordsInserted;
+    frame.searchHits = step.payload.searchHits;
+    frame.prefixHits = step.payload.prefixHits;
+    frame.completed = true;
+    frame.nodes = run.result.nodes.map((node) => ({ ...node }));
+  }
+
+  return frame;
+}
+
+function formatTrieOperationsStepLabel(step: TrieOperationsStepEvent): string {
+  if (step.type === "node-create") {
+    return "Node Create";
+  }
+  if (step.type === "traverse-char") {
+    return "Traverse Char";
+  }
+  if (step.type === "word-terminal-set") {
+    return "Word Terminal";
+  }
+  if (step.type === "query-result") {
+    return "Query Result";
+  }
+  return "Complete";
+}
+
+function formatTrieOperationsStepMessage(step: TrieOperationsStepEvent): string {
+  if (step.type === "node-create") {
+    return `Create node ${step.payload.nodeId} for "${step.payload.char}" while inserting "${step.payload.word}".`;
+  }
+  if (step.type === "traverse-char") {
+    return step.payload.existed
+      ? `Traverse "${step.payload.char}" from node ${step.payload.fromNodeId} to ${step.payload.toNodeId}.`
+      : `Character "${step.payload.char}" missing from node ${step.payload.fromNodeId}.`;
+  }
+  if (step.type === "word-terminal-set") {
+    return `Mark node ${step.payload.nodeId} as terminal for "${step.payload.word}".`;
+  }
+  if (step.type === "query-result") {
+    return `${step.payload.queryType} "${step.payload.term}" => ${step.payload.matched ? "match" : "no match"}.`;
+  }
+  return `Completed with ${step.payload.createdNodes} created node(s) and ${step.payload.queryCount} query(ies).`;
 }
 
 interface InvertBinaryTreeLayoutEdge {

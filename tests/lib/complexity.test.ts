@@ -274,8 +274,46 @@ describe("complexity summary", () => {
     expect(summary?.timeWorst).toBe("O(V * E)");
   });
 
+  it("returns trie-operations complexity with run-aware details", () => {
+    const summary = getComplexitySummary("trie-operations", {
+      algorithmSlug: "trie-operations",
+      input: {
+        words: ["cat", "car", "dog"],
+        queries: [
+          { type: "search", term: "car" },
+          { type: "search", term: "cab" },
+          { type: "prefix", term: "ca" },
+          { type: "prefix", term: "do" },
+        ],
+      },
+      normalizedParams: { caseSensitive: false },
+      result: {
+        nodes: [
+          { id: 0, char: "", parentId: null, depth: 0, terminal: false },
+          { id: 1, char: "c", parentId: 0, depth: 1, terminal: false },
+          { id: 2, char: "a", parentId: 1, depth: 2, terminal: false },
+          { id: 3, char: "t", parentId: 2, depth: 3, terminal: true },
+          { id: 4, char: "r", parentId: 2, depth: 3, terminal: true },
+          { id: 5, char: "d", parentId: 0, depth: 1, terminal: false },
+          { id: 6, char: "o", parentId: 5, depth: 2, terminal: false },
+          { id: 7, char: "g", parentId: 6, depth: 3, terminal: true },
+        ],
+        createdNodes: 7,
+        terminalNodes: 3,
+        wordsInserted: 3,
+        queryCount: 4,
+        searchHits: 1,
+        prefixHits: 2,
+      },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(total chars)");
+    expect(summary?.timeWorst).toBe("O(total chars)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
-    expect(getComplexitySummary("bellman-ford", null)).toBeNull();
+    expect(getComplexitySummary("bidirectional-bfs", null)).toBeNull();
   });
 
   it("returns compact complexity for implemented algorithms", () => {
@@ -452,6 +490,34 @@ describe("complexity summary", () => {
     expect(compact).toBe("O(V * E)");
   });
 
+  it("returns compact complexity for trie-operations", () => {
+    const compact = getCompactCurrentComplexity("trie-operations", {
+      algorithmSlug: "trie-operations",
+      input: {
+        words: ["cat", "car", "dog"],
+        queries: [
+          { type: "search", term: "car" },
+          { type: "prefix", term: "ca" },
+        ],
+      },
+      normalizedParams: { caseSensitive: false },
+      result: {
+        nodes: [
+          { id: 0, char: "", parentId: null, depth: 0, terminal: false },
+          { id: 1, char: "c", parentId: 0, depth: 1, terminal: false },
+        ],
+        createdNodes: 1,
+        terminalNodes: 0,
+        wordsInserted: 3,
+        queryCount: 2,
+        searchHits: 1,
+        prefixHits: 1,
+      },
+    });
+
+    expect(compact).toBe("O(total chars)");
+  });
+
   it("returns compact complexity for dijkstra", () => {
     const compact = getCompactCurrentComplexity("dijkstra", {
       algorithmSlug: "dijkstra",
@@ -485,6 +551,6 @@ describe("complexity summary", () => {
   });
 
   it("returns null compact complexity for non-implemented algorithms", () => {
-    expect(getCompactCurrentComplexity("bellman-ford", null)).toBeNull();
+    expect(getCompactCurrentComplexity("bidirectional-bfs", null)).toBeNull();
   });
 });
