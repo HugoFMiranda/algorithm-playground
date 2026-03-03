@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project follows pre-1.0 Semantic Versioning (`0.x.y`).
 
+## [0.7.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.6.0...algorithm-playground-v0.7.0) (2026-03-03)
+
+
+### Added
+
+* **algorithms:** implement prim mst vertical slice ([05577f2](https://github.com/HugoFMiranda/algorithm-playground/commit/05577f222ef16d643507ab4e73b371935974842a))
+* **algorithms:** implement trie operations vertical slice ([7db6e4f](https://github.com/HugoFMiranda/algorithm-playground/commit/7db6e4f3d9809edc0862f2b150391fa8fd58706b))
+
 ## [0.6.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.5.0...algorithm-playground-v0.6.0) (2026-02-28)
 
 
