@@ -8,6 +8,14 @@ import {
   BINARY_SEARCH_DEFAULT_PARAMS,
   createRandomBinarySearchParams,
 } from "@/algorithms/binary-search/spec";
+import {
+  BIDIRECTIONAL_BFS_DEFAULT_PARAMS,
+  createRandomBidirectionalBfsParams,
+} from "@/algorithms/bidirectional-bfs/spec";
+import {
+  BELLMAN_FORD_DEFAULT_PARAMS,
+  createRandomBellmanFordParams,
+} from "@/algorithms/bellman-ford/spec";
 import { BFS_DEFAULT_PARAMS, createRandomBfsParams } from "@/algorithms/bfs/spec";
 import {
   BUBBLE_SORT_DEFAULT_PARAMS,
@@ -356,6 +364,32 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
     );
   }
 
+  if (selectedAlgorithmSlug === "bellman-ford") {
+    return (
+      <BellmanFordParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
+  if (selectedAlgorithmSlug === "bidirectional-bfs") {
+    return (
+      <BidirectionalBfsParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
   if (selectedAlgorithmSlug === "trie-operations") {
     return (
       <TrieOperationsParamsCard
@@ -392,9 +426,10 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
           </Badge>
         </div>
         <CardDescription className="text-xs leading-relaxed">
-          Parameter schema and validation are enabled for Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort,
-          Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Selection Sort,
-          Insertion Sort, Merge Sort, Invert Binary Tree, and Trie Operations in this milestone.
+          Parameter schema and validation are enabled for Binary Search, BFS, Bidirectional BFS, DFS,
+          Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST,
+          Prim MST, Bellman-Ford, Selection Sort, Insertion Sort, Merge Sort, Invert Binary Tree, and Trie
+          Operations in this milestone.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -2786,6 +2821,597 @@ function PrimMstParamsCard({
                 ? normalizedResult.selectedEdges
                     .map((edge) => `${edge.from}-${edge.to}:${edge.weight}`)
                     .join(", ")
+                : "n/a"}
+            </span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function BellmanFordParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const nodeCount = useMemo(() => {
+    const value = params.nodeCount;
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    return String(BELLMAN_FORD_DEFAULT_PARAMS.nodeCount);
+  }, [params.nodeCount]);
+
+  const edges = useMemo(() => {
+    const value = params.edges;
+    return typeof value === "string" ? value : BELLMAN_FORD_DEFAULT_PARAMS.edges;
+  }, [params.edges]);
+
+  const startNode = useMemo(() => {
+    const value = params.startNode;
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    return String(BELLMAN_FORD_DEFAULT_PARAMS.startNode);
+  }, [params.startNode]);
+
+  const stopEarlyWhenStable = useMemo(
+    () => coerceBoolean(params.stopEarlyWhenStable, BELLMAN_FORD_DEFAULT_PARAMS.stopEarlyWhenStable),
+    [params.stopEarlyWhenStable],
+  );
+  const preferLowerIndex = useMemo(
+    () => coerceBoolean(params.preferLowerIndex, BELLMAN_FORD_DEFAULT_PARAMS.preferLowerIndex),
+    [params.preferLowerIndex],
+  );
+
+  const normalizedInput =
+    run && run.algorithmSlug === "bellman-ford" && typeof run.input === "object" && run.input !== null
+      ? (run.input as {
+          nodeCount: number;
+          startNode: number;
+          edges: Array<{ from: number; to: number; weight: number }>;
+        })
+      : null;
+
+  const normalizedResult =
+    run && run.algorithmSlug === "bellman-ford" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          distances: number[];
+          roundsExecuted: number;
+          relaxations: number;
+          reachableCount: number;
+          negativeCycle: boolean;
+          cycleEdge: { from: number; to: number; weight: number } | null;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomBellmanFordParams();
+    setParams({
+      nodeCount: randomParams.nodeCount,
+      edges: randomParams.edges,
+      startNode: randomParams.startNode,
+      stopEarlyWhenStable: randomParams.stopEarlyWhenStable,
+      preferLowerIndex: randomParams.preferLowerIndex,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Bellman-Ford
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Configure a directed weighted graph. Edge format supports <span className="font-mono">u&gt;v:w</span>,
+          including negative weights.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="param-bellman-node-count" className="text-xs font-medium">
+            Node Count
+          </label>
+          <Input
+            id="param-bellman-node-count"
+            type="number"
+            min={2}
+            max={18}
+            step={1}
+            value={nodeCount}
+            onChange={(event) => {
+              const parsed = Number(event.target.value);
+              setParam("nodeCount", Number.isFinite(parsed) ? parsed : event.target.value);
+            }}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="param-bellman-start-node" className="text-xs font-medium">
+            Start Node
+          </label>
+          <Input
+            id="param-bellman-start-node"
+            type="number"
+            min={0}
+            value={startNode}
+            onChange={(event) => {
+              const parsed = Number(event.target.value);
+              setParam("startNode", Number.isFinite(parsed) ? parsed : event.target.value);
+            }}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="param-bellman-edges" className="text-xs font-medium">
+              Directed Weighted Edges
+            </label>
+            <InlineHelp text="Use comma-separated edges like 0>1:6, 1>4:-4. Duplicate directions keep the lowest weight." />
+          </div>
+          <Input
+            id="param-bellman-edges"
+            value={edges}
+            onChange={(event) => setParam("edges", event.target.value)}
+            placeholder={BELLMAN_FORD_DEFAULT_PARAMS.edges}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Round Control</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={stopEarlyWhenStable ? "secondary" : "outline"}
+              onClick={() => setParam("stopEarlyWhenStable", true)}
+            >
+              Stop When Stable
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={stopEarlyWhenStable ? "outline" : "secondary"}
+              onClick={() => setParam("stopEarlyWhenStable", false)}
+            >
+              Run Full Passes
+            </Button>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Edge Ordering</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={preferLowerIndex ? "secondary" : "outline"}
+              onClick={() => setParam("preferLowerIndex", true)}
+            >
+              Lower Index First
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={preferLowerIndex ? "outline" : "secondary"}
+              onClick={() => setParam("preferLowerIndex", false)}
+            >
+              Higher Index First
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Node count: <span className="font-mono">{normalizedInput?.nodeCount ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Start node: <span className="font-mono">{normalizedInput?.startNode ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Edge count: <span className="font-mono">{normalizedInput?.edges.length ?? "n/a"}</span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result metrics:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? `rounds ${normalizedResult.roundsExecuted}, relaxations ${normalizedResult.relaxations}, reachable ${normalizedResult.reachableCount}`
+                : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Negative cycle:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? normalizedResult.negativeCycle
+                  ? normalizedResult.cycleEdge
+                    ? `${normalizedResult.cycleEdge.from}>${normalizedResult.cycleEdge.to}:${normalizedResult.cycleEdge.weight}`
+                    : "detected"
+                  : "none"
+                : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Distances:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? normalizedResult.distances
+                    .map((distance) => (Number.isFinite(distance) ? String(distance) : "inf"))
+                    .join(", ")
+                : "n/a"}
+            </span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function BidirectionalBfsParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const rows = useMemo(() => {
+    const value = params.rows;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(BIDIRECTIONAL_BFS_DEFAULT_PARAMS.rows);
+  }, [params.rows]);
+
+  const cols = useMemo(() => {
+    const value = params.cols;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(BIDIRECTIONAL_BFS_DEFAULT_PARAMS.cols);
+  }, [params.cols]);
+
+  const startCell = useMemo(() => {
+    const value = params.startCell;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(BIDIRECTIONAL_BFS_DEFAULT_PARAMS.startCell);
+  }, [params.startCell]);
+
+  const targetCell = useMemo(() => {
+    const value = params.targetCell;
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return String(BIDIRECTIONAL_BFS_DEFAULT_PARAMS.targetCell);
+  }, [params.targetCell]);
+
+  const blockedCells = useMemo(() => {
+    const value = params.blockedCells;
+    return typeof value === "string" ? value : BIDIRECTIONAL_BFS_DEFAULT_PARAMS.blockedCells;
+  }, [params.blockedCells]);
+
+  const allowDiagonal = useMemo(
+    () => coerceBoolean(params.allowDiagonal, BIDIRECTIONAL_BFS_DEFAULT_PARAMS.allowDiagonal),
+    [params.allowDiagonal],
+  );
+  const expandSmallerFrontier = useMemo(
+    () =>
+      coerceBoolean(
+        params.expandSmallerFrontier,
+        BIDIRECTIONAL_BFS_DEFAULT_PARAMS.expandSmallerFrontier,
+      ),
+    [params.expandSmallerFrontier],
+  );
+  const preferForwardOnTie = useMemo(
+    () => coerceBoolean(params.preferForwardOnTie, BIDIRECTIONAL_BFS_DEFAULT_PARAMS.preferForwardOnTie),
+    [params.preferForwardOnTie],
+  );
+
+  const normalizedInput =
+    run &&
+    run.algorithmSlug === "bidirectional-bfs" &&
+    typeof run.input === "object" &&
+    run.input !== null
+      ? (run.input as {
+          rows: number;
+          cols: number;
+          startCell: number;
+          targetCell: number;
+          blockedCells: number[];
+          allowDiagonal: boolean;
+          expandSmallerFrontier: boolean;
+          preferForwardOnTie: boolean;
+        })
+      : null;
+
+  const normalizedResult =
+    run &&
+    run.algorithmSlug === "bidirectional-bfs" &&
+    typeof run.result === "object" &&
+    run.result !== null
+      ? (run.result as {
+          found: boolean;
+          distance: number;
+          visitedCount: number;
+          forwardVisitedCount: number;
+          backwardVisitedCount: number;
+          meetingCell: number;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomBidirectionalBfsParams();
+    setParams({
+      rows: randomParams.rows,
+      cols: randomParams.cols,
+      startCell: randomParams.startCell,
+      targetCell: randomParams.targetCell,
+      blockedCells: randomParams.blockedCells,
+      allowDiagonal: randomParams.allowDiagonal,
+      expandSmallerFrontier: randomParams.expandSmallerFrontier,
+      preferForwardOnTie: randomParams.preferForwardOnTie,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Bidirectional BFS
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Configure a grid, optional walls, and two-frontier scheduling rules. Bidirectional BFS grows
+          search waves from both ends until they meet.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <label htmlFor="param-bidirectional-rows" className="text-xs font-medium">
+              Rows
+            </label>
+            <Input
+              id="param-bidirectional-rows"
+              type="number"
+              value={rows}
+              onChange={(event) =>
+                setParam("rows", event.target.value.trim().length === 0 ? "" : Number(event.target.value))
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="param-bidirectional-cols" className="text-xs font-medium">
+              Columns
+            </label>
+            <Input
+              id="param-bidirectional-cols"
+              type="number"
+              value={cols}
+              onChange={(event) =>
+                setParam("cols", event.target.value.trim().length === 0 ? "" : Number(event.target.value))
+              }
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <label htmlFor="param-bidirectional-start-cell" className="text-xs font-medium">
+              Start Cell
+            </label>
+            <Input
+              id="param-bidirectional-start-cell"
+              type="number"
+              value={startCell}
+              onChange={(event) =>
+                setParam(
+                  "startCell",
+                  event.target.value.trim().length === 0 ? "" : Number(event.target.value),
+                )
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="param-bidirectional-target-cell" className="text-xs font-medium">
+              Target Cell
+            </label>
+            <Input
+              id="param-bidirectional-target-cell"
+              type="number"
+              value={targetCell}
+              onChange={(event) =>
+                setParam(
+                  "targetCell",
+                  event.target.value.trim().length === 0 ? "" : Number(event.target.value),
+                )
+              }
+            />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1">
+            <label htmlFor="param-bidirectional-blocked-cells" className="text-xs font-medium">
+              Blocked Cells
+            </label>
+            <InlineHelp text="Blocked cells are removed from both search frontiers and cannot be crossed." />
+          </div>
+          <Input
+            id="param-bidirectional-blocked-cells"
+            value={blockedCells}
+            onChange={(event) => setParam("blockedCells", event.target.value)}
+            placeholder={BIDIRECTIONAL_BFS_DEFAULT_PARAMS.blockedCells}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1">
+            <p className="text-xs font-medium">Neighbor Policy</p>
+            <InlineHelp text="4-direction checks up/right/down/left. 8-direction also includes diagonals." />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={allowDiagonal ? "outline" : "secondary"}
+              onClick={() => setParam("allowDiagonal", false)}
+            >
+              4-Direction
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={allowDiagonal ? "secondary" : "outline"}
+              onClick={() => setParam("allowDiagonal", true)}
+            >
+              8-Direction
+            </Button>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1">
+            <p className="text-xs font-medium">Frontier Scheduling</p>
+            <InlineHelp text="Smaller-frontier mode expands whichever side currently has fewer queued cells." />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={expandSmallerFrontier ? "secondary" : "outline"}
+              onClick={() => setParam("expandSmallerFrontier", true)}
+            >
+              Smaller Frontier
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={expandSmallerFrontier ? "outline" : "secondary"}
+              onClick={() => setParam("expandSmallerFrontier", false)}
+            >
+              Fixed Side
+            </Button>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1">
+            <p className="text-xs font-medium">Tie Policy</p>
+            <InlineHelp text="Controls which side expands first when both frontiers are the same size." />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={preferForwardOnTie ? "secondary" : "outline"}
+              onClick={() => setParam("preferForwardOnTie", true)}
+            >
+              Prefer Forward
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={preferForwardOnTie ? "outline" : "secondary"}
+              onClick={() => setParam("preferForwardOnTie", false)}
+            >
+              Prefer Backward
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Grid:{" "}
+            <span className="font-mono">
+              {normalizedInput ? `${normalizedInput.rows} x ${normalizedInput.cols}` : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Start / Target:{" "}
+            <span className="font-mono">
+              {normalizedInput ? `${normalizedInput.startCell} / ${normalizedInput.targetCell}` : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Strategy:{" "}
+            <span className="font-mono">
+              {normalizedInput
+                ? `${normalizedInput.expandSmallerFrontier ? "smaller-frontier" : "fixed"} / ${normalizedInput.preferForwardOnTie ? "forward-tie" : "backward-tie"}`
+                : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? normalizedResult.found
+                  ? `found in ${normalizedResult.distance} step(s), meet ${normalizedResult.meetingCell}, visited ${normalizedResult.visitedCount}`
+                  : `not found, visited ${normalizedResult.visitedCount}`
+                : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Frontier visits:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? `${normalizedResult.forwardVisitedCount} / ${normalizedResult.backwardVisitedCount}`
                 : "n/a"}
             </span>
           </p>

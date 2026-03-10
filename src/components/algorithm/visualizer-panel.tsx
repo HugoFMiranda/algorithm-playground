@@ -5,6 +5,13 @@ import type { AStarInput, AStarResult } from "@/algorithms/a-star/spec";
 import type { AStarStepEvent } from "@/algorithms/a-star/engine";
 import type { BinarySearchResult, BinarySearchInput } from "@/algorithms/binary-search/spec";
 import type { BinarySearchStepEvent } from "@/algorithms/binary-search/engine";
+import type {
+  BidirectionalBfsInput,
+  BidirectionalBfsResult,
+} from "@/algorithms/bidirectional-bfs/spec";
+import type { BidirectionalBfsStepEvent } from "@/algorithms/bidirectional-bfs/engine";
+import type { BellmanFordInput, BellmanFordResult } from "@/algorithms/bellman-ford/spec";
+import type { BellmanFordStepEvent } from "@/algorithms/bellman-ford/engine";
 import type { BfsInput, BfsResult } from "@/algorithms/bfs/spec";
 import type { BfsStepEvent } from "@/algorithms/bfs/engine";
 import type { BubbleSortInput, BubbleSortResult } from "@/algorithms/bubble-sort/spec";
@@ -87,6 +94,10 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
     return <BfsVisualizer run={run} cursor={cursor} />;
   }
 
+  if (algorithm.slug === "bidirectional-bfs") {
+    return <BidirectionalBfsVisualizer run={run} cursor={cursor} />;
+  }
+
   if (algorithm.slug === "dfs") {
     return <DfsVisualizer run={run} cursor={cursor} />;
   }
@@ -125,6 +136,10 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
 
   if (algorithm.slug === "prim-mst") {
     return <PrimMstVisualizer run={run} cursor={cursor} />;
+  }
+
+  if (algorithm.slug === "bellman-ford") {
+    return <BellmanFordVisualizer run={run} cursor={cursor} />;
   }
 
   if (algorithm.slug === "insertion-sort") {
@@ -301,6 +316,23 @@ interface BfsFrame {
   depth: number | null;
   found: boolean;
   completed: boolean;
+}
+
+interface BidirectionalBfsFrame {
+  forwardVisited: Set<number>;
+  backwardVisited: Set<number>;
+  queuedForward: Set<number>;
+  queuedBackward: Set<number>;
+  blocked: Set<number>;
+  path: Set<number>;
+  current: number | null;
+  currentDirection: "forward" | "backward" | null;
+  inspected: number | null;
+  inspectStatus: "blocked" | "visited-self" | "enqueue" | "meet" | null;
+  inspectedDirection: "forward" | "backward" | null;
+  meetingCell: number | null;
+  completed: boolean;
+  found: boolean;
 }
 
 function toGridLabel(cell: number, cols: number): string {
@@ -773,6 +805,402 @@ function formatBfsStepMessage(step: BfsStepEvent): string {
   }
 
   return `Search exhausted after ${step.payload.layers} layer(s), visited ${step.payload.visitedCount} cells.`;
+}
+
+function BidirectionalBfsVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const setParams = useAppStore((state) => state.setParams);
+  const playbackStatus = useAppStore((state) => state.playback.status);
+  const compactComplexity = getCompactCurrentComplexity("bidirectional-bfs", run);
+  const typedRun =
+    run && run.algorithmSlug === "bidirectional-bfs"
+      ? {
+          ...run,
+          input: run.input as BidirectionalBfsInput,
+          result: run.result as BidirectionalBfsResult,
+          steps: run.steps as BidirectionalBfsStepEvent[],
+        }
+      : null;
+
+  const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
+  const frame = useMemo(() => deriveBidirectionalBfsFrame(typedRun, cursor), [typedRun, cursor]);
+  const stepLabel = activeStep ? formatBidirectionalBfsStepLabel(activeStep) : "Ready";
+  const stepMessage = activeStep
+    ? formatBidirectionalBfsStepMessage(activeStep)
+    : "Press Play or Step to start execution.";
+  const totalCells = typedRun ? typedRun.input.rows * typedRun.input.cols : 0;
+  const canEdit = playbackStatus !== "playing";
+  const [activeTool, setActiveTool] = useState<PathGridTool>("none");
+
+  const applyTool = useCallback(
+    (cell: number) => {
+      if (!typedRun || !canEdit || cell < 0 || cell >= totalCells) {
+        return;
+      }
+
+      const blocked = new Set<number>(typedRun.input.blockedCells);
+      const previousBlocked = new Set<number>(typedRun.input.blockedCells);
+      let nextStart = typedRun.input.startCell;
+      let nextTarget = typedRun.input.targetCell;
+
+      if (activeTool === "start") {
+        nextStart = cell;
+        blocked.delete(cell);
+      } else if (activeTool === "target") {
+        nextTarget = cell;
+        blocked.delete(cell);
+      } else if (activeTool === "block") {
+        if (cell === nextStart || cell === nextTarget) {
+          return;
+        }
+        blocked.add(cell);
+      } else if (activeTool === "erase") {
+        blocked.delete(cell);
+      }
+
+      if (
+        nextStart === typedRun.input.startCell &&
+        nextTarget === typedRun.input.targetCell &&
+        areNumberSetsEqual(blocked, previousBlocked)
+      ) {
+        return;
+      }
+
+      setParams({
+        startCell: nextStart,
+        targetCell: nextTarget,
+        blockedCells: serializeCellList(blocked),
+      });
+    },
+    [activeTool, canEdit, setParams, totalCells, typedRun],
+  );
+
+  const paintHandlers = useGridPaint(activeTool, ["block", "erase"], canEdit, applyTool);
+
+  return (
+    <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg">Visualizer</CardTitle>
+          <div className="flex items-center gap-2">
+            {compactComplexity ? (
+              <Badge variant="outline" className="rounded-full border-border/70">
+                {compactComplexity}
+              </Badge>
+            ) : null}
+            <Badge variant="secondary" className="rounded-full border-border/70">
+              Bidirectional BFS
+            </Badge>
+          </div>
+        </div>
+        <CardDescription>
+          Two-frontier grid playback showing forward and backward waves, intersection checks, and the final
+          meeting path.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Grid</p>
+            <p className="font-mono text-base">
+              {typedRun ? `${typedRun.input.rows} x ${typedRun.input.cols}` : "n/a"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Visited</p>
+            <p className="font-mono text-base">
+              {typedRun
+                ? `${typedRun.result.visitedCount} (${typedRun.result.forwardVisitedCount}/${typedRun.result.backwardVisitedCount})`
+                : "n/a"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Meeting</p>
+            <p className="font-mono text-base">
+              {typedRun?.result.found ? typedRun.result.meetingCell : typedRun ? "n/a" : "n/a"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Result</p>
+            <p className="font-mono text-base">
+              {typedRun?.result.found
+                ? `Path ${typedRun.result.distance}`
+                : typedRun && frame.completed
+                  ? "Not Found"
+                  : "Searching"}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="space-y-1.5 rounded-lg border border-border/70 bg-background/50 p-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <GridToolBar
+                activeTool={activeTool}
+                tools={[
+                  { id: "none", label: "None" },
+                  { id: "start", label: "Start" },
+                  { id: "target", label: "Target" },
+                  { id: "block", label: "Block" },
+                  { id: "erase", label: "Erase" },
+                ]}
+                disabled={!typedRun || !canEdit}
+                onToolChange={setActiveTool}
+              />
+              {!canEdit ? (
+                <p className="text-muted-foreground text-[11px]">Pause playback to edit the grid.</p>
+              ) : activeTool === "none" ? (
+                <p className="text-muted-foreground text-[11px]">Safe mode: choose a tool to edit the grid.</p>
+              ) : (
+                <p className="text-muted-foreground text-[11px]">Click or drag to apply the active tool.</p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="rounded-full border-border/70">
+              {stepLabel}
+            </Badge>
+            <p className="text-muted-foreground">{stepMessage}</p>
+          </div>
+          {typedRun ? (
+            <div
+              className="grid gap-2"
+              style={{ gridTemplateColumns: `repeat(${typedRun.input.cols}, minmax(0, 1fr))` }}
+            >
+              {Array.from({ length: totalCells }, (_, cell) => {
+                const isStart = cell === typedRun.input.startCell;
+                const isTarget = cell === typedRun.input.targetCell;
+                const isBlocked = frame.blocked.has(cell);
+                const isForwardVisited = frame.forwardVisited.has(cell);
+                const isBackwardVisited = frame.backwardVisited.has(cell);
+                const isQueuedForward = frame.queuedForward.has(cell);
+                const isQueuedBackward = frame.queuedBackward.has(cell);
+                const isPath = frame.path.has(cell);
+                const isCurrent = frame.current === cell;
+                const isInspected = frame.inspected === cell;
+                const isMeeting = frame.meetingCell === cell;
+
+                return (
+                  <div
+                    key={cell}
+                    onPointerDown={() => paintHandlers.onPointerDown(cell)}
+                    onPointerEnter={() => paintHandlers.onPointerEnter(cell)}
+                    className={cn(
+                      "rounded-lg border p-2 select-none",
+                      isBlocked && "border-zinc-500/70 bg-zinc-500/25 text-zinc-900 dark:text-zinc-100",
+                      isForwardVisited && "border-sky-300/60 bg-sky-500/12",
+                      isBackwardVisited && "border-fuchsia-300/60 bg-fuchsia-500/12",
+                      isQueuedForward && "border-cyan-300/60 bg-cyan-500/12",
+                      isQueuedBackward && "border-pink-300/60 bg-pink-500/12",
+                      isPath && "border-emerald-300/70 bg-emerald-500/20",
+                      isMeeting && "border-violet-300/80 bg-violet-500/22",
+                      isCurrent &&
+                        frame.currentDirection === "forward" &&
+                        "border-amber-300/70 bg-amber-500/20",
+                      isCurrent &&
+                        frame.currentDirection === "backward" &&
+                        "border-orange-300/70 bg-orange-500/20",
+                      isInspected &&
+                        frame.inspectStatus === "blocked" &&
+                        "border-red-300/70 bg-red-500/18",
+                      isInspected &&
+                        frame.inspectStatus === "enqueue" &&
+                        frame.inspectedDirection === "forward" &&
+                        "border-cyan-300/70 bg-cyan-500/20",
+                      isInspected &&
+                        frame.inspectStatus === "enqueue" &&
+                        frame.inspectedDirection === "backward" &&
+                        "border-pink-300/70 bg-pink-500/20",
+                      isInspected && frame.inspectStatus === "meet" && "border-violet-300/80 bg-violet-500/24",
+                      isStart && "ring-1 ring-blue-300/70",
+                      isTarget && "ring-1 ring-rose-300/70",
+                      typedRun && canEdit && "cursor-pointer",
+                      (!typedRun || !canEdit) && "cursor-default",
+                    )}
+                  >
+                    <p className="text-muted-foreground text-[10px]">{toGridLabel(cell, typedRun.input.cols)}</p>
+                    <p className="font-mono text-xs">
+                      {isStart ? "S" : isTarget ? "T" : isBlocked ? "#" : cell}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+          {!typedRun ? (
+            <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-border/70 p-4 text-xs">
+              <SearchIcon className="size-3.5" />
+              No Bidirectional BFS run available for visualization.
+            </div>
+          ) : null}
+        </div>
+
+        <div className="text-muted-foreground text-xs">
+          Legend: <span className="font-medium">S/T</span> start/target, <span className="font-medium">#</span>{" "}
+          blocked, forward queue/visited (cyan/blue), backward queue/visited (pink/fuchsia), active side
+          (amber/orange), meet (violet), final path (green).
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function deriveBidirectionalBfsFrame(
+  run: {
+    input: BidirectionalBfsInput;
+    result: BidirectionalBfsResult;
+    steps: BidirectionalBfsStepEvent[];
+  } | null,
+  cursor: number,
+): BidirectionalBfsFrame {
+  const frame: BidirectionalBfsFrame = {
+    forwardVisited: new Set<number>(),
+    backwardVisited: new Set<number>(),
+    queuedForward: new Set<number>(),
+    queuedBackward: new Set<number>(),
+    blocked: new Set<number>(run?.input.blockedCells ?? []),
+    path: new Set<number>(),
+    current: null,
+    currentDirection: null,
+    inspected: null,
+    inspectStatus: null,
+    inspectedDirection: null,
+    meetingCell: null,
+    completed: false,
+    found: false,
+  };
+
+  if (!run || cursor < 0 || run.steps.length === 0) {
+    return frame;
+  }
+
+  const boundedCursor = Math.min(cursor, run.steps.length - 1);
+  for (let index = 0; index <= boundedCursor; index += 1) {
+    const step = run.steps[index];
+
+    if (step.type === "enqueue-frontier") {
+      if (step.payload.direction === "forward") {
+        frame.queuedForward.add(step.payload.cell);
+      } else {
+        frame.queuedBackward.add(step.payload.cell);
+      }
+      frame.inspected = null;
+      frame.inspectStatus = null;
+      frame.inspectedDirection = null;
+      continue;
+    }
+
+    if (step.type === "visit") {
+      frame.current = step.payload.cell;
+      frame.currentDirection = step.payload.direction;
+      if (step.payload.direction === "forward") {
+        frame.queuedForward.delete(step.payload.cell);
+        frame.forwardVisited.add(step.payload.cell);
+      } else {
+        frame.queuedBackward.delete(step.payload.cell);
+        frame.backwardVisited.add(step.payload.cell);
+      }
+      frame.inspected = null;
+      frame.inspectStatus = null;
+      frame.inspectedDirection = null;
+      continue;
+    }
+
+    if (step.type === "inspect-neighbor") {
+      frame.inspected = step.payload.to;
+      frame.inspectStatus = step.payload.status;
+      frame.inspectedDirection = step.payload.direction;
+      continue;
+    }
+
+    if (step.type === "frontier-turn-complete") {
+      frame.current = null;
+      frame.currentDirection = null;
+      frame.inspected = null;
+      frame.inspectStatus = null;
+      frame.inspectedDirection = null;
+      continue;
+    }
+
+    if (step.type === "meet-detected") {
+      frame.found = true;
+      frame.completed = true;
+      frame.current = step.payload.to;
+      frame.currentDirection = step.payload.direction;
+      frame.meetingCell = step.payload.meetingCell;
+      frame.path = new Set<number>(run.result.pathCells);
+      continue;
+    }
+
+    frame.completed = true;
+    frame.found = false;
+    frame.current = null;
+    frame.currentDirection = null;
+    frame.inspected = null;
+    frame.inspectStatus = null;
+    frame.inspectedDirection = null;
+  }
+
+  return frame;
+}
+
+function formatBidirectionalBfsStepLabel(step: BidirectionalBfsStepEvent): string {
+  if (step.type === "enqueue-frontier") {
+    return "Queue Frontier";
+  }
+
+  if (step.type === "visit") {
+    return `${step.payload.direction === "forward" ? "Forward" : "Backward"} Visit`;
+  }
+
+  if (step.type === "inspect-neighbor") {
+    return "Inspect Neighbor";
+  }
+
+  if (step.type === "frontier-turn-complete") {
+    return "Turn Complete";
+  }
+
+  if (step.type === "meet-detected") {
+    return "Frontiers Meet";
+  }
+
+  return "No Path";
+}
+
+function formatBidirectionalBfsStepMessage(step: BidirectionalBfsStepEvent): string {
+  if (step.type === "enqueue-frontier") {
+    return `${step.payload.direction} frontier queues cell ${step.payload.cell} at depth ${step.payload.depth}.`;
+  }
+
+  if (step.type === "visit") {
+    return `${step.payload.direction} frontier visits cell ${step.payload.cell} at depth ${step.payload.depth}.`;
+  }
+
+  if (step.type === "inspect-neighbor") {
+    if (step.payload.status === "blocked") {
+      return `${step.payload.direction} frontier sees blocked neighbor ${step.payload.to} from ${step.payload.from}.`;
+    }
+
+    if (step.payload.status === "visited-self") {
+      return `${step.payload.direction} frontier skips already discovered neighbor ${step.payload.to}.`;
+    }
+
+    if (step.payload.status === "meet") {
+      return `${step.payload.direction} frontier reaches ${step.payload.to} and intersects the opposite search.`;
+    }
+
+    return `${step.payload.direction} frontier discovers ${step.payload.to} from ${step.payload.from}.`;
+  }
+
+  if (step.type === "frontier-turn-complete") {
+    return `${step.payload.direction} depth ${step.payload.depth} complete with ${step.payload.frontierSize} cell(s) queued next.`;
+  }
+
+  if (step.type === "meet-detected") {
+    return `Frontiers meet at ${step.payload.meetingCell}; shortest path length is ${step.payload.totalDistance}.`;
+  }
+
+  return `Search exhausted after ${step.payload.turns} turn(s), visited ${step.payload.visitedCount} cells.`;
 }
 
 interface DfsFrame {
@@ -4934,6 +5362,392 @@ function formatPrimMstStepMessage(step: PrimMstStepEvent): string {
   return step.payload.connected
     ? `Completed connected MST with total weight ${step.payload.totalWeight}.`
     : `Completed spanning forest with ${step.payload.components} components.`;
+}
+
+interface BellmanFordFrame {
+  distances: number[];
+  parents: number[];
+  reachableNodes: Set<number>;
+  updatedNodes: Set<number>;
+  currentEdgeKey: string | null;
+  negativeCycleEdgeKey: string | null;
+  round: number;
+  roundsExecuted: number;
+  relaxations: number;
+  reachableCount: number;
+  negativeCycle: boolean;
+  completed: boolean;
+}
+
+function toBellmanFordEdgeKey(from: number, to: number, weight: number): string {
+  return `${from}>${to}:${weight}`;
+}
+
+function BellmanFordVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const compactComplexity = getCompactCurrentComplexity("bellman-ford", run);
+  const typedRun =
+    run && run.algorithmSlug === "bellman-ford"
+      ? {
+          ...run,
+          input: run.input as BellmanFordInput,
+          result: run.result as BellmanFordResult,
+          steps: run.steps as BellmanFordStepEvent[],
+        }
+      : null;
+
+  const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
+  const frame = useMemo(() => deriveBellmanFordFrame(typedRun, cursor), [typedRun, cursor]);
+  const stepLabel = activeStep ? formatBellmanFordStepLabel(activeStep) : "Ready";
+  const stepMessage = activeStep
+    ? formatBellmanFordStepMessage(activeStep)
+    : "Press Play or Step to start execution.";
+  const nodeCount = typedRun?.input.nodeCount ?? 0;
+  const nodeIds = useMemo(() => Array.from({ length: nodeCount }, (_, index) => index), [nodeCount]);
+  const layout = useMemo(() => createKruskalGraphLayout(nodeCount), [nodeCount]);
+  const distanceText = frame.distances
+    .map((distance, index) => `${index}:${Number.isFinite(distance) ? distance : "inf"}`)
+    .join(", ");
+
+  return (
+    <Card className="surface-card min-h-[380px] border-border/70 lg:min-h-[520px]">
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg">Visualizer</CardTitle>
+          <div className="flex items-center gap-2">
+            {compactComplexity ? (
+              <Badge variant="outline" className="rounded-full border-border/70">
+                {compactComplexity}
+              </Badge>
+            ) : null}
+            <Badge variant="secondary" className="rounded-full border-border/70">
+              Bellman-Ford
+            </Badge>
+          </div>
+        </div>
+        <CardDescription>
+          Directed weighted graph playback with full-edge relaxation rounds, distance updates, and
+          negative-cycle checks.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Nodes / Edges</p>
+            <p className="font-mono text-base">{nodeCount} / {typedRun?.input.edges.length ?? 0}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Round</p>
+            <p className="font-mono text-base">{frame.round || "n/a"}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Relaxations</p>
+            <p className="font-mono text-base">{frame.relaxations}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Result</p>
+            <p className="font-mono text-base">
+              {frame.completed ? (frame.negativeCycle ? "Negative Cycle" : "Shortest Paths") : "Processing"}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="rounded-full border-border/70">
+              {stepLabel}
+            </Badge>
+            <p className="text-muted-foreground">{stepMessage}</p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Progress</p>
+              <p className="font-mono text-xs">
+                rounds {frame.roundsExecuted}, reachable {frame.reachableCount}, relaxations {frame.relaxations}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Distances</p>
+              <p className="font-mono text-xs">{distanceText || "n/a"}</p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Parents</p>
+              <p className="font-mono text-xs">{frame.parents.join(", ")}</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/80 bg-background/70 p-3">
+            <div className="overflow-hidden rounded-lg border border-border/70 bg-[radial-gradient(circle_at_20%_10%,rgba(14,165,233,0.08),transparent_52%),radial-gradient(circle_at_80%_88%,rgba(99,102,241,0.08),transparent_48%)]">
+              <svg viewBox={`0 0 ${layout.width} ${layout.height}`} className="h-[340px] w-full">
+                <defs>
+                  <marker
+                    id="bellman-arrow"
+                    viewBox="0 0 10 10"
+                    refX="8.6"
+                    refY="5"
+                    markerWidth="4"
+                    markerHeight="4"
+                    orient="auto-start-reverse"
+                  >
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(148, 163, 184, 0.9)" />
+                  </marker>
+                </defs>
+
+                {typedRun?.input.edges.map((edge, edgeIndex) => {
+                  const fromPosition = layout.positions[edge.from];
+                  const toPosition = layout.positions[edge.to];
+                  if (!fromPosition || !toPosition) {
+                    return null;
+                  }
+
+                  const edgeKey = toBellmanFordEdgeKey(edge.from, edge.to, edge.weight);
+                  const isCurrent = frame.currentEdgeKey === edgeKey;
+                  const isNegativeCycle = frame.negativeCycleEdgeKey === edgeKey;
+                  const isParentEdge =
+                    frame.parents[edge.to] === edge.from && Number.isFinite(frame.distances[edge.to]);
+                  const stroke = isNegativeCycle
+                    ? "rgba(244, 63, 94, 0.88)"
+                    : isCurrent
+                      ? "rgba(245, 158, 11, 0.95)"
+                      : isParentEdge
+                        ? "rgba(16, 185, 129, 0.9)"
+                        : "rgba(148, 163, 184, 0.56)";
+                  const strokeWidth = isNegativeCycle || isCurrent || isParentEdge ? 1.55 : 1.02;
+                  const midX = (fromPosition.x + toPosition.x) / 2;
+                  const midY = (fromPosition.y + toPosition.y) / 2;
+
+                  return (
+                    <g key={`bellman-edge-${edge.from}-${edge.to}-${edge.weight}-${edgeIndex}`}>
+                      <line
+                        x1={fromPosition.x}
+                        y1={fromPosition.y}
+                        x2={toPosition.x}
+                        y2={toPosition.y}
+                        stroke={stroke}
+                        strokeWidth={strokeWidth}
+                        markerEnd="url(#bellman-arrow)"
+                        vectorEffect="non-scaling-stroke"
+                      />
+                      <text
+                        x={midX}
+                        y={midY - 2}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="fill-foreground font-mono text-[2.4px]"
+                      >
+                        {edge.weight}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {nodeIds.map((node) => {
+                  const position = layout.positions[node];
+                  if (!position) {
+                    return null;
+                  }
+
+                  const isReachable = frame.reachableNodes.has(node);
+                  const isUpdated = frame.updatedNodes.has(node);
+                  const fill = isUpdated
+                    ? "rgba(245, 158, 11, 0.24)"
+                    : isReachable
+                      ? "rgba(16, 185, 129, 0.22)"
+                      : "rgba(15, 23, 42, 0.16)";
+                  const stroke = isUpdated
+                    ? "rgba(245, 158, 11, 0.86)"
+                    : isReachable
+                      ? "rgba(16, 185, 129, 0.82)"
+                      : "rgba(148, 163, 184, 0.82)";
+
+                  return (
+                    <g key={`bellman-node-${node}`} transform={`translate(${position.x} ${position.y})`}>
+                      <circle r={layout.nodeRadius} fill={fill} stroke={stroke} strokeWidth={1.2} />
+                      <text
+                        x="0"
+                        y="-0.6"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fontSize="3"
+                        fontWeight="700"
+                        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+                        className="fill-foreground"
+                      >
+                        {node}
+                      </text>
+                      <text
+                        x="0"
+                        y="3.6"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fontSize="2.1"
+                        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+                        className="fill-muted-foreground"
+                      >
+                        {Number.isFinite(frame.distances[node]) ? frame.distances[node] : "inf"}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-amber-500/75" />
+                current edge / updated node
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-emerald-500/75" />
+                shortest-path tree / reachable
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-rose-500/75" />
+                negative cycle edge
+              </span>
+            </div>
+          </div>
+
+          {nodeIds.length === 0 ? (
+            <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-border/70 p-4 text-xs">
+              <SearchIcon className="size-3.5" />
+              No nodes available for visualization.
+            </div>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function deriveBellmanFordFrame(
+  run: {
+    input: BellmanFordInput;
+    result: BellmanFordResult;
+    steps: BellmanFordStepEvent[];
+  } | null,
+  cursor: number,
+): BellmanFordFrame {
+  const nodeCount = run?.input.nodeCount ?? 0;
+  const startNode = run?.input.startNode ?? 0;
+  const frame: BellmanFordFrame = {
+    distances: Array.from({ length: nodeCount }, (_, index) =>
+      index === startNode ? 0 : Number.POSITIVE_INFINITY,
+    ),
+    parents: Array.from({ length: nodeCount }, () => -1),
+    reachableNodes: nodeCount > 0 ? new Set<number>([startNode]) : new Set<number>(),
+    updatedNodes: new Set<number>(),
+    currentEdgeKey: null,
+    negativeCycleEdgeKey: null,
+    round: 0,
+    roundsExecuted: 0,
+    relaxations: 0,
+    reachableCount: nodeCount > 0 ? 1 : 0,
+    negativeCycle: false,
+    completed: false,
+  };
+
+  if (!run || cursor < 0 || run.steps.length === 0) {
+    return frame;
+  }
+
+  const boundedCursor = Math.min(cursor, run.steps.length - 1);
+  for (let index = 0; index <= boundedCursor; index += 1) {
+    const step = run.steps[index];
+
+    if (step.type === "relaxation-round") {
+      frame.round = step.payload.round;
+      frame.updatedNodes = new Set<number>();
+      frame.currentEdgeKey = null;
+      continue;
+    }
+
+    if (step.type === "edge-relax") {
+      frame.currentEdgeKey = toBellmanFordEdgeKey(step.payload.from, step.payload.to, step.payload.weight);
+      continue;
+    }
+
+    if (step.type === "distance-update") {
+      frame.distances[step.payload.node] = step.payload.nextDistance;
+      frame.parents[step.payload.node] = step.payload.parent;
+      frame.updatedNodes.add(step.payload.node);
+      frame.reachableNodes.add(step.payload.node);
+      frame.relaxations += 1;
+      frame.reachableCount = frame.reachableNodes.size;
+      continue;
+    }
+
+    if (step.type === "negative-cycle-edge") {
+      frame.negativeCycle = true;
+      frame.negativeCycleEdgeKey = toBellmanFordEdgeKey(step.payload.from, step.payload.to, step.payload.weight);
+      frame.currentEdgeKey = frame.negativeCycleEdgeKey;
+      continue;
+    }
+
+    frame.roundsExecuted = step.payload.roundsExecuted;
+    frame.relaxations = step.payload.relaxations;
+    frame.reachableCount = step.payload.reachableCount;
+    frame.negativeCycle = step.payload.negativeCycle;
+    frame.completed = true;
+    frame.currentEdgeKey = null;
+    frame.updatedNodes = new Set<number>();
+    frame.distances = [...run.result.distances];
+    frame.parents = [...run.result.parents];
+    frame.reachableNodes = new Set<number>(
+      run.result.distances
+        .map((distance, node) => (Number.isFinite(distance) ? node : -1))
+        .filter((node) => node >= 0),
+    );
+    if (run.result.cycleEdge) {
+      frame.negativeCycleEdgeKey = toBellmanFordEdgeKey(
+        run.result.cycleEdge.from,
+        run.result.cycleEdge.to,
+        run.result.cycleEdge.weight,
+      );
+    }
+  }
+
+  return frame;
+}
+
+function formatBellmanFordStepLabel(step: BellmanFordStepEvent): string {
+  if (step.type === "relaxation-round") {
+    return "Relaxation Round";
+  }
+  if (step.type === "edge-relax") {
+    return "Relax Edge";
+  }
+  if (step.type === "distance-update") {
+    return "Distance Update";
+  }
+  if (step.type === "negative-cycle-edge") {
+    return "Negative Cycle";
+  }
+  return "Complete";
+}
+
+function formatBellmanFordStepMessage(step: BellmanFordStepEvent): string {
+  if (step.type === "relaxation-round") {
+    return `Start round ${step.payload.round} of ${step.payload.totalRounds}.`;
+  }
+  if (step.type === "edge-relax") {
+    if (step.payload.status === "unreachable") {
+      return `Edge ${step.payload.from}>${step.payload.to} is skipped because ${step.payload.from} is unreachable.`;
+    }
+    if (step.payload.status === "skip") {
+      return `Edge ${step.payload.from}>${step.payload.to} does not improve distance ${step.payload.previousDistance}.`;
+    }
+    return `Edge ${step.payload.from}>${step.payload.to} improves distance to ${step.payload.candidateDistance}.`;
+  }
+  if (step.type === "distance-update") {
+    return `Node ${step.payload.node} now has distance ${step.payload.nextDistance} via ${step.payload.parent}.`;
+  }
+  if (step.type === "negative-cycle-edge") {
+    return `Edge ${step.payload.from}>${step.payload.to} can still relax, so a reachable negative cycle exists.`;
+  }
+  return step.payload.negativeCycle
+    ? `Completed after ${step.payload.roundsExecuted} round(s); reachable negative cycle detected.`
+    : `Completed after ${step.payload.roundsExecuted} round(s) with ${step.payload.reachableCount} reachable node(s).`;
 }
 
 function UnionFindVisualizer({ run, cursor }: SharedVisualizerProps) {

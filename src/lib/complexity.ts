@@ -524,6 +524,62 @@ function getPrimMstComplexity(run: AlgorithmRunSnapshot | null): ComplexitySumma
   };
 }
 
+function getBellmanFordComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
+  let nodeCount = 0;
+  let edgeCount = 0;
+  const stopEarlyWhenStable = parseBooleanParam(run?.normalizedParams.stopEarlyWhenStable, true);
+
+  if (run && isRecord(run.input)) {
+    if ("nodeCount" in run.input && isFiniteNumber(run.input.nodeCount)) {
+      nodeCount = run.input.nodeCount;
+    }
+    if ("edges" in run.input && Array.isArray(run.input.edges)) {
+      edgeCount = run.input.edges.length;
+    }
+  }
+
+  let roundsExecuted: number | null = null;
+  let relaxations: number | null = null;
+  let reachableCount: number | null = null;
+  let negativeCycle: boolean | null = null;
+  if (run && isRecord(run.result)) {
+    if ("roundsExecuted" in run.result && isFiniteNumber(run.result.roundsExecuted)) {
+      roundsExecuted = run.result.roundsExecuted;
+    }
+    if ("relaxations" in run.result && isFiniteNumber(run.result.relaxations)) {
+      relaxations = run.result.relaxations;
+    }
+    if ("reachableCount" in run.result && isFiniteNumber(run.result.reachableCount)) {
+      reachableCount = run.result.reachableCount;
+    }
+    if ("negativeCycle" in run.result && typeof run.result.negativeCycle === "boolean") {
+      negativeCycle = run.result.negativeCycle;
+    }
+  }
+
+  const details = [
+    `Graph size: V=${nodeCount}, E=${edgeCount}`,
+    `stopEarlyWhenStable = ${String(stopEarlyWhenStable)}`,
+    "Bellman-Ford performs repeated full-edge relaxation rounds",
+    roundsExecuted === null
+      ? "Observed rounds/relaxations: pending"
+      : `Observed rounds/relaxations: ${roundsExecuted}/${relaxations ?? "?"}`,
+    reachableCount === null ? "Observed reachable nodes: pending" : `Observed reachable nodes: ${reachableCount}`,
+    negativeCycle === null
+      ? "Negative cycle: pending"
+      : `Negative cycle detected: ${String(negativeCycle)}`,
+  ];
+
+  return {
+    timeBest: stopEarlyWhenStable ? "O(E)" : "O(V * E)",
+    timeAverage: "O(V * E)",
+    timeWorst: "O(V * E)",
+    space: "O(V)",
+    current: edgeCount === 0 ? "O(1) on this graph" : "O(V * E) on this graph",
+    details,
+  };
+}
+
 function getTrieOperationsComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
   let wordCount = 0;
   let queryCount = 0;
@@ -780,6 +836,79 @@ function getBfsComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
   };
 }
 
+function getBidirectionalBfsComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
+  let rows = 0;
+  let cols = 0;
+  let blockedCells = 0;
+  let allowDiagonal = false;
+  let expandSmallerFrontier = true;
+
+  if (run && isRecord(run.input)) {
+    if ("rows" in run.input && isFiniteNumber(run.input.rows)) {
+      rows = run.input.rows;
+    }
+    if ("cols" in run.input && isFiniteNumber(run.input.cols)) {
+      cols = run.input.cols;
+    }
+    if ("blockedCells" in run.input && Array.isArray(run.input.blockedCells)) {
+      blockedCells = run.input.blockedCells.filter(isFiniteNumber).length;
+    }
+    if ("allowDiagonal" in run.input && typeof run.input.allowDiagonal === "boolean") {
+      allowDiagonal = run.input.allowDiagonal;
+    }
+    if ("expandSmallerFrontier" in run.input && typeof run.input.expandSmallerFrontier === "boolean") {
+      expandSmallerFrontier = run.input.expandSmallerFrontier;
+    }
+  }
+
+  const vertexCount = Math.max(0, rows * cols - blockedCells);
+  const edgeFactor = allowDiagonal ? 8 : 4;
+  const estimatedEdges = Math.floor((vertexCount * edgeFactor) / 2);
+
+  let visitedCount: number | null = null;
+  let forwardVisitedCount: number | null = null;
+  let backwardVisitedCount: number | null = null;
+  let distance: number | null = null;
+  let found: boolean | null = null;
+  if (run && isRecord(run.result)) {
+    if ("visitedCount" in run.result && isFiniteNumber(run.result.visitedCount)) {
+      visitedCount = run.result.visitedCount;
+    }
+    if ("forwardVisitedCount" in run.result && isFiniteNumber(run.result.forwardVisitedCount)) {
+      forwardVisitedCount = run.result.forwardVisitedCount;
+    }
+    if ("backwardVisitedCount" in run.result && isFiniteNumber(run.result.backwardVisitedCount)) {
+      backwardVisitedCount = run.result.backwardVisitedCount;
+    }
+    if ("distance" in run.result && isFiniteNumber(run.result.distance)) {
+      distance = run.result.distance;
+    }
+    if ("found" in run.result && typeof run.result.found === "boolean") {
+      found = run.result.found;
+    }
+  }
+
+  const details = [
+    `Grid = ${rows} x ${cols}, blocked = ${blockedCells}`,
+    `Approximate graph size: V=${vertexCount}, E~${estimatedEdges}`,
+    `Neighbor model: ${allowDiagonal ? "8-direction" : "4-direction"}`,
+    `Frontier scheduling: ${expandSmallerFrontier ? "expand smaller frontier first" : "fixed tie policy"}`,
+    visitedCount === null
+      ? "Observed unique visited nodes: pending"
+      : `Observed visited nodes (total/forward/backward): ${visitedCount}/${forwardVisitedCount ?? "?"}/${backwardVisitedCount ?? "?"}`,
+    found === null ? "Result: pending" : `Result: ${found ? `met at distance ${distance}` : "not found"}`,
+  ];
+
+  return {
+    timeBest: "O(1)",
+    timeAverage: "O(V + E)",
+    timeWorst: "O(V + E)",
+    space: "O(V)",
+    current: "O(V + E) on this graph",
+    details,
+  };
+}
+
 function getDfsComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
   let rows = 0;
   let cols = 0;
@@ -989,6 +1118,12 @@ export function getComplexitySummary(
     return getBfsComplexity(run && run.algorithmSlug === "bfs" ? run : null);
   }
 
+  if (algorithmSlug === "bidirectional-bfs") {
+    return getBidirectionalBfsComplexity(
+      run && run.algorithmSlug === "bidirectional-bfs" ? run : null,
+    );
+  }
+
   if (algorithmSlug === "dfs") {
     return getDfsComplexity(run && run.algorithmSlug === "dfs" ? run : null);
   }
@@ -1027,6 +1162,10 @@ export function getComplexitySummary(
 
   if (algorithmSlug === "prim-mst") {
     return getPrimMstComplexity(run && run.algorithmSlug === "prim-mst" ? run : null);
+  }
+
+  if (algorithmSlug === "bellman-ford") {
+    return getBellmanFordComplexity(run && run.algorithmSlug === "bellman-ford" ? run : null);
   }
 
   if (algorithmSlug === "trie-operations") {

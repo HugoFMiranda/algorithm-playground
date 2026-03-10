@@ -2,6 +2,10 @@ import { createAStarRun } from "@/algorithms/a-star/engine";
 import { A_STAR_DEFAULT_PARAMS } from "@/algorithms/a-star/spec";
 import { createBinarySearchRun } from "@/algorithms/binary-search/engine";
 import { BINARY_SEARCH_DEFAULT_PARAMS } from "@/algorithms/binary-search/spec";
+import { createBidirectionalBfsRun } from "@/algorithms/bidirectional-bfs/engine";
+import { BIDIRECTIONAL_BFS_DEFAULT_PARAMS } from "@/algorithms/bidirectional-bfs/spec";
+import { createBellmanFordRun } from "@/algorithms/bellman-ford/engine";
+import { BELLMAN_FORD_DEFAULT_PARAMS } from "@/algorithms/bellman-ford/spec";
 import { createBfsRun } from "@/algorithms/bfs/engine";
 import { BFS_DEFAULT_PARAMS } from "@/algorithms/bfs/spec";
 import { createBubbleSortRun } from "@/algorithms/bubble-sort/engine";
@@ -62,6 +66,12 @@ const ALGORITHM_RUNTIME_REGISTRY: Record<string, AlgorithmRuntimeDefinition> = {
     rendererFamily: "grid",
     defaultParams: { ...BFS_DEFAULT_PARAMS },
     createRun: createBfsRun,
+  },
+  "bidirectional-bfs": {
+    slug: "bidirectional-bfs",
+    rendererFamily: "grid",
+    defaultParams: { ...BIDIRECTIONAL_BFS_DEFAULT_PARAMS },
+    createRun: createBidirectionalBfsRun,
   },
   dfs: {
     slug: "dfs",
@@ -146,6 +156,12 @@ const ALGORITHM_RUNTIME_REGISTRY: Record<string, AlgorithmRuntimeDefinition> = {
     rendererFamily: "graph",
     defaultParams: { ...PRIM_MST_DEFAULT_PARAMS },
     createRun: createPrimMstRun,
+  },
+  "bellman-ford": {
+    slug: "bellman-ford",
+    rendererFamily: "graph",
+    defaultParams: { ...BELLMAN_FORD_DEFAULT_PARAMS },
+    createRun: createBellmanFordRun,
   },
   "trie-operations": {
     slug: "trie-operations",

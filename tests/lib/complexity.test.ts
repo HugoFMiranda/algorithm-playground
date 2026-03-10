@@ -312,8 +312,39 @@ describe("complexity summary", () => {
     expect(summary?.timeWorst).toBe("O(total chars)");
   });
 
+  it("returns bellman-ford complexity with run-aware details", () => {
+    const summary = getComplexitySummary("bellman-ford", {
+      algorithmSlug: "bellman-ford",
+      input: {
+        nodeCount: 5,
+        edges: [
+          { from: 0, to: 1, weight: 6 },
+          { from: 0, to: 2, weight: 7 },
+          { from: 1, to: 3, weight: 5 },
+          { from: 2, to: 3, weight: -3 },
+          { from: 3, to: 1, weight: -2 },
+        ],
+        startNode: 0,
+      },
+      normalizedParams: { stopEarlyWhenStable: true, preferLowerIndex: true },
+      result: {
+        distances: [0, 2, 7, 4, Number.POSITIVE_INFINITY],
+        parents: [-1, 3, 0, 2, -1],
+        roundsExecuted: 3,
+        relaxations: 4,
+        reachableCount: 4,
+        negativeCycle: false,
+        cycleEdge: null,
+      },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(V * E)");
+    expect(summary?.timeWorst).toBe("O(V * E)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
-    expect(getComplexitySummary("bidirectional-bfs", null)).toBeNull();
+    expect(getComplexitySummary("bst-operations", null)).toBeNull();
   });
 
   it("returns compact complexity for implemented algorithms", () => {
@@ -490,6 +521,34 @@ describe("complexity summary", () => {
     expect(compact).toBe("O(V * E)");
   });
 
+  it("returns compact complexity for bellman-ford", () => {
+    const compact = getCompactCurrentComplexity("bellman-ford", {
+      algorithmSlug: "bellman-ford",
+      input: {
+        nodeCount: 5,
+        edges: [
+          { from: 0, to: 1, weight: 6 },
+          { from: 0, to: 2, weight: 7 },
+          { from: 1, to: 3, weight: 5 },
+          { from: 2, to: 3, weight: -3 },
+        ],
+        startNode: 0,
+      },
+      normalizedParams: { stopEarlyWhenStable: true, preferLowerIndex: true },
+      result: {
+        distances: [0, 6, 7, 4, Number.POSITIVE_INFINITY],
+        parents: [-1, 0, 0, 2, -1],
+        roundsExecuted: 2,
+        relaxations: 3,
+        reachableCount: 4,
+        negativeCycle: false,
+        cycleEdge: null,
+      },
+    });
+
+    expect(compact).toBe("O(V * E)");
+  });
+
   it("returns compact complexity for trie-operations", () => {
     const compact = getCompactCurrentComplexity("trie-operations", {
       algorithmSlug: "trie-operations",
@@ -551,6 +610,6 @@ describe("complexity summary", () => {
   });
 
   it("returns null compact complexity for non-implemented algorithms", () => {
-    expect(getCompactCurrentComplexity("bidirectional-bfs", null)).toBeNull();
+    expect(getCompactCurrentComplexity("bst-operations", null)).toBeNull();
   });
 });

@@ -99,6 +99,28 @@ describe("app store playback", () => {
     expect(state.playback.status).toBe("idle");
   });
 
+  it("initializes bidirectional-bfs run from runtime registry", () => {
+    const store = useAppStore.getState();
+    store.initializeAlgorithm("bidirectional-bfs");
+
+    const state = useAppStore.getState();
+    expect(state.selectedAlgorithmSlug).toBe("bidirectional-bfs");
+    expect(state.run).not.toBeNull();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
+  it("initializes bellman-ford run from runtime registry", () => {
+    const store = useAppStore.getState();
+    store.initializeAlgorithm("bellman-ford");
+
+    const state = useAppStore.getState();
+    expect(state.selectedAlgorithmSlug).toBe("bellman-ford");
+    expect(state.run).not.toBeNull();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
   it("initializes quick-sort run from runtime registry", () => {
     const store = useAppStore.getState();
     store.initializeAlgorithm("quick-sort");

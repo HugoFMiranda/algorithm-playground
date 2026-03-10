@@ -73,7 +73,21 @@ describe("algorithm examples registry", () => {
     expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
   });
 
+  it("returns bidirectional-bfs snippets in pseudocode and typescript", () => {
+    const examples = getAlgorithmExamplesBySlug("bidirectional-bfs");
+
+    expect(examples).not.toBeNull();
+    expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
+  });
+
+  it("returns bellman-ford snippets in pseudocode and typescript", () => {
+    const examples = getAlgorithmExamplesBySlug("bellman-ford");
+
+    expect(examples).not.toBeNull();
+    expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
+  });
+
   it("returns null for algorithms without examples", () => {
-    expect(getAlgorithmExamplesBySlug("bidirectional-bfs")).toBeNull();
+    expect(getAlgorithmExamplesBySlug("bst-operations")).toBeNull();
   });
 });

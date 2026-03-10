@@ -7,6 +7,7 @@ describe("algorithm runtime registry", () => {
     const bubbleSortRuntime = getAlgorithmRuntime("bubble-sort");
     const binarySearchRuntime = getAlgorithmRuntime("binary-search");
     const aStarRuntime = getAlgorithmRuntime("a-star");
+    const bidirectionalBfsRuntime = getAlgorithmRuntime("bidirectional-bfs");
     const quickSortRuntime = getAlgorithmRuntime("quick-sort");
     const heapSortRuntime = getAlgorithmRuntime("heap-sort");
     const topologicalRuntime = getAlgorithmRuntime("topological-sort");
@@ -14,6 +15,7 @@ describe("algorithm runtime registry", () => {
     const unionFindRuntime = getAlgorithmRuntime("union-find");
     const kruskalMstRuntime = getAlgorithmRuntime("kruskal-mst");
     const primMstRuntime = getAlgorithmRuntime("prim-mst");
+    const bellmanFordRuntime = getAlgorithmRuntime("bellman-ford");
     const trieOperationsRuntime = getAlgorithmRuntime("trie-operations");
 
     expect(bubbleSortRuntime).not.toBeNull();
@@ -22,6 +24,8 @@ describe("algorithm runtime registry", () => {
     expect(binarySearchRuntime?.slug).toBe("binary-search");
     expect(aStarRuntime).not.toBeNull();
     expect(aStarRuntime?.slug).toBe("a-star");
+    expect(bidirectionalBfsRuntime).not.toBeNull();
+    expect(bidirectionalBfsRuntime?.slug).toBe("bidirectional-bfs");
     expect(quickSortRuntime).not.toBeNull();
     expect(quickSortRuntime?.slug).toBe("quick-sort");
     expect(heapSortRuntime).not.toBeNull();
@@ -36,12 +40,14 @@ describe("algorithm runtime registry", () => {
     expect(kruskalMstRuntime?.slug).toBe("kruskal-mst");
     expect(primMstRuntime).not.toBeNull();
     expect(primMstRuntime?.slug).toBe("prim-mst");
+    expect(bellmanFordRuntime).not.toBeNull();
+    expect(bellmanFordRuntime?.slug).toBe("bellman-ford");
     expect(trieOperationsRuntime).not.toBeNull();
     expect(trieOperationsRuntime?.slug).toBe("trie-operations");
   });
 
   it("returns null for non-implemented algorithms", () => {
-    expect(getAlgorithmRuntime("bidirectional-bfs")).toBeNull();
-    expect(isAlgorithmImplemented("bidirectional-bfs")).toBe(false);
+    expect(getAlgorithmRuntime("bst-operations")).toBeNull();
+    expect(isAlgorithmImplemented("bst-operations")).toBe(false);
   });
 });
