@@ -458,9 +458,55 @@ Each algorithm must define:
   - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Bidirectional BFS (`D3`, Phase 3)
-- Objective: two-frontier convergence behavior.
-- Renderer: grid/graph.
-- Key events: forward-visit, backward-visit, meet-detected.
+- Objective: teach how two BFS frontiers can reduce the explored search area by growing from both start and target until they intersect.
+- Input model:
+  - Grid dimensions (`rows`, `cols`) define cell indexing from `0` to `(rows * cols - 1)`.
+  - `startCell` and `targetCell` are normalized into valid range.
+  - `blockedCells` is parsed from comma/space-separated indices and excludes start/target.
+  - Optional diagonal movement is controlled by a boolean parameter.
+  - Frontier scheduling is controlled by `expandSmallerFrontier` and `preferForwardOnTie`.
+- Params:
+  - `rows` (number, default: `6`)
+  - `cols` (number, default: `8`)
+  - `startCell` (number, default: `0`)
+  - `targetCell` (number, default: `47`)
+  - `blockedCells` (string, default: `10, 11, 18, 19, 20, 28, 35, 36`)
+  - `allowDiagonal` (boolean, default: `false`)
+  - `expandSmallerFrontier` (boolean, default: `true`)
+  - `preferForwardOnTie` (boolean, default: `true`)
+- Human-friendly explanation:
+  - Bidirectional BFS runs one BFS from the start and another from the goal. When the two waves touch, the combined route is the shortest unweighted path.
+- Step event contract:
+  - `enqueue-frontier`: pushes a cell into either the forward or backward frontier with depth and frontier size.
+  - `visit`: marks the active cell currently being expanded by one frontier.
+  - `inspect-neighbor`: classifies a neighbor as `blocked`, `visited-self`, `enqueue`, or `meet`.
+  - `frontier-turn-complete`: summarizes one frontier-layer expansion.
+  - `meet-detected`: reports the meeting cell and shortest path metadata.
+  - `not-found`: terminal miss summary when both frontiers exhaust without intersection.
+- Renderer requirements:
+  - Render deterministic grid state from normalized input.
+  - Distinct cell styling for blocked, forward queued/visited, backward queued/visited, current frontier, meet cell, and final path cells.
+  - Provide direct grid editing tools for start, target, blocked paint, and blocked erase.
+  - Support click + drag paint for blocked and erase tools.
+  - Disable grid editing while playback status is `playing`.
+  - Step status text derived from event payload.
+- Metrics tracked:
+  - Unique visited cell count.
+  - Forward visited cell count.
+  - Backward visited cell count.
+  - Frontier turns executed.
+  - Shortest distance (if found).
+- Edge cases:
+  - `startCell === targetCell` immediately emits deterministic meet/found state.
+  - Fully blocked traversals emit deterministic `not-found` terminal state.
+  - Diagonal toggle and frontier scheduling policy change exploration deterministically.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed params.
+  - Param fallback behavior for malformed index/boolean input.
+  - Frontiers meeting emits deterministic path reconstruction and distance.
+  - Renderer completion state matches result payload.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ## Graph Theory
 
@@ -641,9 +687,49 @@ Each algorithm must define:
   - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Bellman-Ford (`D3`, Phase 3)
-- Objective: repeated relaxations and negative cycle detection.
-- Renderer: directed weighted graph.
-- Key events: relaxation-round, distance-update, negative-cycle-flag.
+- Objective: teach repeated whole-graph relaxation rounds, shortest-path improvements with negative edges, and explicit negative-cycle detection.
+- Input model:
+  - Directed weighted graph nodes are indexed from `0` to `nodeCount - 1`.
+  - Directed edges are provided as text using formats like `u>v:w`, `u->v:w`, or `u:v@w`.
+  - Invalid or out-of-range edges are ignored during normalization.
+  - Duplicate directed pairs keep the lowest deterministic weight.
+  - Empty/invalid input falls back to a deterministic graph with negative edges but no negative cycle.
+- Params:
+  - `nodeCount` (number, default: `7`)
+  - `edges` (string, default: `0>1:6, 0>2:7, 1>2:8, 1>3:5, 1>4:-4, 2>3:-3, 2>4:9, 3>1:-2, 4>0:2, 4>3:7`)
+  - `startNode` (number, default: `0`)
+  - `stopEarlyWhenStable` (boolean, default: `true`)
+  - `preferLowerIndex` (boolean, default: `true`)
+- Human-friendly explanation:
+  - Bellman-Ford keeps trying every edge over and over. Each successful relaxation improves a known shortest path. After enough rounds, any further improvement means a negative cycle is reachable.
+- Step event contract:
+  - `relaxation-round`: announces the current full-edge pass.
+  - `edge-relax`: emits each directed edge evaluation and classifies it as `unreachable`, `skip`, or `update`.
+  - `distance-update`: records a shorter path to a node and its new parent.
+  - `negative-cycle-edge`: emits the first edge that still improves after the main rounds.
+  - `complete`: terminal summary with round count, relaxations, reachable nodes, and cycle status.
+- Renderer requirements:
+  - Directed weighted graph renderer with deterministic node placement.
+  - Distinct styling for current edge, updated edge, reachable nodes, and negative-cycle edge.
+  - Display current distance and parent for each node.
+  - Present current round, total relaxations, reachable node count, and cycle status.
+  - Step status message derived from event payload.
+- Metrics tracked:
+  - Relaxation rounds executed.
+  - Successful relaxations.
+  - Reachable node count.
+  - Negative cycle flag and first cycle edge (if detected).
+- Edge cases:
+  - Unreachable nodes keep infinite distance and parent `-1`.
+  - `stopEarlyWhenStable=true` short-circuits once a full round makes no updates.
+  - Reachable negative cycles emit deterministic `negative-cycle-edge` detection after the main rounds.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed graphs.
+  - Param fallback behavior for malformed node count / edge text / booleans.
+  - Negative-cycle graphs emit deterministic cycle detection.
+  - Renderer completion state matches emitted result payload.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ## Trees and Search
 
