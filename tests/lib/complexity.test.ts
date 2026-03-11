@@ -343,8 +343,40 @@ describe("complexity summary", () => {
     expect(summary?.timeWorst).toBe("O(V * E)");
   });
 
+  it("returns bst-operations complexity with run-aware details", () => {
+    const summary = getComplexitySummary("bst-operations", {
+      algorithmSlug: "bst-operations",
+      input: {
+        initialValues: [40, 24, 65, 12, 32, 50, 78],
+        operations: [
+          { type: "search", value: 32 },
+          { type: "insert", value: 29 },
+          { type: "delete", value: 24 },
+        ],
+      },
+      normalizedParams: { deleteStrategy: "successor" },
+      result: {
+        finalLevelOrder: [40, 29, 65, 12, 32, 50, 78],
+        operationCount: 3,
+        traversedNodes: 8,
+        searchHits: 1,
+        insertsApplied: 1,
+        deletesApplied: 1,
+        duplicateInserts: 0,
+        missingDeletes: 0,
+        nodeCount: 7,
+        treeHeight: 3,
+        rootValue: 40,
+      },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(log n)");
+    expect(summary?.timeWorst).toBe("O(n)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
-    expect(getComplexitySummary("bst-operations", null)).toBeNull();
+    expect(getComplexitySummary("avl-rotations", null)).toBeNull();
   });
 
   it("returns compact complexity for implemented algorithms", () => {
@@ -549,6 +581,36 @@ describe("complexity summary", () => {
     expect(compact).toBe("O(V * E)");
   });
 
+  it("returns compact complexity for bst-operations", () => {
+    const compact = getCompactCurrentComplexity("bst-operations", {
+      algorithmSlug: "bst-operations",
+      input: {
+        initialValues: [40, 24, 65, 12, 32, 50, 78],
+        operations: [
+          { type: "search", value: 32 },
+          { type: "insert", value: 29 },
+          { type: "delete", value: 24 },
+        ],
+      },
+      normalizedParams: { deleteStrategy: "successor" },
+      result: {
+        finalLevelOrder: [40, 29, 65, 12, 32, 50, 78],
+        operationCount: 3,
+        traversedNodes: 8,
+        searchHits: 1,
+        insertsApplied: 1,
+        deletesApplied: 1,
+        duplicateInserts: 0,
+        missingDeletes: 0,
+        nodeCount: 7,
+        treeHeight: 3,
+        rootValue: 40,
+      },
+    });
+
+    expect(compact).toBe("O(h)");
+  });
+
   it("returns compact complexity for trie-operations", () => {
     const compact = getCompactCurrentComplexity("trie-operations", {
       algorithmSlug: "trie-operations",
@@ -610,6 +672,6 @@ describe("complexity summary", () => {
   });
 
   it("returns null compact complexity for non-implemented algorithms", () => {
-    expect(getCompactCurrentComplexity("bst-operations", null)).toBeNull();
+    expect(getCompactCurrentComplexity("avl-rotations", null)).toBeNull();
   });
 });

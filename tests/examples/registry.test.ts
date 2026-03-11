@@ -87,7 +87,14 @@ describe("algorithm examples registry", () => {
     expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
   });
 
+  it("returns bst-operations snippets in pseudocode and typescript", () => {
+    const examples = getAlgorithmExamplesBySlug("bst-operations");
+
+    expect(examples).not.toBeNull();
+    expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
+  });
+
   it("returns null for algorithms without examples", () => {
-    expect(getAlgorithmExamplesBySlug("bst-operations")).toBeNull();
+    expect(getAlgorithmExamplesBySlug("avl-rotations")).toBeNull();
   });
 });

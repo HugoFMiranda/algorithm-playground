@@ -121,6 +121,17 @@ describe("app store playback", () => {
     expect(state.playback.status).toBe("idle");
   });
 
+  it("initializes bst-operations run from runtime registry", () => {
+    const store = useAppStore.getState();
+    store.initializeAlgorithm("bst-operations");
+
+    const state = useAppStore.getState();
+    expect(state.selectedAlgorithmSlug).toBe("bst-operations");
+    expect(state.run).not.toBeNull();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
   it("initializes quick-sort run from runtime registry", () => {
     const store = useAppStore.getState();
     store.initializeAlgorithm("quick-sort");

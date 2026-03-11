@@ -18,6 +18,10 @@ import {
 } from "@/algorithms/bellman-ford/spec";
 import { BFS_DEFAULT_PARAMS, createRandomBfsParams } from "@/algorithms/bfs/spec";
 import {
+  BST_OPERATIONS_DEFAULT_PARAMS,
+  createRandomBstOperationsParams,
+} from "@/algorithms/bst-operations/spec";
+import {
   BUBBLE_SORT_DEFAULT_PARAMS,
   createRandomBubbleSortParams,
 } from "@/algorithms/bubble-sort/spec";
@@ -377,6 +381,19 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
     );
   }
 
+  if (selectedAlgorithmSlug === "bst-operations") {
+    return (
+      <BstOperationsParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
   if (selectedAlgorithmSlug === "bidirectional-bfs") {
     return (
       <BidirectionalBfsParamsCard
@@ -428,8 +445,8 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
         <CardDescription className="text-xs leading-relaxed">
           Parameter schema and validation are enabled for Binary Search, BFS, Bidirectional BFS, DFS,
           Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST,
-          Prim MST, Bellman-Ford, Selection Sort, Insertion Sort, Merge Sort, Invert Binary Tree, and Trie
-          Operations in this milestone.
+          Prim MST, Bellman-Ford, BST Operations, Selection Sort, Insertion Sort, Merge Sort, Invert
+          Binary Tree, and Trie Operations in this milestone.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -4091,6 +4108,186 @@ function InvertBinaryTreeParamsCard({
             <span className="font-mono">
               {normalizedResult
                 ? `visited ${normalizedResult.visitedCount}, swaps ${normalizedResult.swaps}`
+                : "n/a"}
+            </span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function BstOperationsParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const initialValues = useMemo(() => {
+    const value = params.initialValues;
+    return typeof value === "string" ? value : BST_OPERATIONS_DEFAULT_PARAMS.initialValues;
+  }, [params.initialValues]);
+
+  const operations = useMemo(() => {
+    const value = params.operations;
+    return typeof value === "string" ? value : BST_OPERATIONS_DEFAULT_PARAMS.operations;
+  }, [params.operations]);
+
+  const deleteStrategy = useMemo(() => {
+    const value = params.deleteStrategy;
+    return value === "predecessor" ? "predecessor" : BST_OPERATIONS_DEFAULT_PARAMS.deleteStrategy;
+  }, [params.deleteStrategy]);
+
+  const normalizedInput =
+    run && run.algorithmSlug === "bst-operations" && typeof run.input === "object" && run.input !== null
+      ? (run.input as {
+          initialValues: number[];
+          operations: Array<{ type: string; value: number }>;
+          initialLevelOrder: Array<number | null>;
+        })
+      : null;
+
+  const normalizedResult =
+    run && run.algorithmSlug === "bst-operations" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          finalLevelOrder: Array<number | null>;
+          traversedNodes: number;
+          searchHits: number;
+          insertsApplied: number;
+          deletesApplied: number;
+          duplicateInserts: number;
+          missingDeletes: number;
+          nodeCount: number;
+          treeHeight: number;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomBstOperationsParams();
+    setParams({
+      initialValues: randomParams.initialValues,
+      operations: randomParams.operations,
+      deleteStrategy: randomParams.deleteStrategy,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            BST Operations
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Build an initial BST from unique numeric values, then run a deterministic script of search,
+          insert, and delete operations.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="param-bst-initial-values" className="text-xs font-medium">
+              Initial Values
+            </label>
+            <InlineHelp text="Comma-separated unique numbers used to build the starting BST." />
+          </div>
+          <Input
+            id="param-bst-initial-values"
+            value={initialValues}
+            onChange={(event) => setParam("initialValues", event.target.value)}
+            placeholder={BST_OPERATIONS_DEFAULT_PARAMS.initialValues}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="param-bst-operations" className="text-xs font-medium">
+              Operation Script
+            </label>
+            <InlineHelp text="Use commands like: search 32, insert 29, delete 24." />
+          </div>
+          <Input
+            id="param-bst-operations"
+            value={operations}
+            onChange={(event) => setParam("operations", event.target.value)}
+            placeholder={BST_OPERATIONS_DEFAULT_PARAMS.operations}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">Delete Policy</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={deleteStrategy === "successor" ? "secondary" : "outline"}
+              onClick={() => setParam("deleteStrategy", "successor")}
+            >
+              Successor
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={deleteStrategy === "predecessor" ? "secondary" : "outline"}
+              onClick={() => setParam("deleteStrategy", "predecessor")}
+            >
+              Predecessor
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Initial values ({normalizedInput?.initialValues.length ?? 0}):{" "}
+            <span className="font-mono">
+              {normalizedInput?.initialValues.length
+                ? normalizedInput.initialValues.join(", ")
+                : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Operations ({normalizedInput?.operations.length ?? 0}):{" "}
+            <span className="font-mono">
+              {normalizedInput?.operations.length
+                ? normalizedInput.operations
+                    .map((operation) => `${operation.type} ${operation.value}`)
+                    .join(", ")
+                : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Initial tree:{" "}
+            <span className="font-mono">
+              {normalizedInput ? formatNullableNumberList(normalizedInput.initialLevelOrder) : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Final tree:{" "}
+            <span className="font-mono">
+              {normalizedResult ? formatNullableNumberList(normalizedResult.finalLevelOrder) : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result metrics:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? `nodes ${normalizedResult.nodeCount}, height ${normalizedResult.treeHeight}, traversals ${normalizedResult.traversedNodes}`
                 : "n/a"}
             </span>
           </p>

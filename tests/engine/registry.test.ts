@@ -16,6 +16,7 @@ describe("algorithm runtime registry", () => {
     const kruskalMstRuntime = getAlgorithmRuntime("kruskal-mst");
     const primMstRuntime = getAlgorithmRuntime("prim-mst");
     const bellmanFordRuntime = getAlgorithmRuntime("bellman-ford");
+    const bstOperationsRuntime = getAlgorithmRuntime("bst-operations");
     const trieOperationsRuntime = getAlgorithmRuntime("trie-operations");
 
     expect(bubbleSortRuntime).not.toBeNull();
@@ -42,12 +43,14 @@ describe("algorithm runtime registry", () => {
     expect(primMstRuntime?.slug).toBe("prim-mst");
     expect(bellmanFordRuntime).not.toBeNull();
     expect(bellmanFordRuntime?.slug).toBe("bellman-ford");
+    expect(bstOperationsRuntime).not.toBeNull();
+    expect(bstOperationsRuntime?.slug).toBe("bst-operations");
     expect(trieOperationsRuntime).not.toBeNull();
     expect(trieOperationsRuntime?.slug).toBe("trie-operations");
   });
 
   it("returns null for non-implemented algorithms", () => {
-    expect(getAlgorithmRuntime("bst-operations")).toBeNull();
-    expect(isAlgorithmImplemented("bst-operations")).toBe(false);
+    expect(getAlgorithmRuntime("avl-rotations")).toBeNull();
+    expect(isAlgorithmImplemented("avl-rotations")).toBe(false);
   });
 });

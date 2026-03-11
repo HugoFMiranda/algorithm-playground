@@ -8,6 +8,8 @@ import { createBellmanFordRun } from "@/algorithms/bellman-ford/engine";
 import { BELLMAN_FORD_DEFAULT_PARAMS } from "@/algorithms/bellman-ford/spec";
 import { createBfsRun } from "@/algorithms/bfs/engine";
 import { BFS_DEFAULT_PARAMS } from "@/algorithms/bfs/spec";
+import { createBstOperationsRun } from "@/algorithms/bst-operations/engine";
+import { BST_OPERATIONS_DEFAULT_PARAMS } from "@/algorithms/bst-operations/spec";
 import { createBubbleSortRun } from "@/algorithms/bubble-sort/engine";
 import { BUBBLE_SORT_DEFAULT_PARAMS } from "@/algorithms/bubble-sort/spec";
 import { createDijkstraRun } from "@/algorithms/dijkstra/engine";
@@ -138,6 +140,12 @@ const ALGORITHM_RUNTIME_REGISTRY: Record<string, AlgorithmRuntimeDefinition> = {
     rendererFamily: "tree",
     defaultParams: { ...INVERT_BINARY_TREE_DEFAULT_PARAMS },
     createRun: createInvertBinaryTreeRun,
+  },
+  "bst-operations": {
+    slug: "bst-operations",
+    rendererFamily: "tree",
+    defaultParams: { ...BST_OPERATIONS_DEFAULT_PARAMS },
+    createRun: createBstOperationsRun,
   },
   "union-find": {
     slug: "union-find",

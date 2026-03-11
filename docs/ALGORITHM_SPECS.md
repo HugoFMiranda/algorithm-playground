@@ -800,9 +800,53 @@ Each algorithm must define:
   - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### BST Operations (`D2`, Phase 3)
-- Objective: structural changes for insert/search/delete.
-- Renderer: tree.
-- Key events: traverse, insert-node, delete-case.
+- Objective: teach ordered tree navigation and how search, insert, and delete preserve the binary-search-tree invariant.
+- Input model:
+  - Initial tree values are provided as comma/space-separated numbers and inserted in order.
+  - Duplicate initial values are removed deterministically while preserving first occurrence order.
+  - Operation script is provided as comma/newline-separated commands.
+  - Supported operations: `search <value>`, `insert <value>`, `delete <value>`.
+  - Invalid commands are dropped during normalization.
+  - Empty/invalid initial values or operation scripts fallback to deterministic defaults.
+- Params:
+  - `initialValues` (string, default: `40, 24, 65, 12, 32, 50, 78`)
+  - `operations` (string, default: `search 32, insert 29, delete 24, search 24, insert 65, delete 99, insert 90`)
+  - `deleteStrategy` (string enum: `successor | predecessor`, default: `successor`)
+- Human-friendly explanation:
+  - A BST keeps smaller values on the left and larger values on the right, so every operation follows the same comparison rule while changing structure in predictable ways.
+- Step event contract:
+  - `traverse`: emits each visited node during search/insert/delete descent with next-branch metadata.
+  - `insert-node`: emits either a successful new node insertion or a deterministic duplicate-insert no-op.
+  - `search-result`: emits whether the target was found and where the search finished.
+  - `delete-case`: classifies delete handling as `not-found`, `leaf`, `one-child`, or `two-children`.
+  - `delete-relink`: emits structural relinks for root replacement, parent child updates, or replacement-value copy during two-child deletion.
+  - `complete`: terminal summary with traversal count, mutation counts, node count, and tree height.
+- Renderer requirements:
+  - Tree renderer with stable left/right orientation and clear current-node highlighting.
+  - Distinct styling for active traversal node and nodes touched by insert/delete mutations.
+  - Show initial, current, and final level-order snapshots.
+  - Present current operation text and aggregate metrics.
+  - Step status message derived from event payload.
+- Metrics tracked:
+  - Traversed node count.
+  - Search hit count.
+  - Successful inserts and deletes.
+  - Duplicate insert count.
+  - Missing delete count.
+  - Reachable node count and tree height.
+- Edge cases:
+  - Duplicate inserts emit deterministic no-op `insert-node` events.
+  - Deletes of missing values emit deterministic `not-found` cases.
+  - Two-child deletion follows explicit `deleteStrategy` (`successor` vs `predecessor`).
+  - Empty initial trees still support root insertion deterministically.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed trees and operation scripts.
+  - Param fallback behavior for malformed values / operation text / delete strategy.
+  - Duplicate insert and missing delete behaviors remain deterministic.
+  - Successor and predecessor delete strategies produce deterministic but different tree outcomes.
+  - Renderer completion state matches final BST output.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### AVL Rotations (`D3`, Phase 3)
 - Objective: balance factor and rotation cases.

@@ -3,6 +3,7 @@ import { binarySearchExamples } from "@/algorithms/examples/binary-search";
 import { bidirectionalBfsExamples } from "@/algorithms/examples/bidirectional-bfs";
 import { bellmanFordExamples } from "@/algorithms/examples/bellman-ford";
 import { bfsExamples } from "@/algorithms/examples/bfs";
+import { bstOperationsExamples } from "@/algorithms/examples/bst-operations";
 import { bubbleSortExamples } from "@/algorithms/examples/bubble-sort";
 import { dijkstraExamples } from "@/algorithms/examples/dijkstra";
 import { dfsExamples } from "@/algorithms/examples/dfs";
@@ -24,6 +25,7 @@ const EXAMPLES_REGISTRY: Record<string, AlgorithmExamples> = {
   "binary-search": binarySearchExamples,
   "bidirectional-bfs": bidirectionalBfsExamples,
   "bellman-ford": bellmanFordExamples,
+  "bst-operations": bstOperationsExamples,
   "a-star": aStarExamples,
   bfs: bfsExamples,
   dijkstra: dijkstraExamples,

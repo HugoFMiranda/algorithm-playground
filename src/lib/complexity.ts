@@ -640,6 +640,66 @@ function getTrieOperationsComplexity(run: AlgorithmRunSnapshot | null): Complexi
   };
 }
 
+function getBstOperationsComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
+  let nodeCount = 0;
+  let operationCount = 0;
+  let deleteStrategy = "successor";
+
+  if (run && isRecord(run.input)) {
+    if ("initialValues" in run.input && Array.isArray(run.input.initialValues)) {
+      nodeCount = run.input.initialValues.filter(isFiniteNumber).length;
+    }
+    if ("operations" in run.input && Array.isArray(run.input.operations)) {
+      operationCount = run.input.operations.length;
+    }
+  }
+
+  if (run && typeof run.normalizedParams.deleteStrategy === "string") {
+    deleteStrategy = run.normalizedParams.deleteStrategy;
+  }
+
+  let traversedNodes: number | null = null;
+  let insertsApplied: number | null = null;
+  let deletesApplied: number | null = null;
+  let treeHeight: number | null = null;
+  if (run && isRecord(run.result)) {
+    if ("traversedNodes" in run.result && isFiniteNumber(run.result.traversedNodes)) {
+      traversedNodes = run.result.traversedNodes;
+    }
+    if ("insertsApplied" in run.result && isFiniteNumber(run.result.insertsApplied)) {
+      insertsApplied = run.result.insertsApplied;
+    }
+    if ("deletesApplied" in run.result && isFiniteNumber(run.result.deletesApplied)) {
+      deletesApplied = run.result.deletesApplied;
+    }
+    if ("treeHeight" in run.result && isFiniteNumber(run.result.treeHeight)) {
+      treeHeight = run.result.treeHeight;
+    }
+  }
+
+  const details = [
+    `Initial nodes = ${nodeCount}, operations = ${operationCount}`,
+    `deleteStrategy = ${deleteStrategy}`,
+    "Search, insert, and delete follow tree height h: balanced trees trend to O(log n), skewed trees degrade to O(n)",
+    traversedNodes === null
+      ? "Observed traversed nodes: pending"
+      : `Observed traversed nodes: ${traversedNodes}`,
+    insertsApplied === null
+      ? "Observed insert/delete counts: pending"
+      : `Observed inserts/deletes: ${insertsApplied}/${deletesApplied ?? "?"}`,
+    treeHeight === null ? "Observed tree height: pending" : `Observed tree height: ${treeHeight}`,
+  ];
+
+  return {
+    timeBest: "O(1)",
+    timeAverage: "O(log n)",
+    timeWorst: "O(n)",
+    space: "O(1)",
+    current: nodeCount <= 1 ? "O(1) on this tree" : "O(h) per operation on this tree",
+    details,
+  };
+}
+
 function getInvertBinaryTreeComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
   let nodeCount = 0;
   if (run && isRecord(run.input) && "nodes" in run.input && Array.isArray(run.input.nodes)) {
@@ -1166,6 +1226,10 @@ export function getComplexitySummary(
 
   if (algorithmSlug === "bellman-ford") {
     return getBellmanFordComplexity(run && run.algorithmSlug === "bellman-ford" ? run : null);
+  }
+
+  if (algorithmSlug === "bst-operations") {
+    return getBstOperationsComplexity(run && run.algorithmSlug === "bst-operations" ? run : null);
   }
 
   if (algorithmSlug === "trie-operations") {

@@ -14,6 +14,8 @@ import type { BellmanFordInput, BellmanFordResult } from "@/algorithms/bellman-f
 import type { BellmanFordStepEvent } from "@/algorithms/bellman-ford/engine";
 import type { BfsInput, BfsResult } from "@/algorithms/bfs/spec";
 import type { BfsStepEvent } from "@/algorithms/bfs/engine";
+import type { BstOperationsInput, BstOperationsNode, BstOperationsResult } from "@/algorithms/bst-operations/spec";
+import type { BstOperationsStepEvent } from "@/algorithms/bst-operations/engine";
 import type { BubbleSortInput, BubbleSortResult } from "@/algorithms/bubble-sort/spec";
 import type { BubbleSortStepEvent } from "@/algorithms/bubble-sort/engine";
 import type { DijkstraInput, DijkstraResult } from "@/algorithms/dijkstra/spec";
@@ -140,6 +142,10 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
 
   if (algorithm.slug === "bellman-ford") {
     return <BellmanFordVisualizer run={run} cursor={cursor} />;
+  }
+
+  if (algorithm.slug === "bst-operations") {
+    return <BstOperationsVisualizer run={run} cursor={cursor} />;
   }
 
   if (algorithm.slug === "insertion-sort") {
@@ -6194,6 +6200,412 @@ function formatUnionFindStepMessage(step: UnionFindStepEvent): string {
   }
 
   return `Completed ${step.payload.operationsProcessed} operations with ${step.payload.componentCount} component(s).`;
+}
+
+interface BstOperationsFrame {
+  rootId: number | null;
+  nodes: BstOperationsNode[];
+  currentNodeId: number | null;
+  currentOperationText: string | null;
+  lastMutationNodeId: number | null;
+  traversedNodes: number;
+  searchHits: number;
+  insertsApplied: number;
+  deletesApplied: number;
+  duplicateInserts: number;
+  missingDeletes: number;
+  nodeCount: number;
+  treeHeight: number;
+  completed: boolean;
+}
+
+function BstOperationsVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const compactComplexity = getCompactCurrentComplexity("bst-operations", run);
+  const typedRun =
+    run && run.algorithmSlug === "bst-operations"
+      ? {
+          ...run,
+          input: run.input as BstOperationsInput,
+          result: run.result as BstOperationsResult,
+          steps: run.steps as BstOperationsStepEvent[],
+        }
+      : null;
+
+  const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
+  const frame = useMemo(() => deriveBstOperationsFrame(typedRun, cursor), [typedRun, cursor]);
+  const layout = useMemo(
+    () => createInvertBinaryTreeLayout(frame.rootId, frame.nodes),
+    [frame.rootId, frame.nodes],
+  );
+  const stepLabel = activeStep ? formatBstOperationsStepLabel(activeStep) : "Ready";
+  const stepMessage = activeStep
+    ? formatBstOperationsStepMessage(activeStep)
+    : "Press Play or Step to start execution.";
+  const originalLevelOrder = typedRun?.input.initialLevelOrder ?? [];
+  const currentLevelOrder = useMemo(
+    () => toInvertBinaryTreeLevelOrder(frame.rootId, frame.nodes),
+    [frame.rootId, frame.nodes],
+  );
+  const finalLevelOrder = typedRun?.result.finalLevelOrder ?? [];
+  const operationsText =
+    typedRun?.input.operations.map((operation) => `${operation.type} ${operation.value}`).join(", ") ?? "n/a";
+
+  return (
+    <Card className="surface-card min-h-[460px] border-border/70 lg:min-h-[700px]">
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg">Visualizer</CardTitle>
+          <div className="flex items-center gap-2">
+            {compactComplexity ? (
+              <Badge variant="outline" className="rounded-full border-border/70">
+                {compactComplexity}
+              </Badge>
+            ) : null}
+            <Badge variant="secondary" className="rounded-full border-border/70">
+              BST Operations
+            </Badge>
+          </div>
+        </div>
+        <CardDescription>
+          Deterministic BST playback for search, insert, and delete with explicit traversal and structural
+          relink events.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Operations</p>
+            <p className="font-mono text-base">{typedRun?.input.operations.length ?? 0}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Tree</p>
+            <p className="font-mono text-base">
+              {frame.nodeCount} node{frame.nodeCount === 1 ? "" : "s"} / h={frame.treeHeight}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Progress</p>
+            <p className="font-mono text-base">
+              t:{frame.traversedNodes} s:{frame.searchHits}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Mutations</p>
+            <p className="font-mono text-base">
+              i:{frame.insertsApplied} d:{frame.deletesApplied}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="rounded-full border-border/70">
+              {stepLabel}
+            </Badge>
+            <p className="text-muted-foreground">{stepMessage}</p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Initial Tree</p>
+              <p className="font-mono text-xs">{toNullableNumberListText(originalLevelOrder)}</p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Current Frame</p>
+              <p className="font-mono text-xs">{toNullableNumberListText(currentLevelOrder)}</p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Final Output</p>
+              <p className="font-mono text-xs">{toNullableNumberListText(finalLevelOrder)}</p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Current Operation</p>
+              <p className="font-mono text-xs">{frame.currentOperationText ?? "n/a"}</p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Script</p>
+              <p className="font-mono text-xs">{operationsText}</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/80 bg-background/70 p-3">
+            {layout.nodeCount > 0 ? (
+              <div className="overflow-hidden rounded-lg border border-border/70 bg-[radial-gradient(circle_at_18%_12%,rgba(245,158,11,0.08),transparent_48%),radial-gradient(circle_at_82%_88%,rgba(16,185,129,0.08),transparent_46%)]">
+                <svg viewBox={`0 0 ${layout.width} ${layout.height}`} className="h-[460px] w-full">
+                  {layout.edges.map((edge) => {
+                    const from = layout.positions[edge.from];
+                    const to = layout.positions[edge.to];
+                    if (!from || !to) {
+                      return null;
+                    }
+
+                    return (
+                      <line
+                        key={`bst-edge-${edge.from}-${edge.to}`}
+                        x1={from.x}
+                        y1={from.y}
+                        x2={to.x}
+                        y2={to.y}
+                        stroke={edge.direction === "left" ? "rgba(56,189,248,0.56)" : "rgba(167,139,250,0.56)"}
+                        strokeWidth={1.2}
+                        vectorEffect="non-scaling-stroke"
+                      />
+                    );
+                  })}
+
+                  {layout.nodeIds.map((nodeId) => {
+                    const position = layout.positions[nodeId];
+                    const node = frame.nodes[nodeId];
+                    if (!position || !node) {
+                      return null;
+                    }
+
+                    const isCurrent = frame.currentNodeId === nodeId;
+                    const isMutation = frame.lastMutationNodeId === nodeId;
+                    const fill = isCurrent
+                      ? "rgba(245, 158, 11, 0.24)"
+                      : isMutation
+                        ? "rgba(16, 185, 129, 0.2)"
+                        : "rgba(148, 163, 184, 0.16)";
+                    const stroke = isCurrent
+                      ? "rgba(245, 158, 11, 0.86)"
+                      : isMutation
+                        ? "rgba(16, 185, 129, 0.8)"
+                        : "rgba(148, 163, 184, 0.7)";
+
+                    return (
+                      <g key={`bst-node-${nodeId}`} transform={`translate(${position.x} ${position.y})`}>
+                        <circle r={layout.nodeRadius} fill={fill} stroke={stroke} strokeWidth={1.3} />
+                        <text
+                          x="0"
+                          y="0"
+                          dy="0.03em"
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fontSize="4.1"
+                          fontWeight="700"
+                          fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+                          className="fill-foreground"
+                        >
+                          {node.value}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+            ) : (
+              <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-border/70 p-4 text-xs">
+                <SearchIcon className="size-3.5" />
+                Tree is empty. Add initial values or randomize to generate a run.
+              </div>
+            )}
+
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-amber-500/75" />
+                current
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-emerald-500/75" />
+                structural change
+              </span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function deriveBstOperationsFrame(
+  run: {
+    input: BstOperationsInput;
+    result: BstOperationsResult;
+    steps: BstOperationsStepEvent[];
+  } | null,
+  cursor: number,
+): BstOperationsFrame {
+  const frame: BstOperationsFrame = {
+    rootId: run?.input.rootId ?? null,
+    nodes: run?.input.nodes.map((node) => ({ ...node })) ?? [],
+    currentNodeId: null,
+    currentOperationText: null,
+    lastMutationNodeId: null,
+    traversedNodes: 0,
+    searchHits: 0,
+    insertsApplied: 0,
+    deletesApplied: 0,
+    duplicateInserts: 0,
+    missingDeletes: 0,
+    nodeCount: run?.input.initialValues.length ?? 0,
+    treeHeight: 0,
+    completed: false,
+  };
+
+  if (!run || cursor < 0 || run.steps.length === 0) {
+    return frame;
+  }
+
+  const boundedCursor = Math.min(cursor, run.steps.length - 1);
+  for (let index = 0; index <= boundedCursor; index += 1) {
+    const step = run.steps[index];
+
+    if (step.type === "traverse") {
+      frame.currentNodeId = step.payload.nodeId;
+      frame.currentOperationText = `${step.payload.operationType} ${step.payload.targetValue}`;
+      continue;
+    }
+
+    if (step.type === "insert-node") {
+      frame.currentNodeId = step.payload.nodeId;
+      frame.currentOperationText = `insert ${step.payload.targetValue}`;
+      frame.lastMutationNodeId = step.payload.nodeId;
+      frame.nodeCount = step.payload.nodeCount;
+
+      if (step.payload.duplicate) {
+        frame.duplicateInserts += 1;
+        continue;
+      }
+
+      if (!frame.nodes[step.payload.nodeId]) {
+        frame.nodes[step.payload.nodeId] = {
+          id: step.payload.nodeId,
+          value: step.payload.targetValue,
+          left: null,
+          right: null,
+        };
+      }
+
+      if (step.payload.direction === "root") {
+        frame.rootId = step.payload.nodeId;
+      } else if (step.payload.parentId !== null) {
+        const parent = frame.nodes[step.payload.parentId];
+        if (parent) {
+          if (step.payload.direction === "left") {
+            parent.left = step.payload.nodeId;
+          } else {
+            parent.right = step.payload.nodeId;
+          }
+        }
+      }
+
+      frame.insertsApplied += 1;
+      continue;
+    }
+
+    if (step.type === "search-result") {
+      frame.currentNodeId = step.payload.nodeId;
+      frame.currentOperationText = `search ${step.payload.targetValue}`;
+      frame.traversedNodes = step.payload.visitedCount;
+      frame.searchHits = step.payload.searchHits;
+      continue;
+    }
+
+    if (step.type === "delete-case") {
+      frame.currentNodeId = step.payload.nodeId;
+      frame.currentOperationText = `delete ${step.payload.targetValue}`;
+      if (step.payload.caseKind === "not-found") {
+        frame.missingDeletes += 1;
+      }
+      continue;
+    }
+
+    if (step.type === "delete-relink") {
+      frame.currentOperationText = `delete ${step.payload.targetValue}`;
+      frame.lastMutationNodeId = step.payload.nodeId;
+      frame.nodeCount = step.payload.nodeCount;
+
+      if (step.payload.action === "copy-value") {
+        const node = frame.nodes[step.payload.nodeId];
+        if (node && typeof step.payload.newValue === "number") {
+          node.value = step.payload.newValue;
+        }
+      } else if (step.payload.action === "replace-root") {
+        frame.rootId = step.payload.replacementNodeId;
+        frame.deletesApplied += 1;
+      } else if (step.payload.parentId !== null) {
+        const parent = frame.nodes[step.payload.parentId];
+        if (parent) {
+          if (step.payload.direction === "left") {
+            parent.left = step.payload.replacementNodeId;
+          } else {
+            parent.right = step.payload.replacementNodeId;
+          }
+        }
+        frame.deletesApplied += 1;
+      }
+      continue;
+    }
+
+    frame.currentNodeId = null;
+    frame.currentOperationText = null;
+    frame.traversedNodes = step.payload.traversedNodes;
+    frame.searchHits = step.payload.searchHits;
+    frame.insertsApplied = step.payload.insertsApplied;
+    frame.deletesApplied = step.payload.deletesApplied;
+    frame.duplicateInserts = step.payload.duplicateInserts;
+    frame.missingDeletes = step.payload.missingDeletes;
+    frame.nodeCount = step.payload.nodeCount;
+    frame.treeHeight = step.payload.treeHeight;
+    frame.completed = true;
+  }
+
+  return frame;
+}
+
+function formatBstOperationsStepLabel(step: BstOperationsStepEvent): string {
+  if (step.type === "traverse") {
+    return "Traverse";
+  }
+  if (step.type === "insert-node") {
+    return step.payload.duplicate ? "Duplicate Insert" : "Insert Node";
+  }
+  if (step.type === "search-result") {
+    return "Search Result";
+  }
+  if (step.type === "delete-case") {
+    return "Delete Case";
+  }
+  if (step.type === "delete-relink") {
+    return "Delete Relink";
+  }
+  return "Complete";
+}
+
+function formatBstOperationsStepMessage(step: BstOperationsStepEvent): string {
+  if (step.type === "traverse") {
+    return `Traverse node ${step.payload.nodeValue} while processing ${step.payload.operationType} ${step.payload.targetValue}.`;
+  }
+  if (step.type === "insert-node") {
+    return step.payload.duplicate
+      ? `Value ${step.payload.targetValue} already exists at node ${step.payload.nodeId}; insertion is skipped.`
+      : `Insert ${step.payload.targetValue} as the ${step.payload.direction} child at depth ${step.payload.depth}.`;
+  }
+  if (step.type === "search-result") {
+    return step.payload.found
+      ? `Found ${step.payload.targetValue} at node ${step.payload.nodeId}.`
+      : `${step.payload.targetValue} is not present in the tree.`;
+  }
+  if (step.type === "delete-case") {
+    if (step.payload.caseKind === "not-found") {
+      return `${step.payload.targetValue} is not present, so delete is a no-op.`;
+    }
+    if (step.payload.caseKind === "two-children") {
+      return `Delete ${step.payload.targetValue} using candidate ${step.payload.candidateValue}.`;
+    }
+    return `Delete ${step.payload.targetValue} with ${step.payload.caseKind.replace("-", " ")} case handling.`;
+  }
+  if (step.type === "delete-relink") {
+    if (step.payload.action === "copy-value") {
+      return `Copy replacement value ${step.payload.newValue} into node ${step.payload.nodeId}.`;
+    }
+    return `Relink ${step.payload.direction} pointer to ${step.payload.replacementNodeId ?? "null"} after delete.`;
+  }
+  return `Completed ${step.payload.operationsProcessed} operation(s) across ${step.payload.nodeCount} reachable node(s).`;
 }
 
 interface InvertBinaryTreeFrame {
