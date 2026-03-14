@@ -2,8 +2,10 @@ import { AboutSheet } from "@/components/library/about-sheet";
 import { LibrarySearch } from "@/components/library/library-search";
 import { ThemeToggle } from "@/components/library/theme-toggle";
 import { PageTransition } from "@/components/layout/page-transition";
+import { Button } from "@/components/ui/button";
 import { ALGORITHMS } from "@/data/algorithms";
 import { isAlgorithmImplemented } from "@/algorithms/registry";
+import Link from "next/link";
 
 export default function LibraryPage() {
   const algorithms = ALGORITHMS.map((algorithm) => ({
@@ -19,6 +21,9 @@ export default function LibraryPage() {
       />
       <div className="container-page relative z-10 flex min-h-svh flex-col py-6 md:py-8">
         <header className="flex items-center justify-end gap-1">
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/compare">Compare</Link>
+          </Button>
           <AboutSheet />
           <ThemeToggle />
         </header>

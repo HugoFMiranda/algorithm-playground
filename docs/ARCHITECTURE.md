@@ -13,7 +13,8 @@ Primary goals:
 
 - App routes:
   - `/` library page with search and algorithm list.
-  - `/algorithms/[slug]` algorithm shell with Binary Search and Bubble Sort runtime integration.
+  - `/algorithms/[slug]` algorithm shell with all 21 shipped algorithm runtimes.
+  - `/compare` side-by-side comparison route for default deterministic runs within the same renderer family, including normalized metrics overlays, synchronized shared-input controls for compatible pairs, and local shared-cursor playback controls with per-side active-step inspectors.
 - Core UI:
   - search, algorithm cards, visualizer panel, params panel, playback controls, implementation examples panel.
 - Data:
@@ -26,11 +27,11 @@ Primary goals:
 - `src/types/engine.ts`
   - Shared algorithm engine contracts and step-event envelope.
 - `src/algorithms/registry.ts`
-  - Central typed runtime registry by slug.
-- `src/algorithms/binary-search/*`
-  - Engine/spec implementation for search-family visualization.
-- `src/algorithms/bubble-sort/*`
-  - Engine/spec implementation for array-family visualization.
+  - Central typed runtime registry by slug across the shipped algorithm backlog.
+- `src/lib/compare.ts`
+  - Comparison helpers for renderer-family filtering, default-run summaries, normalized metrics overlays, and synchronized shared-input snapshots.
+- `src/lib/compare-playback.ts`
+  - Local comparison playback state helpers for shared cursor progression, reset semantics, and speed normalization.
 - `src/algorithms/examples/*`
   - Per-algorithm abstracted code examples (pseudocode + TypeScript).
 
@@ -42,8 +43,8 @@ Primary goals:
   - Catalog and discovery.
 - `src/app/algorithms/[slug]/page.tsx`
   - Algorithm execution shell.
-- Future:
-  - `src/app/compare` for side-by-side algorithm comparisons.
+- Current:
+  - `src/app/compare` for side-by-side default-run comparisons.
 
 ## Algorithm Layer (in progress)
 
@@ -77,7 +78,8 @@ Current store now supports:
 Planned expansion:
 - loop/step-backward behavior,
 - run ids and timeline scrub,
-- worker-backed heavy-step generation.
+- worker-backed heavy-step generation,
+- renderer-level side-by-side visual playback for comparison mode.
 
 ## Documentation Contracts
 

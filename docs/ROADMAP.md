@@ -12,8 +12,8 @@ Audience target is broad: learners, interview preparation users, and engineering
 ## Planning Horizon
 
 - Phase window: 3 phases over approximately 3 months.
-- Current status: UI scaffold completed; Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations shipped as engine-backed vertical slices, completing the current algorithm backlog.
-- Next implementation target: compare mode for side-by-side deterministic default-run summaries across compatible algorithms.
+- Current status: UI scaffold completed; Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations shipped as engine-backed vertical slices, completing the current algorithm backlog. The `/compare` route now ships side-by-side default-run summaries with normalized metrics overlays, synchronized shared inputs for compatible algorithms that share a renderer family, and local playback parity with shared cursor controls and per-side step inspection.
+- Next implementation target: add renderer-level side-by-side visual playback to comparison mode.
 
 ## Difficulty Rubric
 

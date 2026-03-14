@@ -184,10 +184,10 @@ Current tests validate:
 
 ## 9. Current Limits and Next Steps
 
-Current implementation is full for Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations.
+Current implementation is full for Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations. Comparison mode also consumes the same runtime registry for deterministic default-run summaries, normalized metrics overlays, synchronized shared inputs, and local playback parity with a shared cursor across both runs.
 
 Planned next extensions:
 
-1. add comparison mode for side-by-side deterministic default-run summaries across compatible algorithms,
+1. add renderer-level side-by-side visual playback to comparison mode,
 2. keep expanding deterministic grid/graph renderer behavior,
 3. split renderer logic into dedicated `src/renderers/*` modules as algorithm count increases.

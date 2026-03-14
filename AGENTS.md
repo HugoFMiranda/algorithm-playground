@@ -14,7 +14,7 @@ Build a professional algorithm visualization hub where users can:
 - Frontend-only Next.js App Router application.
 - No backend requirements in the current roadmap window.
 - Focus on reusable engine and renderer architecture before advanced features.
-- Current implementation checkpoint: Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations are fully integrated algorithm slices (engine, playback, renderer, params, and code examples).
+- Current implementation checkpoint: Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations are fully integrated algorithm slices (engine, playback, renderer, params, and code examples). Comparison mode now ships side-by-side default-run summaries, normalized metrics overlays, synchronized shared inputs for compatible array and pathfinding pairs across shared renderer families, plus local playback parity with shared cursor controls and per-side active-step inspection.
 - Every algorithm must ship with an easy-to-understand explanation surfaced on its algorithm page.
 
 ## Source-of-Truth Policy
