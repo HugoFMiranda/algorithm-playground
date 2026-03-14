@@ -16,7 +16,7 @@ import { VisualizerPanel } from "@/components/algorithm/visualizer-panel";
 import { PageTransition } from "@/components/layout/page-transition";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { supportsSimpleRenderer } from "@/lib/renderer-mode";
+import { RENDERER_MODE_STORAGE_KEY, supportsSimpleRenderer } from "@/lib/renderer-mode";
 
 interface AlgorithmPageShellProps {
   algorithm: AlgorithmDefinition;
@@ -35,6 +35,21 @@ export function AlgorithmPageShell({ algorithm }: AlgorithmPageShellProps) {
       initializeAlgorithm(null);
     };
   }, [algorithm.slug, initializeAlgorithm]);
+
+  useEffect(() => {
+    try {
+      const storedMode = window.localStorage.getItem(RENDERER_MODE_STORAGE_KEY);
+      if (storedMode === "simple" || storedMode === "advanced") {
+        setRendererMode(storedMode);
+      }
+    } catch {}
+  }, [setRendererMode]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(RENDERER_MODE_STORAGE_KEY, rendererMode);
+    } catch {}
+  }, [rendererMode]);
 
   return (
     <PageTransition className="min-h-svh bg-background pb-28">

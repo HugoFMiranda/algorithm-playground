@@ -297,6 +297,9 @@ function deriveSimpleGridFrame(run: AlgorithmRunSnapshot | null, cursor: number)
 export function SimpleGridRenderer({ algorithmName, run, cursor }: SimpleGridRendererProps) {
   const frame = useMemo(() => deriveSimpleGridFrame(run, cursor), [run, cursor]);
   const totalCells = frame.rows * frame.cols;
+  const totalSteps = run?.steps.length ?? 0;
+  const stepProgress = totalSteps > 0 ? `${Math.max(cursor + 1, 0)} / ${totalSteps}` : "0 / 0";
+  const isBidirectional = run?.algorithmSlug === "bidirectional-bfs";
 
   return (
     <Card className="surface-card min-h-[420px] border-border/70 lg:min-h-[620px]">
@@ -321,9 +324,15 @@ export function SimpleGridRenderer({ algorithmName, run, cursor }: SimpleGridRen
           <Badge variant="outline" className="rounded-full border-border/70">
             {frame.phaseLabel}
           </Badge>
-          <p className="text-muted-foreground">
+          <Badge variant="outline" className="rounded-full border-border/70 tabular-nums">
+            {stepProgress}
+          </Badge>
+          <Badge variant="outline" className="rounded-full border-border/70">
             {frame.rows} x {frame.cols} grid
-          </p>
+          </Badge>
+          <Badge variant="outline" className="rounded-full border-border/70">
+            {totalCells} cells
+          </Badge>
         </div>
 
         <div className="rounded-2xl border border-border/70 bg-[radial-gradient(circle_at_18%_12%,rgba(56,189,248,0.08),transparent_42%),radial-gradient(circle_at_84%_82%,rgba(245,158,11,0.08),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0))] p-4">
@@ -368,6 +377,45 @@ export function SimpleGridRenderer({ algorithmName, run, cursor }: SimpleGridRen
               );
             })}
           </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 text-[11px]">
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-1">
+            <span className="inline-block size-2 rounded-full bg-emerald-400" />
+            start
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-1">
+            <span className="inline-block size-2 rounded-full bg-rose-400" />
+            target
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-1">
+            <span className="inline-block size-2 rounded-full bg-cyan-400" />
+            frontier
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-1">
+            <span className="inline-block size-2 rounded-full bg-sky-500" />
+            visited
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-1">
+            <span className="inline-block size-2 rounded-full bg-amber-400" />
+            current
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-1">
+            <span className="inline-block size-2 rounded-full bg-emerald-300" />
+            path
+          </span>
+          {isBidirectional ? (
+            <>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-1">
+                <span className="inline-block size-2 rounded-full bg-cyan-400" />
+                forward wave
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-1">
+                <span className="inline-block size-2 rounded-full bg-pink-400" />
+                backward wave
+              </span>
+            </>
+          ) : null}
         </div>
       </CardContent>
     </Card>

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { getSimpleRendererFamily, supportsSimpleRenderer } from "@/lib/renderer-mode";
+import {
+  getSimpleRendererFamily,
+  RENDERER_MODE_STORAGE_KEY,
+  supportsSimpleRenderer,
+} from "@/lib/renderer-mode";
 
 describe("renderer mode support", () => {
   it("supports simple renderers for array rollout algorithms", () => {
@@ -22,5 +26,9 @@ describe("renderer mode support", () => {
     expect(supportsSimpleRenderer("topological-sort")).toBe(false);
     expect(supportsSimpleRenderer("avl-rotations")).toBe(false);
     expect(getSimpleRendererFamily("trie-operations")).toBeNull();
+  });
+
+  it("uses a stable local storage key for renderer mode persistence", () => {
+    expect(RENDERER_MODE_STORAGE_KEY).toBe("algorithm-playground.renderer-mode");
   });
 });

@@ -361,6 +361,8 @@ export function SimpleArrayRenderer({ algorithmName, run, cursor }: SimpleArrayR
   const minValue = values.length > 0 ? Math.min(...values) : 0;
   const maxValue = values.length > 0 ? Math.max(...values) : 1;
   const spread = Math.max(maxValue - minValue, 1);
+  const totalSteps = run?.steps.length ?? 0;
+  const stepProgress = totalSteps > 0 ? `${Math.max(cursor + 1, 0)} / ${totalSteps}` : "0 / 0";
 
   return (
     <Card className="surface-card min-h-[420px] border-border/70 lg:min-h-[620px]">
@@ -384,6 +386,12 @@ export function SimpleArrayRenderer({ algorithmName, run, cursor }: SimpleArrayR
         <div className="flex items-center gap-2 text-xs">
           <Badge variant="outline" className="rounded-full border-border/70">
             {frame.phaseLabel}
+          </Badge>
+          <Badge variant="outline" className="rounded-full border-border/70 tabular-nums">
+            {stepProgress}
+          </Badge>
+          <Badge variant="outline" className="rounded-full border-border/70">
+            {values.length} bars
           </Badge>
           {frame.targetValue !== null ? (
             <p className="text-muted-foreground">Target {frame.targetValue}</p>
@@ -429,6 +437,27 @@ export function SimpleArrayRenderer({ algorithmName, run, cursor }: SimpleArrayR
               );
             })}
           </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 text-[11px]">
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-1">
+            <span className="inline-block size-2 rounded-full bg-amber-400" />
+            active
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-1">
+            <span className="inline-block size-2 rounded-full bg-sky-400" />
+            compare
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-1">
+            <span className="inline-block size-2 rounded-full bg-emerald-400" />
+            settled
+          </span>
+          {run?.algorithmSlug === "binary-search" ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-1">
+              <span className="inline-block size-2 rounded-full bg-indigo-400" />
+              midpoint / found
+            </span>
+          ) : null}
         </div>
 
         {run?.algorithmSlug === "counting-sort" && frame.bucketLabels.length > 0 ? (

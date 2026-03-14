@@ -188,7 +188,6 @@ Current implementation is full for Binary Search, BFS, Bidirectional BFS, DFS, D
 
 Planned next extensions:
 
-1. add `Simple` / `Advanced` renderer modes on algorithm pages,
-2. move array and grid rendering into dedicated `src/renderers/*` modules,
-3. expand the simple renderer track across array algorithms first, then grid/pathfinding algorithms,
-4. add renderer-level side-by-side visual playback to comparison mode after the renderer split stabilizes.
+1. harden the shipped `Simple` renderer track with better legends and persistent mode preference,
+2. continue tightening family-level frame derivation for array and grid renderers,
+3. add renderer-level side-by-side visual playback to comparison mode after the renderer split stabilizes.

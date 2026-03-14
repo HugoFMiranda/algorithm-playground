@@ -1,6 +1,7 @@
 import { getAlgorithmRuntime } from "@/algorithms/registry";
 
 export type RendererMode = "advanced" | "simple";
+export const RENDERER_MODE_STORAGE_KEY = "algorithm-playground.renderer-mode";
 
 const SIMPLE_ARRAY_SLUGS = new Set([
   "bubble-sort",

@@ -12,8 +12,8 @@ Audience target is broad: learners, interview preparation users, and engineering
 ## Planning Horizon
 
 - Phase window: 3 phases over approximately 3 months.
-- Current status: UI scaffold completed; Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Counting Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations shipped as engine-backed vertical slices, completing the current algorithm backlog. The `/compare` route now ships side-by-side default-run summaries with normalized metrics overlays, synchronized shared inputs for compatible algorithms that share a renderer family, and local playback parity with shared cursor controls and per-side step inspection.
-- Next implementation target: add per-page `Simple` / `Advanced` renderer modes, starting with array and pathfinding/grid algorithms.
+- Current status: UI scaffold completed; Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Counting Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations shipped as engine-backed vertical slices, completing the current algorithm backlog. The `/compare` route now ships side-by-side default-run summaries with normalized metrics overlays, synchronized shared inputs for compatible algorithms that share a renderer family, and local playback parity with shared cursor controls and per-side step inspection. Algorithm pages now also ship per-page `Simple` / `Advanced` renderer modes, with `Simple` active for array and pathfinding/grid algorithms.
+- Next implementation target: harden simple-mode presentation with clearer legends, persistent mode preference, and tighter family-level visual accuracy before returning to comparison visuals.
 
 ## Difficulty Rubric
 
@@ -96,7 +96,7 @@ Implementation order:
 1. Documentation sync and stale-plan cleanup.
 2. Renderer-mode architecture split (`Simple` / `Advanced`).
 3. Per-page mode toggle with persistent local UI state.
-4. Array-family simple renderer rollout:
+4. Array-family simple renderer rollout.
    - Bubble Sort
    - Selection Sort
    - Insertion Sort
@@ -105,12 +105,16 @@ Implementation order:
    - Quick Sort
    - Heap Sort
    - Counting Sort
-5. Grid/pathfinding simple renderer rollout:
+5. Grid/pathfinding simple renderer rollout.
    - BFS
    - DFS
    - Dijkstra
    - A*
    - Bidirectional BFS
+6. Renderer hardening pass:
+   - persistent `Simple` / `Advanced` preference,
+   - clearer legends and state cues,
+   - family-level polish before compare-mode visuals resume.
 
 Out of scope for this rollout:
 - graph-family simple renderers,

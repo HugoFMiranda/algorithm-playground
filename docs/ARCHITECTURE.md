@@ -20,7 +20,7 @@ Primary goals:
 - Data:
   - `src/data/algorithms.ts` now contains roadmap metadata (category, difficulty, planned phase).
 - State:
-  - `src/store/app-store.ts` holds selected algorithm, raw params, normalized run snapshots, playback cursor, and speed.
+  - `src/store/app-store.ts` holds selected algorithm, renderer mode, raw params, normalized run snapshots, playback cursor, and speed.
 
 ## Implemented Runtime Layer
 
@@ -44,6 +44,7 @@ Primary goals:
   - array algorithms via animated bar renderers,
   - pathfinding/grid algorithms via abstract square-canvas renderers.
 - Graph and tree families remain advanced-only during the first rollout.
+- The current follow-up work is hardening simple-mode presentation and persistence before returning to compare-mode renderer work.
 
 ## Target Architecture (Roadmap)
 
