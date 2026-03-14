@@ -1,4 +1,5 @@
 import { aStarExamples } from "@/algorithms/examples/a-star";
+import { avlRotationsExamples } from "@/algorithms/examples/avl-rotations";
 import { binarySearchExamples } from "@/algorithms/examples/binary-search";
 import { bidirectionalBfsExamples } from "@/algorithms/examples/bidirectional-bfs";
 import { bellmanFordExamples } from "@/algorithms/examples/bellman-ford";
@@ -25,6 +26,7 @@ const EXAMPLES_REGISTRY: Record<string, AlgorithmExamples> = {
   "binary-search": binarySearchExamples,
   "bidirectional-bfs": bidirectionalBfsExamples,
   "bellman-ford": bellmanFordExamples,
+  "avl-rotations": avlRotationsExamples,
   "bst-operations": bstOperationsExamples,
   "a-star": aStarExamples,
   bfs: bfsExamples,

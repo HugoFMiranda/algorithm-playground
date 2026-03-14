@@ -5,6 +5,10 @@ import { CircleHelpIcon, ShuffleIcon, SlidersHorizontalIcon } from "lucide-react
 
 import { A_STAR_DEFAULT_PARAMS, createRandomAStarParams } from "@/algorithms/a-star/spec";
 import {
+  AVL_ROTATIONS_DEFAULT_PARAMS,
+  createRandomAvlRotationsParams,
+} from "@/algorithms/avl-rotations/spec";
+import {
   BINARY_SEARCH_DEFAULT_PARAMS,
   createRandomBinarySearchParams,
 } from "@/algorithms/binary-search/spec";
@@ -394,6 +398,19 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
     );
   }
 
+  if (selectedAlgorithmSlug === "avl-rotations") {
+    return (
+      <AvlRotationsParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
   if (selectedAlgorithmSlug === "bidirectional-bfs") {
     return (
       <BidirectionalBfsParamsCard
@@ -445,8 +462,8 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
         <CardDescription className="text-xs leading-relaxed">
           Parameter schema and validation are enabled for Binary Search, BFS, Bidirectional BFS, DFS,
           Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST,
-          Prim MST, Bellman-Ford, BST Operations, Selection Sort, Insertion Sort, Merge Sort, Invert
-          Binary Tree, and Trie Operations in this milestone.
+          Prim MST, Bellman-Ford, BST Operations, AVL Rotations, Selection Sort, Insertion Sort, Merge
+          Sort, Invert Binary Tree, and Trie Operations in this milestone.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -4288,6 +4305,117 @@ function BstOperationsParamsCard({
             <span className="font-mono">
               {normalizedResult
                 ? `nodes ${normalizedResult.nodeCount}, height ${normalizedResult.treeHeight}, traversals ${normalizedResult.traversedNodes}`
+                : "n/a"}
+            </span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AvlRotationsParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const insertValues = useMemo(() => {
+    const value = params.insertValues;
+    return typeof value === "string" ? value : AVL_ROTATIONS_DEFAULT_PARAMS.insertValues;
+  }, [params.insertValues]);
+
+  const normalizedInput =
+    run && run.algorithmSlug === "avl-rotations" && typeof run.input === "object" && run.input !== null
+      ? (run.input as {
+          insertValues: number[];
+        })
+      : null;
+
+  const normalizedResult =
+    run && run.algorithmSlug === "avl-rotations" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          finalLevelOrder: Array<number | null>;
+          nodeCount: number;
+          treeHeight: number;
+          insertedCount: number;
+          duplicateCount: number;
+          imbalanceCount: number;
+          rotations: number;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomAvlRotationsParams();
+    setParams({
+      insertValues: randomParams.insertValues,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            AVL Rotations
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Insert values into an initially empty AVL tree. The engine emits height updates and the exact
+          single or double rotations needed to restore balance.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="param-avl-insert-values" className="text-xs font-medium">
+              Insert Sequence
+            </label>
+            <InlineHelp text="Try 30, 20, 10 for LL, 10, 20, 30 for RR, 30, 10, 20 for LR, or 10, 30, 20 for RL." />
+          </div>
+          <Input
+            id="param-avl-insert-values"
+            value={insertValues}
+            onChange={(event) => setParam("insertValues", event.target.value)}
+            placeholder={AVL_ROTATIONS_DEFAULT_PARAMS.insertValues}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Insert sequence ({normalizedInput?.insertValues.length ?? 0}):{" "}
+            <span className="font-mono">
+              {normalizedInput?.insertValues.length ? normalizedInput.insertValues.join(", ") : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Final tree:{" "}
+            <span className="font-mono">
+              {normalizedResult ? formatNullableNumberList(normalizedResult.finalLevelOrder) : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Result metrics:{" "}
+            <span className="font-mono">
+              {normalizedResult
+                ? `nodes ${normalizedResult.nodeCount}, height ${normalizedResult.treeHeight}, imbalances ${normalizedResult.imbalanceCount}, rotations ${normalizedResult.rotations}`
                 : "n/a"}
             </span>
           </p>

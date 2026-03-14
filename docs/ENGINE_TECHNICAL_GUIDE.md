@@ -184,10 +184,10 @@ Current tests validate:
 
 ## 9. Current Limits and Next Steps
 
-Current implementation is full for Binary Search, BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Selection Sort, Insertion Sort, Merge Sort, and Invert Binary Tree. Remaining algorithms keep scaffolded UI placeholders until their engines are integrated.
+Current implementation is full for Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations.
 
 Planned next extensions:
 
-1. continue phase-ordered algorithm integrations from `docs/ROADMAP.md`,
+1. add comparison mode for side-by-side deterministic default-run summaries across compatible algorithms,
 2. keep expanding deterministic grid/graph renderer behavior,
 3. split renderer logic into dedicated `src/renderers/*` modules as algorithm count increases.

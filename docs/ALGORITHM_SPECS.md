@@ -849,9 +849,49 @@ Each algorithm must define:
   - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### AVL Rotations (`D3`, Phase 3)
-- Objective: balance factor and rotation cases.
-- Renderer: tree.
-- Key events: imbalance-detected, rotate-left, rotate-right.
+- Objective: teach AVL self-balancing behavior by showing how height updates trigger LL, RR, LR, and RL rotations during insertion.
+- Input model:
+  - Insert sequence is provided as comma/space-separated numbers.
+  - Tree always starts empty and is built by inserting normalized values in order.
+  - Duplicate values are removed during input normalization, and duplicate insert attempts during execution become deterministic no-ops.
+  - Empty/invalid insert sequences fallback to a deterministic default sequence that triggers multiple rebalance cases.
+- Params:
+  - `insertValues` (string, default: `30, 20, 10, 40, 50, 25, 27`)
+- Human-friendly explanation:
+  - An AVL tree is a binary search tree that keeps itself balanced. After each insertion it checks subtree heights, detects imbalances, and performs the exact rotation pattern needed to stay shallow.
+- Step event contract:
+  - `traverse`: emits each visited node while descending toward an insertion position.
+  - `insert-node`: emits either a successful insertion or a duplicate-insert no-op.
+  - `height-update`: emits recalculated node height and balance factor while unwinding.
+  - `imbalance-detected`: emits the first node whose balance factor leaves the AVL range and classifies the case as `LL`, `RR`, `LR`, or `RL`.
+  - `rotate-left`: emits a concrete left rotation with pivot/new-root/subtree-transfer metadata.
+  - `rotate-right`: emits a concrete right rotation with pivot/new-root/subtree-transfer metadata.
+  - `complete`: terminal summary with insert counts, imbalances, rotations, node count, and final tree height.
+- Renderer requirements:
+  - Tree renderer with stable left/right orientation and per-node height/balance display.
+  - Distinct styling for current traversal node and nodes participating in the latest rotation.
+  - Show insert sequence, current frame, and final level-order output.
+  - Present aggregate metrics for imbalances, rotations, duplicates, and tree height.
+  - Step status message derived from event payload.
+- Metrics tracked:
+  - Successful insert count.
+  - Duplicate insert count.
+  - Height update count.
+  - Imbalance detection count.
+  - Rotation count.
+  - Reachable node count and final tree height.
+- Edge cases:
+  - Duplicate insert attempts emit deterministic no-op `insert-node` events.
+  - Single-rotation (`LL`, `RR`) and double-rotation (`LR`, `RL`) cases are all deterministic for fixed input.
+  - Empty or one-node runs complete without imbalance or rotation events.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed insertion sequences.
+  - Param fallback behavior for malformed insert text.
+  - LL, RR, LR, and RL sequences each emit the expected rotation pattern and final balanced tree.
+  - Duplicate insert handling remains deterministic.
+  - Renderer completion state matches final AVL output.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
 
 ### Trie Operations (`D2`, Phase 2)
 - Objective: teach prefix-sharing insertion and deterministic lookup semantics for exact-word and prefix queries.

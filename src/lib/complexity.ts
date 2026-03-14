@@ -700,6 +700,52 @@ function getBstOperationsComplexity(run: AlgorithmRunSnapshot | null): Complexit
   };
 }
 
+function getAvlRotationsComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
+  let insertCount = 0;
+
+  if (run && isRecord(run.input) && "insertValues" in run.input && Array.isArray(run.input.insertValues)) {
+    insertCount = run.input.insertValues.filter(isFiniteNumber).length;
+  }
+
+  let nodeCount: number | null = null;
+  let treeHeight: number | null = null;
+  let imbalanceCount: number | null = null;
+  let rotations: number | null = null;
+  if (run && isRecord(run.result)) {
+    if ("nodeCount" in run.result && isFiniteNumber(run.result.nodeCount)) {
+      nodeCount = run.result.nodeCount;
+    }
+    if ("treeHeight" in run.result && isFiniteNumber(run.result.treeHeight)) {
+      treeHeight = run.result.treeHeight;
+    }
+    if ("imbalanceCount" in run.result && isFiniteNumber(run.result.imbalanceCount)) {
+      imbalanceCount = run.result.imbalanceCount;
+    }
+    if ("rotations" in run.result && isFiniteNumber(run.result.rotations)) {
+      rotations = run.result.rotations;
+    }
+  }
+
+  const details = [
+    `Insert sequence length = ${insertCount}`,
+    "AVL insertion keeps height near O(log n) by rebalancing on detected imbalances",
+    nodeCount === null ? "Observed node count: pending" : `Observed node count: ${nodeCount}`,
+    treeHeight === null ? "Observed tree height: pending" : `Observed tree height: ${treeHeight}`,
+    imbalanceCount === null
+      ? "Observed imbalances/rotations: pending"
+      : `Observed imbalances/rotations: ${imbalanceCount}/${rotations ?? "?"}`,
+  ];
+
+  return {
+    timeBest: "O(1)",
+    timeAverage: "O(log n)",
+    timeWorst: "O(log n)",
+    space: "O(log n)",
+    current: insertCount <= 1 ? "O(1) on this run" : "O(log n) per insert on this tree",
+    details,
+  };
+}
+
 function getInvertBinaryTreeComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
   let nodeCount = 0;
   if (run && isRecord(run.input) && "nodes" in run.input && Array.isArray(run.input.nodes)) {
@@ -1230,6 +1276,10 @@ export function getComplexitySummary(
 
   if (algorithmSlug === "bst-operations") {
     return getBstOperationsComplexity(run && run.algorithmSlug === "bst-operations" ? run : null);
+  }
+
+  if (algorithmSlug === "avl-rotations") {
+    return getAvlRotationsComplexity(run && run.algorithmSlug === "avl-rotations" ? run : null);
   }
 
   if (algorithmSlug === "trie-operations") {

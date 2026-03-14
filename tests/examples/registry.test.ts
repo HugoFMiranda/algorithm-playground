@@ -94,7 +94,14 @@ describe("algorithm examples registry", () => {
     expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
   });
 
+  it("returns avl-rotations snippets in pseudocode and typescript", () => {
+    const examples = getAlgorithmExamplesBySlug("avl-rotations");
+
+    expect(examples).not.toBeNull();
+    expect(examples?.snippets.map((snippet) => snippet.language)).toEqual(["pseudocode", "typescript"]);
+  });
+
   it("returns null for algorithms without examples", () => {
-    expect(getAlgorithmExamplesBySlug("avl-rotations")).toBeNull();
+    expect(getAlgorithmExamplesBySlug("comparison-mode")).toBeNull();
   });
 });

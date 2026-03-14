@@ -3,6 +3,12 @@ import { ArrowUpDownIcon, Grid2x2Icon, MonitorPlayIcon, SearchIcon } from "lucid
 
 import type { AStarInput, AStarResult } from "@/algorithms/a-star/spec";
 import type { AStarStepEvent } from "@/algorithms/a-star/engine";
+import type {
+  AvlRotationsInput,
+  AvlRotationsNode,
+  AvlRotationsResult,
+} from "@/algorithms/avl-rotations/spec";
+import type { AvlRotationsStepEvent } from "@/algorithms/avl-rotations/engine";
 import type { BinarySearchResult, BinarySearchInput } from "@/algorithms/binary-search/spec";
 import type { BinarySearchStepEvent } from "@/algorithms/binary-search/engine";
 import type {
@@ -142,6 +148,10 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
 
   if (algorithm.slug === "bellman-ford") {
     return <BellmanFordVisualizer run={run} cursor={cursor} />;
+  }
+
+  if (algorithm.slug === "avl-rotations") {
+    return <AvlRotationsVisualizer run={run} cursor={cursor} />;
   }
 
   if (algorithm.slug === "bst-operations") {
@@ -6200,6 +6210,424 @@ function formatUnionFindStepMessage(step: UnionFindStepEvent): string {
   }
 
   return `Completed ${step.payload.operationsProcessed} operations with ${step.payload.componentCount} component(s).`;
+}
+
+interface AvlRotationsFrame {
+  rootId: number | null;
+  nodes: AvlRotationsNode[];
+  currentNodeId: number | null;
+  currentInsert: number | null;
+  lastRotationNodeIds: Set<number>;
+  insertedCount: number;
+  duplicateCount: number;
+  heightUpdates: number;
+  imbalanceCount: number;
+  rotations: number;
+  nodeCount: number;
+  treeHeight: number;
+  completed: boolean;
+}
+
+function AvlRotationsVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const compactComplexity = getCompactCurrentComplexity("avl-rotations", run);
+  const typedRun =
+    run && run.algorithmSlug === "avl-rotations"
+      ? {
+          ...run,
+          input: run.input as AvlRotationsInput,
+          result: run.result as AvlRotationsResult,
+          steps: run.steps as AvlRotationsStepEvent[],
+        }
+      : null;
+
+  const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
+  const frame = useMemo(() => deriveAvlRotationsFrame(typedRun, cursor), [typedRun, cursor]);
+  const layout = useMemo(
+    () => createInvertBinaryTreeLayout(frame.rootId, frame.nodes),
+    [frame.rootId, frame.nodes],
+  );
+  const stepLabel = activeStep ? formatAvlRotationsStepLabel(activeStep) : "Ready";
+  const stepMessage = activeStep
+    ? formatAvlRotationsStepMessage(activeStep)
+    : "Press Play or Step to start execution.";
+  const currentLevelOrder = useMemo(
+    () => toInvertBinaryTreeLevelOrder(frame.rootId, frame.nodes),
+    [frame.rootId, frame.nodes],
+  );
+  const finalLevelOrder = typedRun?.result.finalLevelOrder ?? [];
+  const sequenceText = typedRun?.input.insertValues.join(", ") ?? "n/a";
+
+  return (
+    <Card className="surface-card min-h-[460px] border-border/70 lg:min-h-[700px]">
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg">Visualizer</CardTitle>
+          <div className="flex items-center gap-2">
+            {compactComplexity ? (
+              <Badge variant="outline" className="rounded-full border-border/70">
+                {compactComplexity}
+              </Badge>
+            ) : null}
+            <Badge variant="secondary" className="rounded-full border-border/70">
+              AVL Rotations
+            </Badge>
+          </div>
+        </div>
+        <CardDescription>
+          Deterministic AVL insertion playback with per-node height updates, imbalance detection, and
+          explicit left/right rotations.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Sequence</p>
+            <p className="font-mono text-base">{typedRun?.input.insertValues.length ?? 0} inserts</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Tree</p>
+            <p className="font-mono text-base">
+              {frame.nodeCount} node{frame.nodeCount === 1 ? "" : "s"} / h={frame.treeHeight}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Balancing</p>
+            <p className="font-mono text-base">
+              i:{frame.imbalanceCount} r:{frame.rotations}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Updates</p>
+            <p className="font-mono text-base">
+              h:{frame.heightUpdates} d:{frame.duplicateCount}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="rounded-full border-border/70">
+              {stepLabel}
+            </Badge>
+            <p className="text-muted-foreground">{stepMessage}</p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Insert Sequence</p>
+              <p className="font-mono text-xs">{sequenceText}</p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Current Frame</p>
+              <p className="font-mono text-xs">{toNullableNumberListText(currentLevelOrder)}</p>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+              <p className="text-muted-foreground mb-1 text-[11px] uppercase">Final Output</p>
+              <p className="font-mono text-xs">{toNullableNumberListText(finalLevelOrder)}</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/80 bg-background/70 p-3">
+            {layout.nodeCount > 0 ? (
+              <div className="overflow-hidden rounded-lg border border-border/70 bg-[radial-gradient(circle_at_18%_12%,rgba(245,158,11,0.08),transparent_48%),radial-gradient(circle_at_82%_88%,rgba(59,130,246,0.08),transparent_46%)]">
+                <svg viewBox={`0 0 ${layout.width} ${layout.height}`} className="h-[460px] w-full">
+                  {layout.edges.map((edge) => {
+                    const from = layout.positions[edge.from];
+                    const to = layout.positions[edge.to];
+                    if (!from || !to) {
+                      return null;
+                    }
+
+                    return (
+                      <line
+                        key={`avl-edge-${edge.from}-${edge.to}`}
+                        x1={from.x}
+                        y1={from.y}
+                        x2={to.x}
+                        y2={to.y}
+                        stroke={edge.direction === "left" ? "rgba(56,189,248,0.56)" : "rgba(167,139,250,0.56)"}
+                        strokeWidth={1.2}
+                        vectorEffect="non-scaling-stroke"
+                      />
+                    );
+                  })}
+
+                  {layout.nodeIds.map((nodeId) => {
+                    const position = layout.positions[nodeId];
+                    const node = frame.nodes[nodeId];
+                    if (!position || !node) {
+                      return null;
+                    }
+
+                    const isCurrent = frame.currentNodeId === nodeId;
+                    const isRotation = frame.lastRotationNodeIds.has(nodeId);
+                    const fill = isCurrent
+                      ? "rgba(245, 158, 11, 0.24)"
+                      : isRotation
+                        ? "rgba(59, 130, 246, 0.2)"
+                        : "rgba(148, 163, 184, 0.16)";
+                    const stroke = isCurrent
+                      ? "rgba(245, 158, 11, 0.86)"
+                      : isRotation
+                        ? "rgba(59, 130, 246, 0.82)"
+                        : "rgba(148, 163, 184, 0.7)";
+                    const balanceFactor =
+                      (node.left !== null ? frame.nodes[node.left]?.height ?? 0 : 0) -
+                      (node.right !== null ? frame.nodes[node.right]?.height ?? 0 : 0);
+
+                    return (
+                      <g key={`avl-node-${nodeId}`} transform={`translate(${position.x} ${position.y})`}>
+                        <circle r={layout.nodeRadius} fill={fill} stroke={stroke} strokeWidth={1.3} />
+                        <text
+                          x="0"
+                          y="-1.1"
+                          textAnchor="middle"
+                          fontSize="3.7"
+                          fontWeight="700"
+                          fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+                          className="fill-foreground"
+                        >
+                          {node.value}
+                        </text>
+                        <text
+                          x="0"
+                          y="3.2"
+                          textAnchor="middle"
+                          fontSize="2.6"
+                          fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+                          className="fill-muted-foreground"
+                        >
+                          {`h${node.height} b${balanceFactor}`}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+            ) : (
+              <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-border/70 p-4 text-xs">
+                <SearchIcon className="size-3.5" />
+                Provide insert values or randomize to generate a run.
+              </div>
+            )}
+
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-amber-500/75" />
+                current
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5">
+                <span className="inline-block size-2 rounded-full bg-blue-500/75" />
+                rotation path
+              </span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function deriveAvlRotationsFrame(
+  run: {
+    result: AvlRotationsResult;
+    steps: AvlRotationsStepEvent[];
+  } | null,
+  cursor: number,
+): AvlRotationsFrame {
+  const frame: AvlRotationsFrame = {
+    rootId: null,
+    nodes: [],
+    currentNodeId: null,
+    currentInsert: null,
+    lastRotationNodeIds: new Set<number>(),
+    insertedCount: 0,
+    duplicateCount: 0,
+    heightUpdates: 0,
+    imbalanceCount: 0,
+    rotations: 0,
+    nodeCount: 0,
+    treeHeight: 0,
+    completed: false,
+  };
+
+  if (!run || cursor < 0 || run.steps.length === 0) {
+    return frame;
+  }
+
+  const boundedCursor = Math.min(cursor, run.steps.length - 1);
+  for (let index = 0; index <= boundedCursor; index += 1) {
+    const step = run.steps[index];
+
+    if (step.type === "traverse") {
+      frame.currentNodeId = step.payload.nodeId;
+      frame.currentInsert = step.payload.targetValue;
+      frame.lastRotationNodeIds = new Set<number>();
+      continue;
+    }
+
+    if (step.type === "insert-node") {
+      frame.currentNodeId = step.payload.nodeId;
+      frame.currentInsert = step.payload.targetValue;
+      frame.lastRotationNodeIds = new Set<number>();
+      frame.nodeCount = step.payload.nodeCount;
+
+      if (step.payload.duplicate) {
+        frame.duplicateCount += 1;
+        continue;
+      }
+
+      frame.nodes[step.payload.nodeId] = {
+        id: step.payload.nodeId,
+        value: step.payload.targetValue,
+        left: null,
+        right: null,
+        height: 1,
+      };
+      if (step.payload.direction === "root") {
+        frame.rootId = step.payload.nodeId;
+      } else if (step.payload.parentId !== null) {
+        const parent = frame.nodes[step.payload.parentId];
+        if (parent) {
+          if (step.payload.direction === "left") {
+            parent.left = step.payload.nodeId;
+          } else {
+            parent.right = step.payload.nodeId;
+          }
+        }
+      }
+      frame.insertedCount += 1;
+      continue;
+    }
+
+    if (step.type === "height-update") {
+      frame.currentNodeId = step.payload.nodeId;
+      const node = frame.nodes[step.payload.nodeId];
+      if (node) {
+        node.height = step.payload.height;
+      }
+      frame.heightUpdates += 1;
+      continue;
+    }
+
+    if (step.type === "imbalance-detected") {
+      frame.currentNodeId = step.payload.nodeId;
+      frame.imbalanceCount += 1;
+      frame.lastRotationNodeIds = new Set<number>(
+        [step.payload.nodeId, step.payload.childNodeId].filter(
+          (value): value is number => typeof value === "number",
+        ),
+      );
+      continue;
+    }
+
+    if (step.type === "rotate-left") {
+      const pivot = frame.nodes[step.payload.pivotId];
+      const newRoot = frame.nodes[step.payload.newRootId];
+      if (pivot && newRoot) {
+        pivot.right = step.payload.movedSubtreeId;
+        newRoot.left = step.payload.pivotId;
+        if (step.payload.direction === "root") {
+          frame.rootId = step.payload.newRootId;
+        } else if (step.payload.parentId !== null) {
+          const parent = frame.nodes[step.payload.parentId];
+          if (parent) {
+            if (step.payload.direction === "left") {
+              parent.left = step.payload.newRootId;
+            } else {
+              parent.right = step.payload.newRootId;
+            }
+          }
+        }
+      }
+      frame.rotations += 1;
+      frame.lastRotationNodeIds = new Set<number>([step.payload.pivotId, step.payload.newRootId]);
+      continue;
+    }
+
+    if (step.type === "rotate-right") {
+      const pivot = frame.nodes[step.payload.pivotId];
+      const newRoot = frame.nodes[step.payload.newRootId];
+      if (pivot && newRoot) {
+        pivot.left = step.payload.movedSubtreeId;
+        newRoot.right = step.payload.pivotId;
+        if (step.payload.direction === "root") {
+          frame.rootId = step.payload.newRootId;
+        } else if (step.payload.parentId !== null) {
+          const parent = frame.nodes[step.payload.parentId];
+          if (parent) {
+            if (step.payload.direction === "left") {
+              parent.left = step.payload.newRootId;
+            } else {
+              parent.right = step.payload.newRootId;
+            }
+          }
+        }
+      }
+      frame.rotations += 1;
+      frame.lastRotationNodeIds = new Set<number>([step.payload.pivotId, step.payload.newRootId]);
+      continue;
+    }
+
+    frame.currentNodeId = null;
+    frame.currentInsert = null;
+    frame.insertedCount = step.payload.insertedCount;
+    frame.duplicateCount = step.payload.duplicateCount;
+    frame.heightUpdates = step.payload.heightUpdates;
+    frame.imbalanceCount = step.payload.imbalanceCount;
+    frame.rotations = step.payload.rotations;
+    frame.nodeCount = step.payload.nodeCount;
+    frame.treeHeight = step.payload.treeHeight;
+    frame.completed = true;
+  }
+
+  return frame;
+}
+
+function formatAvlRotationsStepLabel(step: AvlRotationsStepEvent): string {
+  if (step.type === "traverse") {
+    return "Traverse";
+  }
+  if (step.type === "insert-node") {
+    return step.payload.duplicate ? "Duplicate Insert" : "Insert Node";
+  }
+  if (step.type === "height-update") {
+    return "Height Update";
+  }
+  if (step.type === "imbalance-detected") {
+    return "Imbalance";
+  }
+  if (step.type === "rotate-left") {
+    return "Rotate Left";
+  }
+  if (step.type === "rotate-right") {
+    return "Rotate Right";
+  }
+  return "Complete";
+}
+
+function formatAvlRotationsStepMessage(step: AvlRotationsStepEvent): string {
+  if (step.type === "traverse") {
+    return `Traverse node ${step.payload.nodeValue} while inserting ${step.payload.targetValue}.`;
+  }
+  if (step.type === "insert-node") {
+    return step.payload.duplicate
+      ? `Value ${step.payload.targetValue} already exists, so insertion is skipped.`
+      : `Insert ${step.payload.targetValue} as the ${step.payload.direction} child at depth ${step.payload.depth}.`;
+  }
+  if (step.type === "height-update") {
+    return `Update node ${step.payload.value}: height ${step.payload.height}, balance ${step.payload.balanceFactor}.`;
+  }
+  if (step.type === "imbalance-detected") {
+    return `Node ${step.payload.value} is imbalanced with ${step.payload.caseType} case (balance ${step.payload.balanceFactor}).`;
+  }
+  if (step.type === "rotate-left") {
+    return `Rotate left at node ${step.payload.pivotId}; new subtree root is ${step.payload.newRootId}.`;
+  }
+  if (step.type === "rotate-right") {
+    return `Rotate right at node ${step.payload.pivotId}; new subtree root is ${step.payload.newRootId}.`;
+  }
+  return `Completed with ${step.payload.rotations} rotation(s) across ${step.payload.nodeCount} node(s).`;
 }
 
 interface BstOperationsFrame {

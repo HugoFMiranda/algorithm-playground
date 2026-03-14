@@ -375,8 +375,33 @@ describe("complexity summary", () => {
     expect(summary?.timeWorst).toBe("O(n)");
   });
 
+  it("returns avl-rotations complexity with run-aware details", () => {
+    const summary = getComplexitySummary("avl-rotations", {
+      algorithmSlug: "avl-rotations",
+      input: {
+        insertValues: [30, 10, 20, 40, 50],
+      },
+      normalizedParams: {},
+      result: {
+        finalLevelOrder: [20, 10, 40, null, null, 30, 50],
+        nodeCount: 5,
+        treeHeight: 3,
+        insertedCount: 5,
+        duplicateCount: 0,
+        heightUpdates: 11,
+        imbalanceCount: 2,
+        rotations: 3,
+        rootValue: 20,
+      },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(log n)");
+    expect(summary?.timeWorst).toBe("O(log n)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
-    expect(getComplexitySummary("avl-rotations", null)).toBeNull();
+    expect(getComplexitySummary("comparison-mode", null)).toBeNull();
   });
 
   it("returns compact complexity for implemented algorithms", () => {
@@ -611,6 +636,29 @@ describe("complexity summary", () => {
     expect(compact).toBe("O(h)");
   });
 
+  it("returns compact complexity for avl-rotations", () => {
+    const compact = getCompactCurrentComplexity("avl-rotations", {
+      algorithmSlug: "avl-rotations",
+      input: {
+        insertValues: [30, 10, 20, 40, 50],
+      },
+      normalizedParams: {},
+      result: {
+        finalLevelOrder: [20, 10, 40, null, null, 30, 50],
+        nodeCount: 5,
+        treeHeight: 3,
+        insertedCount: 5,
+        duplicateCount: 0,
+        heightUpdates: 11,
+        imbalanceCount: 2,
+        rotations: 3,
+        rootValue: 20,
+      },
+    });
+
+    expect(compact).toBe("O(log n)");
+  });
+
   it("returns compact complexity for trie-operations", () => {
     const compact = getCompactCurrentComplexity("trie-operations", {
       algorithmSlug: "trie-operations",
@@ -672,6 +720,6 @@ describe("complexity summary", () => {
   });
 
   it("returns null compact complexity for non-implemented algorithms", () => {
-    expect(getCompactCurrentComplexity("avl-rotations", null)).toBeNull();
+    expect(getCompactCurrentComplexity("comparison-mode", null)).toBeNull();
   });
 });

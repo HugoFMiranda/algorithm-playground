@@ -1,5 +1,7 @@
 import { createAStarRun } from "@/algorithms/a-star/engine";
 import { A_STAR_DEFAULT_PARAMS } from "@/algorithms/a-star/spec";
+import { createAvlRotationsRun } from "@/algorithms/avl-rotations/engine";
+import { AVL_ROTATIONS_DEFAULT_PARAMS } from "@/algorithms/avl-rotations/spec";
 import { createBinarySearchRun } from "@/algorithms/binary-search/engine";
 import { BINARY_SEARCH_DEFAULT_PARAMS } from "@/algorithms/binary-search/spec";
 import { createBidirectionalBfsRun } from "@/algorithms/bidirectional-bfs/engine";
@@ -140,6 +142,12 @@ const ALGORITHM_RUNTIME_REGISTRY: Record<string, AlgorithmRuntimeDefinition> = {
     rendererFamily: "tree",
     defaultParams: { ...INVERT_BINARY_TREE_DEFAULT_PARAMS },
     createRun: createInvertBinaryTreeRun,
+  },
+  "avl-rotations": {
+    slug: "avl-rotations",
+    rendererFamily: "tree",
+    defaultParams: { ...AVL_ROTATIONS_DEFAULT_PARAMS },
+    createRun: createAvlRotationsRun,
   },
   "bst-operations": {
     slug: "bst-operations",
