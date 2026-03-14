@@ -30,6 +30,7 @@ export type ComparisonSharedInputProfile = "array-values" | "path-grid";
 const ARRAY_SHARED_INPUT_SLUGS = new Set([
   "binary-search",
   "bubble-sort",
+  "counting-sort",
   "selection-sort",
   "insertion-sort",
   "merge-sort",
@@ -135,6 +136,8 @@ const RESULT_METRIC_PRIORITY: Array<{ key: string; label: string }> = [
   { key: "swaps", label: "Swaps" },
   { key: "passes", label: "Passes" },
   { key: "writes", label: "Writes" },
+  { key: "rangeSize", label: "Range Size" },
+  { key: "countsLength", label: "Bucket Count" },
   { key: "shifts", label: "Shifts" },
   { key: "partitions", label: "Partitions" },
   { key: "maxDepth", label: "Depth" },

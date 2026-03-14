@@ -30,12 +30,14 @@ describe("compare utilities", () => {
     const comparable = getComparableAlgorithms("bubble-sort");
 
     expect(comparable.some((algorithm) => algorithm.slug === "selection-sort")).toBe(true);
+    expect(comparable.some((algorithm) => algorithm.slug === "counting-sort")).toBe(true);
     expect(comparable.some((algorithm) => algorithm.slug === "bfs")).toBe(false);
     expect(new Set(comparable.map((algorithm) => algorithm.rendererFamily)).size).toBe(1);
   });
 
   it("detects safe shared-input profiles for compatible pairs", () => {
     expect(getComparisonSharedInputProfile("bubble-sort", "quick-sort")).toBe("array-values");
+    expect(getComparisonSharedInputProfile("counting-sort", "merge-sort")).toBe("array-values");
     expect(getComparisonSharedInputProfile("bfs", "a-star")).toBe("path-grid");
     expect(getComparisonSharedInputProfile("bubble-sort", "topological-sort")).toBeNull();
   });
@@ -74,6 +76,16 @@ describe("compare utilities", () => {
     expect(snapshot).not.toBeNull();
     expect(snapshot?.metrics.some((metric) => metric.key === "grid-cells")).toBe(true);
     expect(snapshot?.metrics.some((metric) => metric.key === "visitedCount")).toBe(true);
+  });
+
+  it("includes counting-sort range metrics in snapshots", () => {
+    const snapshot = createComparisonSnapshot("counting-sort", {
+      arrayValues: "3, -1, 3, 2, 0",
+    });
+
+    expect(snapshot).not.toBeNull();
+    expect(snapshot?.metrics.some((metric) => metric.key === "rangeSize")).toBe(true);
+    expect(snapshot?.metrics.some((metric) => metric.key === "countsLength")).toBe(true);
   });
 
   it("applies shared input overrides when creating comparison snapshots", () => {

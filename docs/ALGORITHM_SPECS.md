@@ -1,6 +1,6 @@
 # Algorithm Specs and Implementation Template
 
-This document defines the per-algorithm plan format and the 21-roadmap backlog.
+This document defines the per-algorithm plan format and the 22-roadmap backlog.
 
 ## Required Spec Template
 
@@ -170,6 +170,45 @@ Each algorithm must define:
   - Deterministic output snapshots for fixed params.
   - Param fallback behavior for malformed input and flags.
   - Tie-behavior toggle (`preferLeftOnEqual`) remains deterministic.
+  - Renderer completion state matches final sorted output.
+- Code examples:
+  - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.
+
+### Counting Sort (`D2`, Phase 2)
+- Objective: teach value-range-based sorting by converting frequencies into prefix positions and placing values stably into output slots.
+- Input model:
+  - Integer list provided as comma/space-separated text.
+  - Engine preserves normalized numeric order from input (no pre-sort).
+  - Decimal values are truncated during normalization so bucket indices stay deterministic.
+  - Empty/invalid arrays fallback to default seed values.
+- Params:
+  - `arrayValues` (string, default: `4, 2, 2, 8, 3, 3, 1, 5, 4, -1`)
+- Human-friendly explanation:
+  - Counting Sort counts how often each value appears, turns those counts into running positions, then places each value directly into the correct output slot.
+- Step event contract:
+  - `count`: increments the frequency bucket for one input value.
+  - `prefix-sum`: converts a bucket frequency into a running total for stable placement.
+  - `place`: places one input value into its resolved output index while decrementing the running bucket total.
+  - `write-back`: copies the stable output array back into the rendered result view.
+  - `complete`: terminal aggregate metrics and sorted-state flag.
+- Renderer requirements:
+  - Highlight active input index, active bucket, active output slot, and active write-back index.
+  - Show bucket labels across the normalized value range, including negative values when present.
+  - Distinct styling for output placement vs final write-back.
+  - Step status message derived from event payload.
+- Metrics tracked:
+  - Value range size / bucket count.
+  - Total placement operations.
+  - Total write-back operations.
+- Edge cases:
+  - Negative values are supported via deterministic bucket offset from `minValue`.
+  - Duplicate values preserve stable relative ordering because placement walks the input from right to left.
+  - Single-element arrays emit count, write-back, and completion events without prefix growth.
+- Acceptance tests:
+  - Deterministic output snapshots for fixed params.
+  - Param fallback behavior for malformed input.
+  - Negative-value input produces correct bucket offsets and sorted output.
+  - Stable placement behavior remains deterministic for duplicate values.
   - Renderer completion state matches final sorted output.
 - Code examples:
   - Algorithm page includes abstracted pseudocode and TypeScript reference snippets, maintained in per-algorithm example source files.

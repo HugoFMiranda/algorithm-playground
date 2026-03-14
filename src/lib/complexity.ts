@@ -199,6 +199,48 @@ function getSelectionSortComplexity(run: AlgorithmRunSnapshot | null): Complexit
   };
 }
 
+function getCountingSortComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
+  const values = run ? extractValues(run.input) : [];
+  const n = values.length;
+  const minValue = n > 0 ? Math.min(...values) : 0;
+  const maxValue = n > 0 ? Math.max(...values) : 0;
+  const rangeSize = n > 0 ? maxValue - minValue + 1 : 0;
+
+  let placements: number | null = null;
+  let writes: number | null = null;
+  let countsLength: number | null = null;
+  if (run && isRecord(run.result)) {
+    if ("placements" in run.result && isFiniteNumber(run.result.placements)) {
+      placements = run.result.placements;
+    }
+    if ("writes" in run.result && isFiniteNumber(run.result.writes)) {
+      writes = run.result.writes;
+    }
+    if ("countsLength" in run.result && isFiniteNumber(run.result.countsLength)) {
+      countsLength = run.result.countsLength;
+    }
+  }
+
+  const details = [
+    `n = ${n}`,
+    `Value range = ${rangeSize} (${minValue}..${maxValue})`,
+    "Counting Sort runs in O(n + k) where k is the value range size",
+    countsLength === null ? "Observed bucket count: pending" : `Observed bucket count: ${countsLength}`,
+    placements === null
+      ? "Observed placements/writes: pending"
+      : `Observed placements/writes: ${placements}/${writes ?? "?"}`,
+  ];
+
+  return {
+    timeBest: "O(n + k)",
+    timeAverage: "O(n + k)",
+    timeWorst: "O(n + k)",
+    space: "O(n + k)",
+    current: n <= 1 ? "O(1) on this input" : "O(n + k) on this input",
+    details,
+  };
+}
+
 function getQuickSortComplexity(run: AlgorithmRunSnapshot | null): ComplexitySummary {
   const values = run ? extractValues(run.input) : [];
   const n = values.length;
@@ -1244,6 +1286,10 @@ export function getComplexitySummary(
 
   if (algorithmSlug === "selection-sort") {
     return getSelectionSortComplexity(run && run.algorithmSlug === "selection-sort" ? run : null);
+  }
+
+  if (algorithmSlug === "counting-sort") {
+    return getCountingSortComplexity(run && run.algorithmSlug === "counting-sort" ? run : null);
   }
 
   if (algorithmSlug === "quick-sort") {

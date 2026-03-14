@@ -7,6 +7,8 @@ const ALGORITHM_EASY_EXPLANATIONS: Record<string, string> = {
     "Insertion Sort grows a sorted left side by inserting each new value into the correct spot in that side.",
   "merge-sort":
     "Merge Sort splits the array into smaller pieces, sorts each piece, then merges them back in order.",
+  "counting-sort":
+    "Counting Sort counts how many times each value appears, turns those counts into positions, then places values in order.",
   "quick-sort":
     "Quick Sort picks a pivot, groups smaller values to one side and larger values to the other, then repeats.",
   "heap-sort":

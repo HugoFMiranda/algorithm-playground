@@ -6,6 +6,7 @@ import { bellmanFordExamples } from "@/algorithms/examples/bellman-ford";
 import { bfsExamples } from "@/algorithms/examples/bfs";
 import { bstOperationsExamples } from "@/algorithms/examples/bst-operations";
 import { bubbleSortExamples } from "@/algorithms/examples/bubble-sort";
+import { countingSortExamples } from "@/algorithms/examples/counting-sort";
 import { dijkstraExamples } from "@/algorithms/examples/dijkstra";
 import { dfsExamples } from "@/algorithms/examples/dfs";
 import { heapSortExamples } from "@/algorithms/examples/heap-sort";
@@ -32,6 +33,7 @@ const EXAMPLES_REGISTRY: Record<string, AlgorithmExamples> = {
   bfs: bfsExamples,
   dijkstra: dijkstraExamples,
   dfs: dfsExamples,
+  "counting-sort": countingSortExamples,
   "selection-sort": selectionSortExamples,
   "insertion-sort": insertionSortExamples,
   "merge-sort": mergeSortExamples,

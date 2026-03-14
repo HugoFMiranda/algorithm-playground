@@ -13,7 +13,7 @@ Primary goals:
 
 - App routes:
   - `/` library page with search and algorithm list.
-  - `/algorithms/[slug]` algorithm shell with all 21 shipped algorithm runtimes.
+  - `/algorithms/[slug]` algorithm shell with all 22 shipped algorithm runtimes.
   - `/compare` side-by-side comparison route for default deterministic runs within the same renderer family, including normalized metrics overlays, synchronized shared-input controls for compatible pairs, and local shared-cursor playback controls with per-side active-step inspectors.
 - Core UI:
   - search, algorithm cards, visualizer panel, params panel, playback controls, implementation examples panel.

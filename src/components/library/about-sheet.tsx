@@ -27,9 +27,8 @@ export function AboutSheet() {
         <SheetHeader>
           <SheetTitle>algorithm-playground Phase One</SheetTitle>
           <SheetDescription>
-            Core UI, routing, and state scaffolding are available. Binary Search, BFS, DFS, Dijkstra, A*,
-            Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Selection Sort, Insertion Sort, and Merge
-            Sort are implemented as engine-backed visualization slices.
+            The current app ships the full roadmap backlog plus comparison mode. Array, grid, graph, and
+            tree algorithms all run through deterministic engine-backed visualization slices.
           </SheetDescription>
         </SheetHeader>
         <div className="space-y-4 px-4 pb-6 text-sm">
@@ -45,6 +44,7 @@ export function AboutSheet() {
               <Badge variant="secondary">Dijkstra</Badge>
               <Badge variant="secondary">A*</Badge>
               <Badge variant="secondary">Bubble Sort</Badge>
+              <Badge variant="secondary">Counting Sort</Badge>
               <Badge variant="secondary">Quick Sort</Badge>
               <Badge variant="secondary">Heap Sort</Badge>
               <Badge variant="secondary">Topological Sort</Badge>

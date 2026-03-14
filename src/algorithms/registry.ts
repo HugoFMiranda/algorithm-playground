@@ -14,6 +14,8 @@ import { createBstOperationsRun } from "@/algorithms/bst-operations/engine";
 import { BST_OPERATIONS_DEFAULT_PARAMS } from "@/algorithms/bst-operations/spec";
 import { createBubbleSortRun } from "@/algorithms/bubble-sort/engine";
 import { BUBBLE_SORT_DEFAULT_PARAMS } from "@/algorithms/bubble-sort/spec";
+import { createCountingSortRun } from "@/algorithms/counting-sort/engine";
+import { COUNTING_SORT_DEFAULT_PARAMS } from "@/algorithms/counting-sort/spec";
 import { createDijkstraRun } from "@/algorithms/dijkstra/engine";
 import { DIJKSTRA_DEFAULT_PARAMS } from "@/algorithms/dijkstra/spec";
 import { createDfsRun } from "@/algorithms/dfs/engine";
@@ -64,6 +66,12 @@ const ALGORITHM_RUNTIME_REGISTRY: Record<string, AlgorithmRuntimeDefinition> = {
     rendererFamily: "array",
     defaultParams: { ...BUBBLE_SORT_DEFAULT_PARAMS },
     createRun: createBubbleSortRun,
+  },
+  "counting-sort": {
+    slug: "counting-sort",
+    rendererFamily: "array",
+    defaultParams: { ...COUNTING_SORT_DEFAULT_PARAMS },
+    createRun: createCountingSortRun,
   },
   bfs: {
     slug: "bfs",

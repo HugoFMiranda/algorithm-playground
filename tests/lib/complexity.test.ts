@@ -400,6 +400,29 @@ describe("complexity summary", () => {
     expect(summary?.timeWorst).toBe("O(log n)");
   });
 
+  it("returns counting-sort complexity with range-aware details", () => {
+    const summary = getComplexitySummary("counting-sort", {
+      algorithmSlug: "counting-sort",
+      input: {
+        values: [3, -1, 3, 2, 0],
+      },
+      normalizedParams: {},
+      result: {
+        sortedValues: [-1, 0, 2, 3, 3],
+        minValue: -1,
+        maxValue: 3,
+        rangeSize: 5,
+        countsLength: 5,
+        placements: 5,
+        writes: 5,
+      },
+    });
+
+    expect(summary).not.toBeNull();
+    expect(summary?.timeAverage).toBe("O(n + k)");
+    expect(summary?.space).toBe("O(n + k)");
+  });
+
   it("returns null for non-implemented algorithms", () => {
     expect(getComplexitySummary("comparison-mode", null)).toBeNull();
   });
@@ -657,6 +680,27 @@ describe("complexity summary", () => {
     });
 
     expect(compact).toBe("O(log n)");
+  });
+
+  it("returns compact complexity for counting-sort", () => {
+    const compact = getCompactCurrentComplexity("counting-sort", {
+      algorithmSlug: "counting-sort",
+      input: {
+        values: [3, -1, 3, 2, 0],
+      },
+      normalizedParams: {},
+      result: {
+        sortedValues: [-1, 0, 2, 3, 3],
+        minValue: -1,
+        maxValue: 3,
+        rangeSize: 5,
+        countsLength: 5,
+        placements: 5,
+        writes: 5,
+      },
+    });
+
+    expect(compact).toBe("O(n + k)");
   });
 
   it("returns compact complexity for trie-operations", () => {

@@ -114,7 +114,7 @@ export function LibrarySearch({ algorithms }: LibrarySearchProps) {
             Explore visual algorithms.
           </CardTitle>
           <CardDescription className="max-w-2xl text-sm leading-relaxed">
-            Search the full algorithm catalog, open visualizer pages, or jump into compare mode. All 21
+            Search the full algorithm catalog, open visualizer pages, or jump into compare mode. All 22
             current roadmap algorithms ship with deterministic engine-backed playback implementations.
           </CardDescription>
         </div>

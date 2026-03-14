@@ -19,6 +19,7 @@ describe("algorithm runtime registry", () => {
     const avlRotationsRuntime = getAlgorithmRuntime("avl-rotations");
     const bstOperationsRuntime = getAlgorithmRuntime("bst-operations");
     const trieOperationsRuntime = getAlgorithmRuntime("trie-operations");
+    const countingSortRuntime = getAlgorithmRuntime("counting-sort");
 
     expect(bubbleSortRuntime).not.toBeNull();
     expect(bubbleSortRuntime?.slug).toBe("bubble-sort");
@@ -50,6 +51,8 @@ describe("algorithm runtime registry", () => {
     expect(bstOperationsRuntime?.slug).toBe("bst-operations");
     expect(trieOperationsRuntime).not.toBeNull();
     expect(trieOperationsRuntime?.slug).toBe("trie-operations");
+    expect(countingSortRuntime).not.toBeNull();
+    expect(countingSortRuntime?.slug).toBe("counting-sort");
   });
 
   it("returns null for non-implemented algorithms", () => {

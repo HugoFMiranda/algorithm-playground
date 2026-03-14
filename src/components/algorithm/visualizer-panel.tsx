@@ -24,6 +24,8 @@ import type { BstOperationsInput, BstOperationsNode, BstOperationsResult } from 
 import type { BstOperationsStepEvent } from "@/algorithms/bst-operations/engine";
 import type { BubbleSortInput, BubbleSortResult } from "@/algorithms/bubble-sort/spec";
 import type { BubbleSortStepEvent } from "@/algorithms/bubble-sort/engine";
+import type { CountingSortInput, CountingSortResult } from "@/algorithms/counting-sort/spec";
+import type { CountingSortStepEvent } from "@/algorithms/counting-sort/engine";
 import type { DijkstraInput, DijkstraResult } from "@/algorithms/dijkstra/spec";
 import type { DijkstraStepEvent } from "@/algorithms/dijkstra/engine";
 import type { DfsInput, DfsResult } from "@/algorithms/dfs/spec";
@@ -120,6 +122,10 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
 
   if (algorithm.slug === "selection-sort") {
     return <SelectionSortVisualizer run={run} cursor={cursor} />;
+  }
+
+  if (algorithm.slug === "counting-sort") {
+    return <CountingSortVisualizer run={run} cursor={cursor} />;
   }
 
   if (algorithm.slug === "quick-sort") {
@@ -4164,6 +4170,308 @@ function formatSelectionSortStepMessage(step: SelectionSortStepEvent): string {
   }
 
   return `Completed in ${step.payload.passes} passes with ${step.payload.comparisons} comparisons.`;
+}
+
+interface CountingSortFrame {
+  values: number[];
+  countBuckets: number[];
+  bucketLabels: number[];
+  outputValues: Array<number | null>;
+  finalValues: number[];
+  activeSourceIndex: number | null;
+  activeBucketIndex: number | null;
+  activeOutputIndex: number | null;
+  activeWriteIndex: number | null;
+  placements: number;
+  writes: number;
+  completed: boolean;
+}
+
+function CountingSortVisualizer({ run, cursor }: SharedVisualizerProps) {
+  const compactComplexity = getCompactCurrentComplexity("counting-sort", run);
+  const typedRun =
+    run && run.algorithmSlug === "counting-sort"
+      ? {
+          ...run,
+          input: run.input as CountingSortInput,
+          result: run.result as CountingSortResult,
+          steps: run.steps as CountingSortStepEvent[],
+        }
+      : null;
+
+  const activeStep = typedRun && cursor >= 0 ? typedRun.steps[cursor] : null;
+  const frame = useMemo(() => deriveCountingSortFrame(typedRun, cursor), [typedRun, cursor]);
+  const stepLabel = activeStep ? formatCountingSortStepLabel(activeStep) : "Ready";
+  const stepMessage = activeStep
+    ? formatCountingSortStepMessage(activeStep)
+    : "Press Play or Step to start execution.";
+
+  return (
+    <Card className="surface-card min-h-[420px] border-border/70 lg:min-h-[620px]">
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg">Visualizer</CardTitle>
+          <div className="flex items-center gap-2">
+            {compactComplexity ? (
+              <Badge variant="outline" className="rounded-full border-border/70">
+                {compactComplexity}
+              </Badge>
+            ) : null}
+            <Badge variant="secondary" className="rounded-full border-border/70">
+              Counting Sort
+            </Badge>
+          </div>
+        </div>
+        <CardDescription>
+          Deterministic counting, prefix-sum, stable placement, and write-back playback for integer arrays.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Input</p>
+            <p className="font-mono text-base">{frame.values.length} values</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Range</p>
+            <p className="font-mono text-base">{typedRun?.result.rangeSize ?? 0} buckets</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Placements</p>
+            <p className="font-mono text-base">{frame.placements}</p>
+          </div>
+          <div className="rounded-lg border border-border/80 bg-background/70 p-3">
+            <p className="text-muted-foreground text-[11px] uppercase">Writes</p>
+            <p className="font-mono text-base">{frame.writes}</p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="rounded-full border-border/70">
+              {stepLabel}
+            </Badge>
+            <p className="text-muted-foreground">{stepMessage}</p>
+          </div>
+
+          <CountingSortRow
+            label="Input"
+            values={frame.values}
+            activeIndex={frame.activeSourceIndex}
+            activeClassName="border-cyan-300/60 bg-cyan-500/15"
+          />
+
+          <div className="rounded-xl border border-border/70 bg-background/70 p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Count Buckets
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-6">
+              {frame.countBuckets.map((count, index) => (
+                <div
+                  key={`count-bucket-${frame.bucketLabels[index]}`}
+                  className={cn(
+                    "rounded-lg border p-2",
+                    frame.activeBucketIndex === index && "border-amber-300/60 bg-amber-500/15",
+                  )}
+                >
+                  <p className="text-muted-foreground text-[10px]">value {frame.bucketLabels[index]}</p>
+                  <p className="font-mono text-sm">{count}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/70 bg-background/70 p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Output</p>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-6">
+              {frame.outputValues.map((value, index) => (
+                <div
+                  key={`counting-output-${index}-${String(value)}`}
+                  className={cn(
+                    "rounded-lg border p-2",
+                    frame.activeOutputIndex === index && "border-sky-300/60 bg-sky-500/15",
+                  )}
+                >
+                  <p className="text-muted-foreground text-[10px]">index {index}</p>
+                  <p className="font-mono text-sm">{value === null ? "?" : value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <CountingSortRow
+            label="Write Back"
+            values={frame.finalValues}
+            activeIndex={frame.activeWriteIndex}
+            activeClassName="border-emerald-300/60 bg-emerald-500/15"
+          />
+
+          {frame.values.length === 0 ? (
+            <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-border/70 p-4 text-xs">
+              <ArrowUpDownIcon className="size-3.5" />
+              No values available for visualization.
+            </div>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CountingSortRow({
+  label,
+  values,
+  activeIndex,
+  activeClassName,
+}: {
+  label: string;
+  values: number[];
+  activeIndex: number | null;
+  activeClassName: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-background/70 p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-6">
+        {values.map((value, index) => (
+          <div
+            key={`${label}-${index}-${value}`}
+            className={cn("rounded-lg border p-2", activeIndex === index && activeClassName)}
+          >
+            <p className="text-muted-foreground text-[10px]">index {index}</p>
+            <p className="font-mono text-sm">{value}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function deriveCountingSortFrame(
+  run: {
+    input: CountingSortInput;
+    result: CountingSortResult;
+    steps: CountingSortStepEvent[];
+  } | null,
+  cursor: number,
+): CountingSortFrame {
+  const bucketLabels =
+    run === null
+      ? []
+      : Array.from({ length: run.input.rangeSize }, (_, index) => run.input.minValue + index);
+  const frame: CountingSortFrame = {
+    values: run?.input.values ?? [],
+    countBuckets: Array.from({ length: bucketLabels.length }, () => 0),
+    bucketLabels,
+    outputValues: Array.from({ length: run?.input.values.length ?? 0 }, () => null),
+    finalValues: [...(run?.input.values ?? [])],
+    activeSourceIndex: null,
+    activeBucketIndex: null,
+    activeOutputIndex: null,
+    activeWriteIndex: null,
+    placements: 0,
+    writes: 0,
+    completed: false,
+  };
+
+  if (!run || cursor < 0 || run.steps.length === 0) {
+    return frame;
+  }
+
+  const boundedCursor = Math.min(cursor, run.steps.length - 1);
+  for (let index = 0; index <= boundedCursor; index += 1) {
+    const step = run.steps[index];
+
+    if (step.type === "count") {
+      frame.countBuckets[step.payload.bucketIndex] = step.payload.bucketCount;
+      frame.activeSourceIndex = step.payload.sourceIndex;
+      frame.activeBucketIndex = step.payload.bucketIndex;
+      frame.activeOutputIndex = null;
+      frame.activeWriteIndex = null;
+      continue;
+    }
+
+    if (step.type === "prefix-sum") {
+      frame.countBuckets[step.payload.bucketIndex] = step.payload.runningTotal;
+      frame.activeSourceIndex = null;
+      frame.activeBucketIndex = step.payload.bucketIndex;
+      frame.activeOutputIndex = null;
+      frame.activeWriteIndex = null;
+      continue;
+    }
+
+    if (step.type === "place") {
+      frame.outputValues[step.payload.outputIndex] = step.payload.value;
+      frame.countBuckets[step.payload.bucketIndex] = step.payload.remainingCount;
+      frame.activeSourceIndex = step.payload.sourceIndex;
+      frame.activeBucketIndex = step.payload.bucketIndex;
+      frame.activeOutputIndex = step.payload.outputIndex;
+      frame.activeWriteIndex = null;
+      frame.placements += 1;
+      continue;
+    }
+
+    if (step.type === "write-back") {
+      frame.finalValues[step.payload.writeIndex] = step.payload.value;
+      frame.activeSourceIndex = null;
+      frame.activeBucketIndex = null;
+      frame.activeOutputIndex = null;
+      frame.activeWriteIndex = step.payload.writeIndex;
+      frame.writes += 1;
+      continue;
+    }
+
+    frame.activeSourceIndex = null;
+    frame.activeBucketIndex = null;
+    frame.activeOutputIndex = null;
+    frame.activeWriteIndex = null;
+    frame.placements = step.payload.placements;
+    frame.writes = step.payload.writes;
+    frame.finalValues = [...run.result.sortedValues];
+    frame.completed = step.payload.isSorted;
+  }
+
+  return frame;
+}
+
+function formatCountingSortStepLabel(step: CountingSortStepEvent): string {
+  if (step.type === "count") {
+    return "Count";
+  }
+
+  if (step.type === "prefix-sum") {
+    return "Prefix Sum";
+  }
+
+  if (step.type === "place") {
+    return "Place";
+  }
+
+  if (step.type === "write-back") {
+    return "Write Back";
+  }
+
+  return "Sorted";
+}
+
+function formatCountingSortStepMessage(step: CountingSortStepEvent): string {
+  if (step.type === "count") {
+    return `Count value ${step.payload.value} at input index ${step.payload.sourceIndex}; bucket ${step.payload.bucketValue} now stores ${step.payload.bucketCount}.`;
+  }
+
+  if (step.type === "prefix-sum") {
+    return `Convert bucket ${step.payload.bucketValue} into a prefix total: ${step.payload.previousCount} becomes ${step.payload.runningTotal}.`;
+  }
+
+  if (step.type === "place") {
+    return `Place value ${step.payload.value} from input index ${step.payload.sourceIndex} into output index ${step.payload.outputIndex}.`;
+  }
+
+  if (step.type === "write-back") {
+    return `Write sorted value ${step.payload.value} back to index ${step.payload.writeIndex}.`;
+  }
+
+  return `Completed with ${step.payload.countsLength} buckets, ${step.payload.placements} placements, and ${step.payload.writes} writes.`;
 }
 
 interface InsertionSortFrame {

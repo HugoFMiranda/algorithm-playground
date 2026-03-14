@@ -29,6 +29,10 @@ import {
   BUBBLE_SORT_DEFAULT_PARAMS,
   createRandomBubbleSortParams,
 } from "@/algorithms/bubble-sort/spec";
+import {
+  COUNTING_SORT_DEFAULT_PARAMS,
+  createRandomCountingSortParams,
+} from "@/algorithms/counting-sort/spec";
 import { DFS_DEFAULT_PARAMS, createRandomDfsParams } from "@/algorithms/dfs/spec";
 import {
   DIJKSTRA_DEFAULT_PARAMS,
@@ -307,6 +311,19 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
     );
   }
 
+  if (selectedAlgorithmSlug === "counting-sort") {
+    return (
+      <CountingSortParamsCard
+        className={className}
+        params={params}
+        run={run}
+        setParam={setParam}
+        setParams={setParams}
+        resetParams={resetParams}
+      />
+    );
+  }
+
   if (selectedAlgorithmSlug === "insertion-sort") {
     return (
       <InsertionSortParamsCard
@@ -462,8 +479,8 @@ export function ParamsPanel({ className }: ParamsPanelProps) {
         <CardDescription className="text-xs leading-relaxed">
           Parameter schema and validation are enabled for Binary Search, BFS, Bidirectional BFS, DFS,
           Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST,
-          Prim MST, Bellman-Ford, BST Operations, AVL Rotations, Selection Sort, Insertion Sort, Merge
-          Sort, Invert Binary Tree, and Trie Operations in this milestone.
+          Prim MST, Bellman-Ford, BST Operations, AVL Rotations, Selection Sort, Counting Sort,
+          Insertion Sort, Merge Sort, Invert Binary Tree, and Trie Operations in this milestone.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -3860,6 +3877,104 @@ function SelectionSortParamsCard({
             Values ({normalizedValues.length}):{" "}
             <span className="font-mono">
               {normalizedValues.length > 0 ? normalizedValues.join(", ") : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Sorted:{" "}
+            <span className="font-mono">{sortedValues.length > 0 ? sortedValues.join(", ") : "n/a"}</span>
+          </p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <SlidersHorizontalIcon className="size-3.5" />
+          Parameter changes immediately regenerate a deterministic step stream.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CountingSortParamsCard({
+  className,
+  params,
+  run,
+  setParam,
+  setParams,
+  resetParams,
+}: AlgorithmParamsCardProps) {
+  const arrayValues = useMemo(() => {
+    const value = params.arrayValues;
+    return typeof value === "string" ? value : COUNTING_SORT_DEFAULT_PARAMS.arrayValues;
+  }, [params.arrayValues]);
+
+  const normalizedValues = run && run.algorithmSlug === "counting-sort" ? getInputValues(run.input) : [];
+  const sortedValues = run && run.algorithmSlug === "counting-sort" ? getSortedResultValues(run.result) : [];
+  const rangeSummary =
+    run && run.algorithmSlug === "counting-sort" && typeof run.result === "object" && run.result !== null
+      ? (run.result as {
+          minValue: number;
+          maxValue: number;
+          rangeSize: number;
+          countsLength: number;
+        })
+      : null;
+
+  const handleRandomize = () => {
+    const randomParams = createRandomCountingSortParams();
+    setParams({
+      arrayValues: randomParams.arrayValues,
+    });
+  };
+
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Parameters</CardTitle>
+          <Badge variant="secondary" className="rounded-full border-border/70">
+            Counting Sort
+          </Badge>
+        </div>
+        <CardDescription className="text-xs leading-relaxed">
+          Provide comma-separated integer values. Counting Sort counts occurrences by value range, builds
+          prefix totals, then places elements into stable output positions.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="param-counting-array-values" className="text-xs font-medium">
+            Array Values
+          </label>
+          <Input
+            id="param-counting-array-values"
+            value={arrayValues}
+            onChange={(event) => setParam("arrayValues", event.target.value)}
+            placeholder={COUNTING_SORT_DEFAULT_PARAMS.arrayValues}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={resetParams}>
+            Reset Defaults
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleRandomize}>
+            <ShuffleIcon className="size-3.5" />
+            Randomize
+          </Button>
+        </div>
+        <Separator />
+        <div className="space-y-1 text-xs">
+          <p className="font-medium">Normalized Run Input</p>
+          <p className="text-muted-foreground leading-relaxed">
+            Values ({normalizedValues.length}):{" "}
+            <span className="font-mono">
+              {normalizedValues.length > 0 ? normalizedValues.join(", ") : "n/a"}
+            </span>
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Range:{" "}
+            <span className="font-mono">
+              {rangeSummary
+                ? `${rangeSummary.minValue}..${rangeSummary.maxValue} (${rangeSummary.rangeSize} buckets)`
+                : "n/a"}
             </span>
           </p>
           <p className="text-muted-foreground leading-relaxed">

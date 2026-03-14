@@ -58,6 +58,16 @@ export const ALGORITHMS: AlgorithmDefinition[] = [
       "Stable divide-and-conquer sort with predictable O(n log n) behavior.",
   },
   {
+    name: "Counting Sort",
+    slug: "counting-sort",
+    category: "Sorting",
+    difficulty: "D2",
+    roadmapPhase: "Phase 2",
+    tags: ["counting", "stable", "range-based"],
+    shortDescription:
+      "Value-range-based stable sorting walkthrough using buckets, prefix sums, and output placement.",
+  },
+  {
     name: "Quick Sort",
     slug: "quick-sort",
     category: "Sorting",

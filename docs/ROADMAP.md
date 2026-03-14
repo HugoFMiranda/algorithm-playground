@@ -12,7 +12,7 @@ Audience target is broad: learners, interview preparation users, and engineering
 ## Planning Horizon
 
 - Phase window: 3 phases over approximately 3 months.
-- Current status: UI scaffold completed; Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations shipped as engine-backed vertical slices, completing the current algorithm backlog. The `/compare` route now ships side-by-side default-run summaries with normalized metrics overlays, synchronized shared inputs for compatible algorithms that share a renderer family, and local playback parity with shared cursor controls and per-side step inspection.
+- Current status: UI scaffold completed; Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Counting Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations shipped as engine-backed vertical slices, completing the current algorithm backlog. The `/compare` route now ships side-by-side default-run summaries with normalized metrics overlays, synchronized shared inputs for compatible algorithms that share a renderer family, and local playback parity with shared cursor controls and per-side step inspection.
 - Next implementation target: add renderer-level side-by-side visual playback to comparison mode.
 
 ## Difficulty Rubric
@@ -56,6 +56,7 @@ Algorithms:
 - Invert Binary Tree (`D1`)
 - Quick Sort (`D2`)
 - Heap Sort (`D3`)
+- Counting Sort (`D2`)
 - Topological Sort (`D2`)
 - Union-Find (`D2`)
 - Kruskal MST (`D2`)
@@ -84,7 +85,7 @@ Core infra milestones:
 - Expanded metrics overlays.
 - Worker-backed step generation for heavy workloads.
 
-## Algorithm Portfolio (21)
+## Algorithm Portfolio (22)
 
 | Algorithm | Category | Difficulty | Planned Phase |
 | --- | --- | --- | --- |
@@ -92,6 +93,7 @@ Core infra milestones:
 | Selection Sort | Sorting | D1 | Phase 1 |
 | Insertion Sort | Sorting | D1 | Phase 1 |
 | Merge Sort | Sorting | D2 | Phase 1 |
+| Counting Sort | Sorting | D2 | Phase 2 |
 | Quick Sort | Sorting | D2 | Phase 2 |
 | Heap Sort | Sorting | D3 | Phase 2 |
 | BFS | Pathfinding | D1 | Phase 1 |

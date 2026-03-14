@@ -143,6 +143,17 @@ describe("app store playback", () => {
     expect(state.playback.status).toBe("idle");
   });
 
+  it("initializes counting-sort run from runtime registry", () => {
+    const store = useAppStore.getState();
+    store.initializeAlgorithm("counting-sort");
+
+    const state = useAppStore.getState();
+    expect(state.selectedAlgorithmSlug).toBe("counting-sort");
+    expect(state.run).not.toBeNull();
+    expect(state.playback.cursor).toBe(-1);
+    expect(state.playback.status).toBe("idle");
+  });
+
   it("initializes quick-sort run from runtime registry", () => {
     const store = useAppStore.getState();
     store.initializeAlgorithm("quick-sort");

@@ -14,7 +14,7 @@ Build a professional algorithm visualization hub where users can:
 - Frontend-only Next.js App Router application.
 - No backend requirements in the current roadmap window.
 - Focus on reusable engine and renderer architecture before advanced features.
-- Current implementation checkpoint: Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations are fully integrated algorithm slices (engine, playback, renderer, params, and code examples). Comparison mode now ships side-by-side default-run summaries, normalized metrics overlays, synchronized shared inputs for compatible array and pathfinding pairs across shared renderer families, plus local playback parity with shared cursor controls and per-side active-step inspection.
+- Current implementation checkpoint: Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Counting Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations are fully integrated algorithm slices (engine, playback, renderer, params, and code examples). Comparison mode now ships side-by-side default-run summaries, normalized metrics overlays, synchronized shared inputs for compatible array and pathfinding pairs across shared renderer families, plus local playback parity with shared cursor controls and per-side active-step inspection.
 - Every algorithm must ship with an easy-to-understand explanation surfaced on its algorithm page.
 
 ## Source-of-Truth Policy
@@ -67,7 +67,7 @@ Difficulty:
 - `D2`: moderate invariants and event complexity.
 - `D3`: advanced invariants, branching logic, and complex visuals.
 
-Roadmap horizon is 3 phases with 21 planned algorithms.
+Roadmap horizon is 3 phases with 22 planned algorithms.
 
 ## Delivery Sequence
 
