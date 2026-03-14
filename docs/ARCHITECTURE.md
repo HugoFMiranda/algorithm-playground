@@ -16,7 +16,7 @@ Primary goals:
   - `/algorithms/[slug]` algorithm shell with all 22 shipped algorithm runtimes.
   - `/compare` side-by-side comparison route for default deterministic runs within the same renderer family, including normalized metrics overlays, synchronized shared-input controls for compatible pairs, and local shared-cursor playback controls with per-side active-step inspectors.
 - Core UI:
-  - search, algorithm cards, visualizer panel, params panel, playback controls, implementation examples panel.
+  - search, algorithm cards, visualizer panel, renderer mode toggle, params panel, playback controls, implementation examples panel.
 - Data:
   - `src/data/algorithms.ts` now contains roadmap metadata (category, difficulty, planned phase).
 - State:
@@ -34,6 +34,16 @@ Primary goals:
   - Local comparison playback state helpers for shared cursor progression, reset semantics, and speed normalization.
 - `src/algorithms/examples/*`
   - Per-algorithm abstracted code examples (pseudocode + TypeScript).
+
+## Active Renderer Direction
+
+- Algorithm pages support two presentation tracks:
+  - `Advanced`: the existing detailed, algorithm-specific educational visualizers.
+  - `Simple`: a new abstract, clip-friendly renderer mode.
+- The first `Simple` rollout applies only to:
+  - array algorithms via animated bar renderers,
+  - pathfinding/grid algorithms via abstract square-canvas renderers.
+- Graph and tree families remain advanced-only during the first rollout.
 
 ## Target Architecture (Roadmap)
 
@@ -53,12 +63,16 @@ Primary goals:
 - `src/algorithms/<slug>/engine.ts`
   - Pure step generation logic.
 
-## Renderer Layer (planned)
+## Renderer Layer (active refactor)
 
 - `src/renderers/array/`
+  - shared array frame derivation and `Simple` renderer surfaces.
 - `src/renderers/grid/`
+  - shared grid frame derivation and `Simple` renderer surfaces.
 - `src/renderers/graph/`
+  - reserved for future graph-family modularization.
 - `src/renderers/tree/`
+  - reserved for future tree-family modularization.
 
 Each renderer consumes step events and produces view state for UI components.
 
@@ -79,7 +93,7 @@ Planned expansion:
 - loop/step-backward behavior,
 - run ids and timeline scrub,
 - worker-backed heavy-step generation,
-- renderer-level side-by-side visual playback for comparison mode.
+- renderer-level side-by-side visual playback for comparison mode after simple-mode rollout stabilizes.
 
 ## Documentation Contracts
 

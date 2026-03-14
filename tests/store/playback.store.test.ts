@@ -99,6 +99,15 @@ describe("app store playback", () => {
     expect(state.playback.status).toBe("idle");
   });
 
+  it("preserves renderer mode when algorithms reinitialize", () => {
+    useAppStore.getState().setRendererMode("simple");
+    useAppStore.getState().initializeAlgorithm("bubble-sort");
+    useAppStore.getState().initializeAlgorithm("bfs");
+
+    const state = useAppStore.getState();
+    expect(state.rendererMode).toBe("simple");
+  });
+
   it("initializes bidirectional-bfs run from runtime registry", () => {
     const store = useAppStore.getState();
     store.initializeAlgorithm("bidirectional-bfs");

@@ -11,10 +11,12 @@ import { ComplexityPanel } from "@/components/algorithm/complexity-panel";
 import { ImplementationExamples } from "@/components/algorithm/implementation-examples";
 import { PlaybackControls } from "@/components/algorithm/playback-controls";
 import { ParamsPanel } from "@/components/algorithm/params-panel";
+import { RendererModeToggle } from "@/components/algorithm/renderer-mode-toggle";
 import { VisualizerPanel } from "@/components/algorithm/visualizer-panel";
 import { PageTransition } from "@/components/layout/page-transition";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { supportsSimpleRenderer } from "@/lib/renderer-mode";
 
 interface AlgorithmPageShellProps {
   algorithm: AlgorithmDefinition;
@@ -22,7 +24,10 @@ interface AlgorithmPageShellProps {
 
 export function AlgorithmPageShell({ algorithm }: AlgorithmPageShellProps) {
   const initializeAlgorithm = useAppStore((state) => state.initializeAlgorithm);
+  const rendererMode = useAppStore((state) => state.rendererMode);
+  const setRendererMode = useAppStore((state) => state.setRendererMode);
   const easyExplanation = getAlgorithmEasyExplanation(algorithm.slug);
+  const simpleModeSupported = supportsSimpleRenderer(algorithm.slug);
 
   useEffect(() => {
     initializeAlgorithm(algorithm.slug);
@@ -79,7 +84,12 @@ export function AlgorithmPageShell({ algorithm }: AlgorithmPageShellProps) {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-          <VisualizerPanel algorithm={algorithm} />
+          <div className="space-y-6">
+            {simpleModeSupported ? (
+              <RendererModeToggle mode={rendererMode} onModeChange={setRendererMode} />
+            ) : null}
+            <VisualizerPanel algorithm={algorithm} mode={rendererMode} />
+          </div>
           <aside className="space-y-6">
             <ParamsPanel className="surface-card border-border/70" />
             <ComplexityPanel algorithmSlug={algorithm.slug} className="surface-card border-border/70" />

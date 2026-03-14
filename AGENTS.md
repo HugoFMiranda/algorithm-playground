@@ -15,6 +15,7 @@ Build a professional algorithm visualization hub where users can:
 - No backend requirements in the current roadmap window.
 - Focus on reusable engine and renderer architecture before advanced features.
 - Current implementation checkpoint: Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Counting Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations are fully integrated algorithm slices (engine, playback, renderer, params, and code examples). Comparison mode now ships side-by-side default-run summaries, normalized metrics overlays, synchronized shared inputs for compatible array and pathfinding pairs across shared renderer families, plus local playback parity with shared cursor controls and per-side active-step inspection.
+- Current renderer direction: algorithm pages now support an `Advanced` detailed renderer track and are adding a `Simple` renderer track for short-form-friendly, abstract playback. The first `Simple` rollout targets array and pathfinding/grid families only; graph and tree algorithms remain advanced-only until later phases.
 - Every algorithm must ship with an easy-to-understand explanation surfaced on its algorithm page.
 
 ## Source-of-Truth Policy
@@ -74,6 +75,12 @@ Roadmap horizon is 3 phases with 22 planned algorithms.
 1. Phase 1: foundational sorting + pathfinding + binary search.
 2. Phase 2: graph breadth and additional sorting/tree structures, with Bidirectional BFS prioritized next.
 3. Phase 3: advanced algorithms and comparison tooling.
+4. Current post-roadmap implementation sequence:
+   - documentation sync before renderer work,
+   - renderer-mode architecture split,
+   - per-page `Simple` / `Advanced` toggle,
+   - array simple renderers,
+   - grid simple renderers.
 
 Canonical order and algorithm list are maintained in `docs/ROADMAP.md` and `src/data/algorithms.ts`.
 
@@ -94,6 +101,7 @@ For each implemented algorithm:
 - Keep ESLint enabled; avoid broad suppression.
 - Prefer small composable components and pure algorithm engines.
 - Keep shadcn-first UI usage for consistency.
+- Documentation must be updated before coding when architecture or roadmap direction changes.
 
 ## Commit and PR Rules
 

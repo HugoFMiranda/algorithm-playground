@@ -58,7 +58,11 @@ import type { UnionFindInput, UnionFindResult } from "@/algorithms/union-find/sp
 import type { UnionFindStepEvent } from "@/algorithms/union-find/engine";
 import type { AlgorithmDefinition } from "@/data/algorithms";
 import { getCompactCurrentComplexity } from "@/lib/complexity";
+import type { RendererMode } from "@/lib/renderer-mode";
+import { getSimpleRendererFamily, supportsSimpleRenderer } from "@/lib/renderer-mode";
 import { parseWeightOverrides, serializeCellList, serializeWeightOverrides } from "@/lib/path-grid-edit";
+import { SimpleArrayRenderer } from "@/renderers/array/simple";
+import { SimpleGridRenderer } from "@/renderers/grid/simple";
 import { useAppStore } from "@/store/app-store";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +72,7 @@ import { Input } from "@/components/ui/input";
 
 interface VisualizerPanelProps {
   algorithm: AlgorithmDefinition;
+  mode?: RendererMode;
 }
 
 interface AlgorithmRunSnapshot {
@@ -83,7 +88,7 @@ interface SharedVisualizerProps {
   cursor: number;
 }
 
-export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
+export function VisualizerPanel({ algorithm, mode = "advanced" }: VisualizerPanelProps) {
   const run = useAppStore((state) => state.run);
   const cursor = useAppStore((state) => state.playback.cursor);
   const usesTreeViewport =
@@ -91,6 +96,17 @@ export function VisualizerPanel({ algorithm }: VisualizerPanelProps) {
     algorithm.slug === "bst-operations" ||
     algorithm.slug === "avl-rotations" ||
     algorithm.slug === "trie-operations";
+  const simpleRendererFamily = getSimpleRendererFamily(algorithm.slug);
+
+  if (mode === "simple" && supportsSimpleRenderer(algorithm.slug)) {
+    if (simpleRendererFamily === "array") {
+      return <SimpleArrayRenderer algorithmName={algorithm.name} run={run} cursor={cursor} />;
+    }
+
+    if (simpleRendererFamily === "grid") {
+      return <SimpleGridRenderer algorithmName={algorithm.name} run={run} cursor={cursor} />;
+    }
+  }
 
   if (algorithm.slug === "binary-search") {
     return <BinarySearchVisualizer run={run} cursor={cursor} />;

@@ -7,6 +7,7 @@ import {
   getPlaybackMaxSpeed,
   getPlaybackSpeedStep,
 } from "@/lib/playback-config";
+import type { RendererMode } from "@/lib/renderer-mode";
 import type { ParamPrimitive, StepEventBase } from "@/types/engine";
 
 export type PlaybackStatus = "idle" | "playing" | "paused" | "completed";
@@ -28,10 +29,12 @@ interface AlgorithmRunState {
 
 interface AppState {
   selectedAlgorithmSlug: string | null;
+  rendererMode: RendererMode;
   playback: PlaybackState;
   params: Record<string, ParamValue>;
   run: AlgorithmRunState | null;
   setSelectedAlgorithmSlug: (slug: string | null) => void;
+  setRendererMode: (mode: RendererMode) => void;
   initializeAlgorithm: (slug: string | null) => void;
   setPlaybackStatus: (status: PlaybackStatus) => void;
   setPlaybackSpeed: (speed: number) => void;
@@ -102,10 +105,12 @@ function normalizePlaybackSpeed(rawSpeed: number, minSpeed: number, maxSpeed: nu
 
 export const useAppStore = create<AppState>((set) => ({
   selectedAlgorithmSlug: null,
+  rendererMode: "advanced",
   playback: defaultPlayback,
   params: {},
   run: null,
   setSelectedAlgorithmSlug: (slug) => set({ selectedAlgorithmSlug: slug }),
+  setRendererMode: (mode) => set({ rendererMode: mode }),
   initializeAlgorithm: (slug) =>
     set((state) => {
       if (!slug) {

@@ -13,7 +13,7 @@ Audience target is broad: learners, interview preparation users, and engineering
 
 - Phase window: 3 phases over approximately 3 months.
 - Current status: UI scaffold completed; Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Counting Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations shipped as engine-backed vertical slices, completing the current algorithm backlog. The `/compare` route now ships side-by-side default-run summaries with normalized metrics overlays, synchronized shared inputs for compatible algorithms that share a renderer family, and local playback parity with shared cursor controls and per-side step inspection.
-- Next implementation target: add renderer-level side-by-side visual playback to comparison mode.
+- Next implementation target: add per-page `Simple` / `Advanced` renderer modes, starting with array and pathfinding/grid algorithms.
 
 ## Difficulty Rubric
 
@@ -84,6 +84,39 @@ Core infra milestones:
 - Side-by-side comparison mode.
 - Expanded metrics overlays.
 - Worker-backed step generation for heavy workloads.
+
+## Post-Backlog Renderer Rollout
+
+Goals:
+- Add a short-form-friendly simple renderer track without replacing the current detailed educational views.
+- Keep playback deterministic by reusing existing step streams and controls.
+- Start modularizing renderer code by family instead of continuing to grow a single visualizer surface.
+
+Implementation order:
+1. Documentation sync and stale-plan cleanup.
+2. Renderer-mode architecture split (`Simple` / `Advanced`).
+3. Per-page mode toggle with persistent local UI state.
+4. Array-family simple renderer rollout:
+   - Bubble Sort
+   - Selection Sort
+   - Insertion Sort
+   - Binary Search
+   - Merge Sort
+   - Quick Sort
+   - Heap Sort
+   - Counting Sort
+5. Grid/pathfinding simple renderer rollout:
+   - BFS
+   - DFS
+   - Dijkstra
+   - A*
+   - Bidirectional BFS
+
+Out of scope for this rollout:
+- graph-family simple renderers,
+- tree-family simple renderers,
+- autoplay/demo-mode playback,
+- a separate short-video route.
 
 ## Algorithm Portfolio (22)
 

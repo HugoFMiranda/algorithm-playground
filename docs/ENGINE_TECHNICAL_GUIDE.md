@@ -147,7 +147,7 @@ To add a new algorithm, follow this exact sequence.
 1. Add `src/algorithms/<slug>/spec.ts`.
 2. Add `src/algorithms/<slug>/engine.ts` implementing `AlgorithmEngine`.
 3. Register it in `src/algorithms/registry.ts` with `defaultParams` and `createRun`.
-4. Add or adapt renderer behavior in `src/components/algorithm/visualizer-panel.tsx`.
+4. Add or adapt renderer behavior through the active renderer layer. For current work, prefer family-level renderer modules before adding more inline visualizer branches.
 5. Add parameter controls in `src/components/algorithm/params-panel.tsx`.
 6. Add implementation examples in `src/algorithms/examples/<slug>.ts`.
 7. Add tests under `tests/engine` and `tests/store` as needed.
@@ -188,6 +188,7 @@ Current implementation is full for Binary Search, BFS, Bidirectional BFS, DFS, D
 
 Planned next extensions:
 
-1. add renderer-level side-by-side visual playback to comparison mode,
-2. keep expanding deterministic grid/graph renderer behavior,
-3. split renderer logic into dedicated `src/renderers/*` modules as algorithm count increases.
+1. add `Simple` / `Advanced` renderer modes on algorithm pages,
+2. move array and grid rendering into dedicated `src/renderers/*` modules,
+3. expand the simple renderer track across array algorithms first, then grid/pathfinding algorithms,
+4. add renderer-level side-by-side visual playback to comparison mode after the renderer split stabilizes.
