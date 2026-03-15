@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project follows pre-1.0 Semantic Versioning (`0.x.y`).
 
+## [0.8.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.7.0...algorithm-playground-v0.8.0) (2026-03-15)
+
+
+### Added
+
+* **algorithms:** add AVL rotations visualizer ([5592dca](https://github.com/HugoFMiranda/algorithm-playground/commit/5592dca49eea8a11dfa19ceddf4b818571e39dd0))
+* **algorithms:** add bidirectional bfs and bellman-ford ([a5f927b](https://github.com/HugoFMiranda/algorithm-playground/commit/a5f927b8ada708e514853c47d1d1a2cd21c75c65))
+* **algorithms:** add bst operations ([c48e218](https://github.com/HugoFMiranda/algorithm-playground/commit/c48e218d0dab86fce1ad9648b97ce8c4080e604d))
+* **algorithms:** add counting sort visualizer ([b7216c1](https://github.com/HugoFMiranda/algorithm-playground/commit/b7216c1b83abd1a01b9115dbfa5e76d0cc303d76))
+* **compare:** add deterministic comparison mode ([fdc8f49](https://github.com/HugoFMiranda/algorithm-playground/commit/fdc8f4980cf6cb5e731d8d9450cae6054887f84f))
+* **compare:** add synchronized renderer playback ([b2f2a54](https://github.com/HugoFMiranda/algorithm-playground/commit/b2f2a54d7265fecc715af1cbd761d22575bd77fc))
+* **renderer:** add simple mode for array and grid views ([d2eae68](https://github.com/HugoFMiranda/algorithm-playground/commit/d2eae68cbe060711c5138cf37992fcc080a7cf7d))
+* **renderer:** harden simple mode presentation ([5ba0ac8](https://github.com/HugoFMiranda/algorithm-playground/commit/5ba0ac858da254ad7ae9b514663c2fc21c8c97c4))
+
+
+### Changed
+
+* **roadmap:** sync shipped algorithms and next targets ([70d5b34](https://github.com/HugoFMiranda/algorithm-playground/commit/70d5b341026afd52d1907009491b74e44250cd11))
+
 ## [0.7.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.6.0...algorithm-playground-v0.7.0) (2026-03-03)
 
 
