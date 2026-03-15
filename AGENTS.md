@@ -14,7 +14,7 @@ Build a professional algorithm visualization hub where users can:
 - Frontend-only Next.js App Router application.
 - No backend requirements in the current roadmap window.
 - Focus on reusable engine and renderer architecture before advanced features.
-- Current implementation checkpoint: Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Counting Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations are fully integrated algorithm slices (engine, playback, renderer, params, and code examples). Comparison mode now ships side-by-side default-run summaries, normalized metrics overlays, synchronized shared inputs for compatible array and pathfinding pairs across shared renderer families, plus local playback parity with shared cursor controls and per-side active-step inspection.
+- Current implementation checkpoint: Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Counting Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations are fully integrated algorithm slices (engine, playback, renderer, params, and code examples). Comparison mode now ships side-by-side default-run summaries, normalized metrics overlays, synchronized shared inputs for compatible array and pathfinding pairs across shared renderer families, local playback parity with shared cursor controls and per-side active-step inspection, plus synchronized visual playback for simple-renderer array and grid families.
 - Current renderer direction: algorithm pages now support both `Advanced` detailed renderers and `Simple` short-form-friendly renderers. `Simple` mode now ships for array and pathfinding/grid families; graph and tree algorithms remain advanced-only until later phases.
 - Every algorithm must ship with an easy-to-understand explanation surfaced on its algorithm page.
 
@@ -82,9 +82,9 @@ Roadmap horizon is 3 phases with 22 planned algorithms.
    - array simple renderers,
    - grid simple renderers.
 5. Current renderer follow-up sequence:
-   - harden simple-mode presentation and preference persistence,
    - refine family-level frame accuracy and legends,
-   - return to renderer-level side-by-side comparison visuals.
+   - extend compare visuals beyond simple array/grid families,
+   - decide whether compare mode should expose a renderer toggle per supported family.
 
 Canonical order and algorithm list are maintained in `docs/ROADMAP.md` and `src/data/algorithms.ts`.
 

@@ -184,10 +184,10 @@ Current tests validate:
 
 ## 9. Current Limits and Next Steps
 
-Current implementation is full for Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Counting Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations. Comparison mode also consumes the same runtime registry for deterministic default-run summaries, normalized metrics overlays, synchronized shared inputs, and local playback parity with a shared cursor across both runs.
+Current implementation is full for Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Counting Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations. Comparison mode also consumes the same runtime registry for deterministic default-run summaries, normalized metrics overlays, synchronized shared inputs, local playback parity with a shared cursor across both runs, and synchronized visual playback for the simple array/grid renderer families.
 
 Planned next extensions:
 
-1. harden the shipped `Simple` renderer track with better legends and persistent mode preference,
-2. continue tightening family-level frame derivation for array and grid renderers,
-3. add renderer-level side-by-side visual playback to comparison mode after the renderer split stabilizes.
+1. continue tightening family-level frame derivation for array and grid renderers,
+2. extend compare-mode renderer coverage beyond simple array/grid families,
+3. decide whether compare mode should expose compare-specific renderer controls or keep one fixed visual track per supported family.

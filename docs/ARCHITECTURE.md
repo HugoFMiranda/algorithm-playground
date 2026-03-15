@@ -44,7 +44,8 @@ Primary goals:
   - array algorithms via animated bar renderers,
   - pathfinding/grid algorithms via abstract square-canvas renderers.
 - Graph and tree families remain advanced-only during the first rollout.
-- The current follow-up work is hardening simple-mode presentation and persistence before returning to compare-mode renderer work.
+- Compare mode now reuses the same family-level simple renderers for synchronized array and grid playback, while graph and tree comparisons remain on summary + step-inspection fallback cards.
+- The current follow-up work is extending compare visuals beyond the simple array/grid families and tightening family-level visual accuracy.
 
 ## Target Architecture (Roadmap)
 
@@ -94,7 +95,7 @@ Planned expansion:
 - loop/step-backward behavior,
 - run ids and timeline scrub,
 - worker-backed heavy-step generation,
-- renderer-level side-by-side visual playback for comparison mode after simple-mode rollout stabilizes.
+- compare renderer coverage for graph/tree families after array/grid visual playback stabilization.
 
 ## Documentation Contracts
 

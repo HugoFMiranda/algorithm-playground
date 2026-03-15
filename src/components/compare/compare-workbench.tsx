@@ -38,6 +38,7 @@ import {
   stepComparePlaybackForward,
   type ComparisonPlaybackState,
 } from "@/lib/compare-playback";
+import { getSimpleRendererFamily, supportsSimpleRenderer } from "@/lib/renderer-mode";
 import { getAlgorithmEasyExplanation } from "@/data/easy-explanations";
 import { PageTransition } from "@/components/layout/page-transition";
 import { ThemeToggle } from "@/components/library/theme-toggle";
@@ -51,6 +52,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { SimpleArrayRenderer } from "@/renderers/array/simple";
+import { SimpleGridRenderer } from "@/renderers/grid/simple";
 import { cn } from "@/lib/utils";
 import type { RawParams, StepEventBase } from "@/types/engine";
 
@@ -397,7 +400,7 @@ export function CompareWorkbench() {
                 <p>Metrics overlays expose shared observed counts like steps, comparisons, visits, edges, or nodes when both runs produce them.</p>
                 <p>Shared input sync keeps compatible pairs on the same array or grid configuration.</p>
                 <p>Playback parity now keeps both runs on the same cursor and speed without using the main app store.</p>
-                <p>The next comparison milestone is renderer-level side-by-side visual playback.</p>
+                <p>Array and pathfinding pairs now reuse the same simple renderer surfaces inside compare mode.</p>
               </CardContent>
             </Card>
           </section>
@@ -862,6 +865,8 @@ function ComparisonColumn({
             </div>
           </CardHeader>
           <CardContent className="relative space-y-4">
+            <ComparisonVisualizerCard snapshot={snapshot} playbackCursor={playbackCursor} />
+
             <StepInspector step={activeStep} cursor={playbackCursor} totalSteps={snapshot.steps.length} />
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -925,6 +930,59 @@ function ComparisonColumn({
           </CardContent>
         </Card>
       ) : null}
+    </div>
+  );
+}
+
+interface ComparisonVisualizerCardProps {
+  snapshot: ComparisonSnapshot;
+  playbackCursor: number;
+}
+
+function ComparisonVisualizerCard({ snapshot, playbackCursor }: ComparisonVisualizerCardProps) {
+  const simpleRendererFamily = getSimpleRendererFamily(snapshot.algorithm.slug);
+  const runSnapshot = {
+    algorithmSlug: snapshot.algorithm.slug,
+    input: snapshot.input,
+    normalizedParams: snapshot.normalizedParams,
+    steps: snapshot.steps,
+    result: snapshot.result,
+  };
+
+  if (supportsSimpleRenderer(snapshot.algorithm.slug) && simpleRendererFamily === "array") {
+    return (
+      <SimpleArrayRenderer
+        algorithmName={snapshot.algorithm.name}
+        run={runSnapshot}
+        cursor={playbackCursor}
+      />
+    );
+  }
+
+  if (supportsSimpleRenderer(snapshot.algorithm.slug) && simpleRendererFamily === "grid") {
+    return (
+      <SimpleGridRenderer
+        algorithmName={snapshot.algorithm.name}
+        run={runSnapshot}
+        cursor={playbackCursor}
+      />
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-dashed border-border/70 bg-background/60 px-4 py-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[10px] uppercase">
+          Visual Fallback
+        </Badge>
+        <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-[10px] uppercase">
+          {snapshot.algorithm.rendererFamily}
+        </Badge>
+      </div>
+      <p className="mt-3 text-sm font-medium">Comparison visuals are currently available for simple array and grid families.</p>
+      <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+        {snapshot.algorithm.name} still exposes synchronized metrics, shared inputs when supported, and active-step payload inspection here. Graph and tree compare visuals are the next renderer-coverage target.
+      </p>
     </div>
   );
 }

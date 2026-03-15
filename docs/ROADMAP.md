@@ -12,8 +12,8 @@ Audience target is broad: learners, interview preparation users, and engineering
 ## Planning Horizon
 
 - Phase window: 3 phases over approximately 3 months.
-- Current status: UI scaffold completed; Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Counting Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations shipped as engine-backed vertical slices, completing the current algorithm backlog. The `/compare` route now ships side-by-side default-run summaries with normalized metrics overlays, synchronized shared inputs for compatible algorithms that share a renderer family, and local playback parity with shared cursor controls and per-side step inspection. Algorithm pages now also ship per-page `Simple` / `Advanced` renderer modes, with `Simple` active for array and pathfinding/grid algorithms.
-- Next implementation target: harden simple-mode presentation with clearer legends, persistent mode preference, and tighter family-level visual accuracy before returning to comparison visuals.
+- Current status: UI scaffold completed; Binary Search, BFS, Bidirectional BFS, DFS, Dijkstra, A*, Bubble Sort, Quick Sort, Heap Sort, Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford, Trie Operations, Selection Sort, Counting Sort, Insertion Sort, Merge Sort, Invert Binary Tree, BST Operations, and AVL Rotations shipped as engine-backed vertical slices, completing the current algorithm backlog. The `/compare` route now ships side-by-side default-run summaries with normalized metrics overlays, synchronized shared inputs for compatible algorithms that share a renderer family, local playback parity with shared cursor controls and per-side step inspection, and synchronized visual playback for array and pathfinding/grid simple renderer families. Algorithm pages now also ship per-page `Simple` / `Advanced` renderer modes, with `Simple` active for array and pathfinding/grid algorithms.
+- Next implementation target: tighten compare-mode renderer coverage and family-specific visual accuracy, starting with unsupported graph/tree comparison families and any remaining simple-view polish.
 
 ## Difficulty Rubric
 
@@ -115,6 +115,10 @@ Implementation order:
    - persistent `Simple` / `Advanced` preference,
    - clearer legends and state cues,
    - family-level polish before compare-mode visuals resume.
+7. Compare-mode visual playback rollout:
+   - reuse simple array/grid renderers in `/compare`,
+   - keep graph/tree pairs on metrics-only fallback until dedicated compare visuals exist,
+   - evaluate compare-specific renderer controls after the first visual pass stabilizes.
 
 Out of scope for this rollout:
 - graph-family simple renderers,
