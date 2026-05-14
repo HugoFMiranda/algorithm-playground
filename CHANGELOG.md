@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project follows pre-1.0 Semantic Versioning (`0.x.y`).
 
+## [0.9.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.8.0...algorithm-playground-v0.9.0) (2026-05-14)
+
+
+### Added
+
+* add footer with GitHub link and repo button ([e9b8f61](https://github.com/HugoFMiranda/algorithm-playground/commit/e9b8f61451beb268ac21284eceb19d4dc7d06312))
+* add GitHub link and repo button to about panel ([bdcd45e](https://github.com/HugoFMiranda/algorithm-playground/commit/bdcd45e810c6cae6c95e39418bd42694faf555aa))
+
+
+### Fixed
+
+* **deps:** patch security vulnerabilities via npm audit fix ([b874695](https://github.com/HugoFMiranda/algorithm-playground/commit/b874695e9de53f4e72ee83163f7253302d54fa73))
+
 ## [0.8.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.7.0...algorithm-playground-v0.8.0) (2026-03-15)
 
 
