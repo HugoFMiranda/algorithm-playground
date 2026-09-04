@@ -18,7 +18,8 @@ export const metadata: Metadata = {
     default: "algorithm-playground",
     template: "%s | algorithm-playground",
   },
-  description: "A minimalist, premium algorithm visualization workspace scaffold built with Next.js.",
+  description:
+    "Interactive algorithm visualizer with deterministic step playback for 22 sorting, pathfinding, graph and tree algorithms — pseudocode, complexity analysis and side-by-side comparison.",
 };
 
 export default function RootLayout({

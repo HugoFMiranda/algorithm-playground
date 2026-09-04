@@ -18,32 +18,16 @@ This is a personal project that im doing to save and study some algorithms. Some
 
 ## Implemented Algorithms
 
-- Binary Search
-- Bubble Sort
-- Selection Sort
-- Insertion Sort
-- Merge Sort
-- Quick Sort
-- Heap Sort
-- Breadth-First Search (BFS)
-- Depth-First Search (DFS)
-- Dijkstra
-- A* Search
-- Topological Sort
-- Union-Find
-- Invert Binary Tree
+All 22 algorithms in the planned portfolio are shipped — the 3-phase roadmap in
+`docs/ROADMAP.md` is complete.
 
-## Planned (Roadmap)
+**Sorting:** Bubble Sort, Selection Sort, Insertion Sort, Merge Sort, Counting Sort, Quick Sort, Heap Sort
 
-- Bidirectional BFS
-- Kruskal MST
-- Prim MST
-- Bellman-Ford
-- BST Operations
-- AVL Rotations
-- Trie Operations
+**Pathfinding:** BFS, DFS, Dijkstra, A* Search, Bidirectional BFS
 
-Roadmap and ordering are maintained in `docs/ROADMAP.md`.
+**Graph Theory:** Topological Sort, Union-Find, Kruskal MST, Prim MST, Bellman-Ford
+
+**Trees & Search:** Binary Search, Invert Binary Tree, BST Operations, AVL Rotations, Trie Operations
 
 ## Tech Stack
 
