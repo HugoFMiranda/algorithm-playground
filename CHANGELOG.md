@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project follows pre-1.0 Semantic Versioning (`0.x.y`).
 
+## [0.9.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.8.0...algorithm-playground-v0.9.0) (2026-09-04)
+
+
+### Added
+
+* add footer with GitHub link and repo button ([e9b8f61](https://github.com/HugoFMiranda/algorithm-playground/commit/e9b8f61451beb268ac21284eceb19d4dc7d06312))
+* add GitHub link and repo button to about panel ([bdcd45e](https://github.com/HugoFMiranda/algorithm-playground/commit/bdcd45e810c6cae6c95e39418bd42694faf555aa))
+
+
+### Fixed
+
+* **deps:** patch npm vulnerabilities ([33db73a](https://github.com/HugoFMiranda/algorithm-playground/commit/33db73a1a689dc59e1430231231ade91fa08f2e0))
+* **deps:** patch security vulnerabilities via npm audit fix ([b874695](https://github.com/HugoFMiranda/algorithm-playground/commit/b874695e9de53f4e72ee83163f7253302d54fa73))
+* **deps:** upgrade vitest 3 → 4 to patch critical file-read vuln ([3a43c3d](https://github.com/HugoFMiranda/algorithm-playground/commit/3a43c3d1728ebf51958adc30381335ec7bd27fa2))
+* **security:** bind Next.js server to 127.0.0.1 only ([e97998c](https://github.com/HugoFMiranda/algorithm-playground/commit/e97998c6ddd7b79d7995150a2c09f80af8728558))
+
 ## [0.8.0](https://github.com/HugoFMiranda/algorithm-playground/compare/algorithm-playground-v0.7.0...algorithm-playground-v0.8.0) (2026-03-15)
 
 
